@@ -1,7 +1,14 @@
-seaf.ta.services.dc_az:
-  flix.dc_az.moscow:
-    description: Зона доступности Москва
+seaf.company.ta.services.dc_azs:
+  jupiter.dc_az.moscow:
+    title: AZ Москва
+    description: Основная зона доступности Jupiter в Москве
     external_id: dc_az.moscow
-    region: flix.dc_region.russia
-    title: Зона доступности Москва
-    vendor: Фликс
+    region: jupiter.dc_region.russia
+    vendor: Jupiter IT
+  jupiter.dc_az.moscow_dr:
+    title: AZ резервный (DR)
+    description: Резервная зона доступности в другом ЦОД
+    external_id: dc_az.moscow_dr
+    region: jupiter.dc_region.russia
+    vendor: Jupiter IT
+

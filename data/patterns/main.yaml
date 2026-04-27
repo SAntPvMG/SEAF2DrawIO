@@ -19,8 +19,8 @@ region:
         <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
       </mxCell>
     </object>
-  schema : 'seaf.ta.services.dc_region'
-  x : 20
+  schema : 'seaf.company.ta.services.dc_regions'
+  x : 390
   y : 30
   h : 630
   w : 760
@@ -35,11 +35,11 @@ az:
         <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
       </mxCell>
     </object>
-  schema : 'seaf.ta.services.dc_az'
+  schema : 'seaf.company.ta.services.dc_azs'
   parent_id: 'region'
   x : 390
   y : 30
-  h: 260
+  h: 300
   w : 360
   offset: 10
   algo: 'Y+'
@@ -52,15 +52,15 @@ office:
         <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
       </mxCell>
     </object>
-  schema : 'seaf.ta.services.office'
+  schema : 'seaf.company.ta.services.dc_offices'
   parent_id: 'region'
   x : 20
   y : 40
   h: 60
   w : 120
   offset: 25
-  algo: 'X-'
-  deep: 3
+  algo: 'X+'
+  deep: 2
   ext_page : >
     <diagram id="{id}" name="{name}">
       <mxGraphModel dx="{width}" dy="{height}" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="1">
@@ -112,9 +112,9 @@ dc:
         <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
       </mxCell>
     </object>
-  schema : 'seaf.ta.services.dc'
+  schema : 'seaf.company.ta.services.dcs'
   parent_id: 'availabilityzone'
-  x : 230
+  x : 120
   y : 30
   h : 60
   w : 120
@@ -169,14 +169,17 @@ segment_internet:
         <mxGeometry  x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />            
       </mxCell>
     </object>
-  schema: 'seaf.ta.services.network_segment'
+  schema: 'seaf.company.ta.services.network_segments'
   parent_id: 'location'
   type: "zone:INTERNET"
-  x: 1
-  y: 1
-  w: 1
-  h: 1
-  algo: 'none'
+  x: 10
+  y: 10
+  w: 140
+  h: 350
+  algo: 'Y+'
+  deep: 1
+  offset: 10
+  global_positioning: true
 
 segment_transport_wan:
   xml : >
@@ -185,14 +188,17 @@ segment_transport_wan:
         <mxGeometry  x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />            
       </mxCell>
     </object>
-  schema: 'seaf.ta.services.network_segment'
+  schema: 'seaf.company.ta.services.network_segments'
   parent_id: 'location'
   type: "zone:TRANSPORT-WAN"
-  x: 1
-  y: 1
-  w: 1
-  h: 1
-  algo: 'none'
+  x: 10
+  y: 10
+  w: 140
+  h: 350
+  algo: 'Y+'
+  deep: 1
+  offset: 10
+  global_positioning: true
 
 isp:
   xml : >
@@ -210,12 +216,14 @@ isp:
     <mxCell id="{{id}}" value="&lt;div style=&quot;font-size: 1px&quot;&gt;&lt;p style=&quot;align:center;margin-left:0;margin-right:0;margin-top:0px;margin-bottom:0px;text-indent:0;valign:middle;direction:ltr;&quot;&gt;&lt;font style=&quot;font-size: 7.06px; font-family: Calibri; color: rgb(0, 0, 0); direction: ltr; letter-spacing: 0px; line-height: 100%; opacity: 1;&quot;&gt;&lt;b&gt;{title} Router&lt;/b&gt;&lt;/font&gt;&lt;font style=&quot;font-size: 7.06px; font-family: Calibri; color: rgb(0, 0, 0); direction: ltr; letter-spacing: 0px; line-height: 100%; opacity: 1;&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/p&gt;&lt;/div&gt;" style="verticalAlign=middle;align=center;vsdxID=12895;fillColor=#ffff00;gradientColor=none;fillOpacity=40;shape=stencil(nZBLDoAgDERP0z3SIyjew0SURgSD+Lu9kMZoXLhwN9O+tukAlrNpJg1SzDH4QW/URgNYgZTkjA4UkwJUgGXng+6DX1zLfmoymdXo17xh5zmRJ6Q42BWCfc2oJfdAr+Yv+AP9Cb7OJ3H/2JG1HNGz/84klThPVCc=);strokeColor=none;spacingTop=-3;spacingBottom=-3;spacingLeft=-3;spacingRight=-3;labelBackgroundColor=none;rounded=0;html=1;whiteSpace=wrap;" vertex="1" parent="{Group_ID}">
         <mxGeometry x="70" y="45" width="39" height="18" as="geometry" />
     </mxCell>
-  schema: 'seaf.ta.services.network'
+  schema: 'seaf.company.ta.services.networks'
   parent_id: 'segment'
   parent_key: 'zone'
   type: "type:WAN"
+  require_fields:
+    - provider
   deep: 15
-  offset: 30
+  offset: 25
   x: 10
   y: 5
   w: 110
@@ -226,12 +234,12 @@ isp:
 network_links:
   xml: >
     <object id="{id}" label="{label}">
-        <mxCell style="{style}" edge="1" parent="100" source="{source_id}" target="{target_id}">
+        <mxCell style="{style}" edge="1" parent="100" source="{source}" target="{target}">
             <mxGeometry relative="1" as="geometry"/>
         </mxCell>
     </object>
   style: "endArrow=none;edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;strokeColor=#FF0000;"
-  schema: 'seaf.ta.services.network'
+  schema: 'seaf.company.ta.services.networks'
   parent_id: 'segment'
   targets: 'location'
   parent_key: 'location'

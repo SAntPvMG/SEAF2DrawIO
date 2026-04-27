@@ -1,0 +1,161 @@
+seaf.company.systems:
+  jupiter.tech_system.esb:
+    title: АС КСШ
+    class: Интеграционная шина
+    criticality_level: Business Critical
+    lifecycle_stage: Промышленная эксплуатация
+    description: |
+      Система, обеспечивающая синхронный транспорт MQ сообщений внутри периметра компании
+    location: Внутренняя
+    ownership: Владеем экземпляром
+    stakeholders:
+      - name: Иванов Н.
+        role: Владелец от ИТ
+    target_status: Нецелевая
+    categories:
+      - jupiter.sys_group.internal_dc
+      - jupiter.fo.it
+
+    realizes_functions:
+      - function: jupiter.function.messaging_transport
+        description: Доставка MQ сообщений
+        lifecycle_stage: Промышленная эксплуатация
+        target_status: Нецелевая
+        service: jupiter.srv.mq_via_esb
+
+    high_availability:
+      type: Да
+      capacity_management: Полное
+      capacity_reservation_type: Active
+    disaster_recovery:
+      type: Да
+      capacity_management: Частичное
+      capacity_reservation_type: StandBy
+    backup:
+      placement: Offsite
+      backup_placement: Отсутствует
+    monitoring:
+      - Стандартные средства мониторинга
+    performance: 1500 TPS
+    scalability: Вертикальная и горизонтальная
+    rpo: 0,3
+    sla: 99.95%
+    rto: 5
+
+  jupiter.tech_system.kafka:
+    title: АС Kafka
+    class: Интеграционная шина
+    criticality_level: Business Critical
+    lifecycle_stage: Промышленная эксплуатация
+    description: |
+      Система, обеспечивающая асинхронный транспорт сообщений внутри периметра компании
+    location: Внутренняя
+    ownership: Владеем экземпляром
+    stakeholders:
+      - name: Иванов Н.
+        role: Владелец от ИТ
+    target_status: Целевая
+    categories:
+      - jupiter.sys_group.internal_dc
+      - jupiter.fo.it
+
+    realizes_functions:
+      - function: jupiter.function.messaging_transport
+        description: Доставка сообщений и данных
+        lifecycle_stage: Промышленная эксплуатация
+        target_status: Целевая
+        service: jupiter.srv.msg_via_kafka
+
+    high_availability:
+      type: Да
+      capacity_management: Полное
+      capacity_reservation_type: Active
+    disaster_recovery:
+      type: Да
+      capacity_management: Частичное
+      capacity_reservation_type: StandBy
+    backup:
+      placement: Offsite
+      backup_placement: Отсутствует
+    monitoring:
+      - Стандартные средства мониторинга
+    performance: 1500 TPS
+    scalability: Вертикальная и горизонтальная
+    rpo: 0,5
+    sla: 99.96%
+    rto: 2
+
+  jupiter.tech_system.vorona:
+    title: АС ШПУ Ворона
+    class: Шлюзы, Балансировщики, Proxy
+    criticality_level: Business Critical
+    lifecycle_stage: Промышленная эксплуатация
+    description: |
+      Система, обеспечивающая функции шлюза сообщений на границе периметра компании
+    location: Внутренняя
+    ownership: Владеем экземпляром
+    stakeholders:
+      - name: Иванов Н.
+        role: Владелец от ИТ
+    target_status: Целевая
+    categories:
+      - jupiter.sys_group.internal_dc
+      - jupiter.fo.it
+
+    realizes_functions:
+      - function: jupiter.function.messaging_gateway
+        description: Проверка и фильтрация сообщений и данных при пересечении сетевого периметра компании
+        lifecycle_stage: Промышленная эксплуатация
+        target_status: Целевая
+        service: jupiter.srv.gateway_vorona11
+      - function: jupiter.function.messaging_gateway
+        description: Проверка и фильтрация сообщений и данных при пересечении сетевого периметра компании
+        lifecycle_stage: В разработке / приобретение
+        target_status: Целевая
+        service: jupiter.srv.gateway_vorona17
+
+    high_availability:
+      type: Да
+      capacity_management: Полное
+      capacity_reservation_type: Active
+    disaster_recovery:
+      type: Да
+      capacity_management: Частичное
+      capacity_reservation_type: StandBy
+    backup:
+      placement: Offsite
+      backup_placement: Отсутствует
+    monitoring:
+      - Стандартные средства мониторинга
+    performance: 1500 TPS
+    scalability: Вертикальная и горизонтальная
+    rpo: 0,5
+    sla: 99.96%
+    rto: 2
+
+#  сервисы систем
+seaf.company.services:
+  jupiter.srv.mq_via_esb:
+    title: MQ 03
+    lifecycle_stage: Используется
+    description: |
+      Сервис транспортировки MQ сообщений через КСШ. 
+      Используеться для передачи информации между различными системами в периметре компании
+
+  jupiter.srv.msg_via_kafka:
+    title: Kafka
+    lifecycle_stage: Используется
+    description: |
+      Сервис транспортировки сообщений через Kafka.
+      Сервисная функция по доставке сообщений от системы А к системе Б через топики Кафки
+
+  jupiter.srv.gateway_vorona11:
+    title: ШПУ 11
+    lifecycle_stage: Используется
+    description: Сервис шлюзования сообщений прикладного уровня на базе АС Ворона
+
+  jupiter.srv.gateway_vorona17:
+    title: ШПУ 17
+    lifecycle_stage: Используется
+    description: Сервис шлюзования сообщений прикладного уровня на базе АС Ворона
+

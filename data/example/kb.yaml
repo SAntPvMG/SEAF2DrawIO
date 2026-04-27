@@ -1,274 +1,412 @@
-seaf.ta.services.kb:
-  flix.kb.1:
+seaf.company.ta.services.kbs:
+  jupiter.kb.1:
     description: Сервис кибер безопасности
     tag: SCAN
     network_connection:
-      - flix.lan.dc01.dmz.prod
-      - flix.lan.dc02.dmz.prod
+      - jupiter.network.lan.dc01.dmz.prod
+      - jupiter.network.lan.dc02.dmz.prod
     software_name: Sonarqube
     status: Используется
     technology: Инструментальный контроль защищенности
     title: Инструментальный контроль защищенности
-  flix.kb.11:
+  jupiter.kb.11:
     description: Сервис кибер безопасности
-    tag: ALG
+    tag: CS
     network_connection:
-      - flix.lan.dc01.dmz.prod
-      - flix.lan.dc02.dmz.prod
+      - jupiter.network.lan.dc01.dmz.prod
+      - jupiter.network.lan.dc02.dmz.prod
     software_name: S11
     status: Используется
     technology: Безопасность конфигураций
     title: S11
-  flix.kb.12:
+  jupiter.kb.12:
     description: Сервис кибер безопасности
-    tag: ALG
+    tag: CS
     network_connection:
-      - flix.lan.dc01.int.sec.prod
-      - flix.lan.dc02.int.sec.prod
+      - jupiter.network.lan.dc01.int.sec.prod
+      - jupiter.network.lan.dc02.int.sec.prod
+      - jupiter.network.lan.dc01.int.it.services
+      - jupiter.network.lan.dc02.int.it.services
+      - jupiter.network.lan.dc01.int.it.services
+      - jupiter.network.lan.dc02.int.it.services
     software_name: S12
     status: Используется
     technology: Безопасность конфигураций
     title: S12
-  flix.kb.2:
+  jupiter.kb.2:
     description: Сервис кибер безопасности
     tag: FW
     network_connection:
-      - flix.lan.dc01.int.sec.prod
-      - flix.lan.dc02.int.sec.prod
+      - jupiter.network.lan.dc01.int.sec.prod
+      - jupiter.network.lan.dc02.int.sec.prod
     software_name: S2
     status: Используется
     technology: Управление доступом пользователей
     title: S2
-  flix.kb.3:
+  jupiter.kb.3:
     description: Сервис кибер безопасности
     tag: IDS
     network_connection:
-      - flix.lan.dc01.int.sec.prod
-      - flix.lan.dc02.int.sec.prod
+      - jupiter.network.lan.dc01.int.sec.prod
+      - jupiter.network.lan.dc02.int.sec.prod
     software_name: S3
     status: Используется
-    technology: Управление доступом пользователей
+    technology: Сигнатурный анализ режим обнаружения вторжений
     title: IDS
-  flix.kb.4:
+  jupiter.kb.4:
     description: Сервис кибер безопасности
     tag: FW
     network_connection:
-      - flix.lan.dc01.dmz.prod
-      - flix.lan.dc01.int.prod
-      - flix.lan.dc02.dmz.prod
-      - flix.lan.dc02.int.prod
+      - jupiter.network.lan.dc01.dmz.prod
+      - jupiter.network.lan.dc01.int.prod
+      - jupiter.network.lan.dc02.dmz.prod
+      - jupiter.network.lan.dc02.int.prod
     software_name: Forti
     status: Используется
     technology: Межсетевое экранирование
     title: МСЭ
-  flix.kb.5:
+  jupiter.kb.5:
     description: Сервис кибер безопасности
     tag: AV
     network_connection:
-      - flix.lan.dc01.int.sec.prod
-      - flix.lan.dc02.int.sec.prod
+      - jupiter.network.lan.dc01.int.sec.prod
+      - jupiter.network.lan.dc02.int.sec.prod
     software_name: Kaspersky
     status: Используется
     technology: Потоковый антивирус
     title: Сервис антивирус
-  flix.kb.6:
+    protected_services:
+      - jupiter.server_virtual.ad01
+      - jupiter.server_virtual.ad02
+      - jupiter.server_virtual.mail01
+      - jupiter.server_virtual.mail02
+  jupiter.kb.6:
     description: Сервис кибер безопасности
-    tag: ALG
+    tag: NAC
     network_connection:
-      - flix.lan.dc01.int.sec.prod
-      - flix.lan.dc02.int.sec.prod
+      - jupiter.network.lan.dc01.int.sec.prod
+      - jupiter.network.lan.dc02.int.sec.prod
     software_name: S6
     status: Используется
     technology: Контроль подключений к сети
     title: S6
-  flix.kb.7:
+  jupiter.kb.7:
     description: Сервис кибер безопасности
     network_connection:
-      - flix.lan.dc01.ext.wan
-      - flix.lan.dc02.ext.wan
+      - jupiter.network.lan.dc01.ext.wan
+      - jupiter.network.lan.dc02.ext.wan
     technology: Шлюзы безопасности прикладного уровня
     title: S7
     software_name: S7
-    tag: DDoS
-    status: Создается
-  flix.kb.8:
-    description: Сервис кибер безопасности
     tag: ALG
+    status: Создается
+  jupiter.kb.8:
+    description: Сервис кибер безопасности
+    tag: FW
     network_connection:
-      - flix.lan.dc01.dmz.prod
-      - flix.lan.dc02.dmz.prod
+      - jupiter.network.lan.dc01.dmz.prod
+      - jupiter.network.lan.dc02.dmz.prod
     software_name: S8
     status: Используется
     technology: Контентная фильтрация и разграничение доступа в Интернет
     title: S8
-  flix.kb.9:
+  jupiter.kb.9:
     description: Сервис кибер безопасности
-    tag: ALG
+    tag: Log
     network_connection:
-      - flix.lan.dc01.dmz.prod
-      - flix.lan.dc02.dmz.prod
+      - jupiter.network.lan.dc01.dmz.prod
+      - jupiter.network.lan.dc02.dmz.prod
     software_name: S9
     status: Используется
     technology: Аудит событий КБ
     title: S9
-  flix.kb.ddos_1:
+    protected_services:
+      - jupiter.k8s.01
+      - jupiter.k8s.02
+  jupiter.kb.ddos_1:
     description: Сервис защиты от DDOs от BiZone
     tag: DDoS
     network_connection:
-      - flix.lan.dc01.inet_edge
-      - flix.wan.dc01.isp.01
-      - flix.lan.dc02.inet_edge
-      - flix.wan.dc02.isp.01
+      - jupiter.network.lan.dc01.inet_edge
+      - jupiter.network.wan.dc01.isp.01
+      - jupiter.network.lan.dc02.inet_edge
+      - jupiter.network.wan.dc02.isp.01
     software_name: DDOS
     status: Создается
-    technology: Защита от атак типа "Отказ в обслуживании"
+    technology: Защита от атак типа "Отказ от обслуживания"
     title: DDOS
-  flix.kb.sandbox:
+  jupiter.kb.sandbox:
     description: Сервис кибер безопасности
     tag: Sandbox
     network_connection:
-      - flix.lan.dc01.dmz.prod
-      - flix.lan.dc02.dmz.prod
+      - jupiter.network.lan.dc01.dmz.prod
+      - jupiter.network.lan.dc02.dmz.prod
     software_name: Sandbox
     status: Используется
     technology: Динамический анализ угроз Sandbox
     title: Sandbox
-  flix.kb.seam:
+    protected_services:
+      - jupiter.server_virtual.mail01
+      - jupiter.server_virtual.mail02
+  jupiter.kb.seam:
     description: Сервис кибер безопасности
     tag: IPS
     network_connection:
-      - flix.wan.dc01.isp.01
-      - flix.wan.dc02.isp.01
+      - jupiter.network.wan.dc01.isp.01
+      - jupiter.network.wan.dc02.isp.01
     software_name: SEAM
     status: Используется
-    technology: Аудит событий КБ
+    technology: Сигнатурный анализ режим предотвращения вторжений
     title: SEAM
-  flix.kb.waf_1:
+  jupiter.kb.waf_1:
     description: WAF for All-App
     tag: WAF
     network_connection:
-      - flix.lan.dc01.inet_edge
-      - flix.wan.dc01.isp.01
-      - flix.wan.dc01.isp.02
-      - flix.lan.dc02.inet_edge
-      - flix.wan.dc02.isp.01
-      - flix.wan.dc02.isp.02
+      - jupiter.network.lan.dc01.inet_edge
+      - jupiter.network.wan.dc01.isp.01
+      - jupiter.network.wan.dc01.isp.02
+      - jupiter.network.lan.dc02.inet_edge
+      - jupiter.network.wan.dc02.isp.01
+      - jupiter.network.wan.dc02.isp.02
     software_name: Nginx
     status: Используется
     technology: Защита веб-приложений WAF
     title: WAF
-  flix.service.kb.radius:
+    protected_services:
+      - jupiter.k8s.01
+      - jupiter.k8s.02
+  jupiter.service.kb.radius:
     description: Сервис RADIUS в ЦОД1
     tag: IDFW
     network_connection:
-      - flix.lan.dc01.int.sec.prod
-      - flix.lan.dc02.int.sec.prod
+      - jupiter.network.lan.dc01.int.sec.prod
+      - jupiter.network.lan.dc02.int.sec.prod
     software_name: Аркан
     status: Используется
     technology: Управление доступом пользователей
     title: RADIUS
-  flix.service.kb.skud:
+  jupiter.service.kb.skud:
     description: Сервис СКУД в офисе
-    tag: CS
+    tag: NAC
     network_connection:
-      - flix.lan.office.pr.security
+      - jupiter.network.lan.office.pr.security
     software_name: Аркан
     status: Используется
-    technology: Управление доступом пользователей
+    technology: Контроль подключений к сети
     title: СКУД
-  flix.kb.audit.siem:
+  jupiter.kb.audit.siem:
     description: Централизованный сбор и анализ логов (SIEM)
     tag: Log
     network_connection:
-      - flix.lan.dc01.int.sec.prod
-      - flix.lan.dc02.int.sec.prod
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
+      - jupiter.network.lan.dc01.int.sec.prod
+      - jupiter.network.lan.dc02.int.sec.prod
+      - jupiter.network.lan.dc01.int.it.services
+      - jupiter.network.lan.dc02.int.it.services
     software_name: SIEM
     status: Используется
     technology: Аудит событий КБ
     title: SIEM/Logs
-  flix.kb.cmc:
+    protected_services:
+      - jupiter.k8s.01
+      - jupiter.k8s.02
+      - jupiter.k8s.llm.01
+      - jupiter.monitoring.elk
+      - jupiter.monitoring.zabbix
+      - jupiter.monitoring.jaeger
+      - jupiter.cluster_virtualization.esx.cloudru
+      - jupiter.cluster_virtualization.proxmox.vk
+      - jupiter.cluster_virtualization.vmware.sber
+  jupiter.kb.cmc:
     description: ЦУЦ для управления сертификатами
     tag: CMC
     network_connection:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
+      - jupiter.network.lan.dc01.int.it.services
+      - jupiter.network.lan.dc02.int.it.services
     software_name: CMC
     status: Используется
     technology: Центр управления сертификатами ИБ
     title: Corporate CMC
-  flix.kb.idm.corp:
+    protected_services:
+      - jupiter.k8s.01
+      - jupiter.k8s.02
+      - jupiter.k8s.llm.01
+      - jupiter.monitoring.elk
+      - jupiter.monitoring.zabbix
+      - jupiter.monitoring.jaeger
+      - jupiter.cluster_virtualization.esx.cloudru
+      - jupiter.cluster_virtualization.proxmox.vk
+      - jupiter.cluster_virtualization.vmware.sber
+  jupiter.kb.idm.corp:
     description: Сервис управления учетными записями (IdM)
     tag: IdM
     network_connection:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
+      - jupiter.network.lan.dc01.int.it.services
+      - jupiter.network.lan.dc02.int.it.services
     software_name: IdM
     status: Используется
     technology: Управление учетными записями (IdM)
     title: Corporate IdM
-  flix.kb.pam.central:
+    protected_services:
+      - jupiter.k8s.01
+      - jupiter.server_virtual.ad01
+      - jupiter.server_virtual.ad02
+      - jupiter.k8s.02
+      - jupiter.k8s.llm.01
+      - jupiter.monitoring.elk
+      - jupiter.monitoring.zabbix
+      - jupiter.monitoring.jaeger
+      - jupiter.cluster_virtualization.esx.cloudru
+      - jupiter.cluster_virtualization.proxmox.vk
+      - jupiter.cluster_virtualization.vmware.sber
+  jupiter.kb.pam.central:
     description: Сервис привилегированного доступа (PAM)
     tag: PAM
     network_connection:
-      - flix.lan.dc01.int.sec.prod
-      - flix.lan.dc02.int.sec.prod
+      - jupiter.network.lan.dc01.int.sec.prod
+      - jupiter.network.lan.dc02.int.sec.prod
+      - jupiter.network.lan.dc01.int.it.services
+      - jupiter.network.lan.dc02.int.it.services
     software_name: PAM
     status: Используется
     technology: Управление привилегированным доступом
     title: Central PAM
-  flix.kb.registry.harbor:
+    protected_services:
+      - jupiter.k8s.01
+      - jupiter.cluster_virtualization.esx.cloudru
+      - jupiter.cluster_virtualization.proxmox.vk
+      - jupiter.cluster_virtualization.vmware.sber
+      - jupiter.k8s.02
+      - jupiter.k8s.llm.01
+      - jupiter.monitoring.elk
+      - jupiter.monitoring.zabbix
+      - jupiter.monitoring.jaeger
+  jupiter.kb.registry.harbor:
     description: Корпоративный реестр контейнеров
     tag: Registry
     network_connection:
-      - flix.lan.192.168.101.0
-      - flix.lan.192.168.2.0
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
+      - jupiter.network.lan.192.168.101.0
+      - jupiter.network.lan.192.168.2.0
+      - jupiter.network.lan.dc01.int.it.services
+      - jupiter.network.lan.dc02.int.it.services
     software_name: Harbor
     status: Используется
     technology: Реестр контейнеров
     title: Harbor Registry
-  flix.kb.repo.corp:
+    protected_services:
+      - jupiter.k8s.01
+      - jupiter.k8s.02
+      - jupiter.k8s.llm.01
+      - jupiter.monitoring.elk
+      - jupiter.monitoring.zabbix
+      - jupiter.monitoring.jaeger
+      - jupiter.cluster_virtualization.esx.cloudru
+      - jupiter.cluster_virtualization.proxmox.vk
+      - jupiter.cluster_virtualization.vmware.sber
+  jupiter.kb.repo.corp:
     description: Корпоративный репозиторий ПО
     tag: Repo
     network_connection:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
+      - jupiter.network.lan.dc01.int.it.services
+      - jupiter.network.lan.dc02.int.it.services
     software_name: Nexus
     status: Используется
     technology: Репозиторий ПО
     title: Corporate Repo
-  flix.kb.idp.keycloak:
+    protected_services:
+      - jupiter.k8s.01
+      - jupiter.k8s.02
+      - jupiter.k8s.llm.01
+      - jupiter.monitoring.elk
+      - jupiter.monitoring.zabbix
+      - jupiter.monitoring.jaeger
+      - jupiter.cluster_virtualization.esx.cloudru
+      - jupiter.cluster_virtualization.proxmox.vk
+      - jupiter.cluster_virtualization.vmware.sber
+  jupiter.kb.idp.keycloak:
     description: Провайдер идентификации (IdP) для доступа к кластеру
     tag: IdP
     network_connection:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
+      - jupiter.network.lan.dc01.int.it.services
+      - jupiter.network.lan.dc02.int.it.services
     software_name: Keycloak
     status: Используется
     technology: Провайдер идентификации (IdP)
     title: Keycloak IdP
-  flix.kb.secrets.vault:
+    protected_services:
+      - jupiter.k8s.01
+      - jupiter.k8s.02
+      - jupiter.k8s.llm.01
+      - jupiter.monitoring.elk
+      - jupiter.monitoring.zabbix
+      - jupiter.monitoring.jaeger
+      - jupiter.cluster_virtualization.esx.cloudru
+      - jupiter.cluster_virtualization.proxmox.vk
+      - jupiter.cluster_virtualization.vmware.sber
+  jupiter.kb.secrets.vault:
     description: Хранилище секретов для k8s кластеров
     tag: Secrets
     network_connection:
-      - flix.lan.dc01.int.sec.prod
-      - flix.lan.dc02.int.sec.prod
+      - jupiter.network.lan.dc01.int.sec.prod
+      - jupiter.network.lan.dc02.int.sec.prod
+      - jupiter.network.lan.dc01.int.it.services
+      - jupiter.network.lan.dc02.int.it.services
     software_name: Vault
     status: Используется
     technology: Сервис хранения секретов
     title: Vault Secrets
-  flix.kb.policy.kyverno:
+    protected_services:
+      - jupiter.k8s.01
+      - jupiter.k8s.02
+      - jupiter.k8s.llm.01
+      - jupiter.monitoring.elk
+      - jupiter.monitoring.zabbix
+      - jupiter.monitoring.jaeger
+      - jupiter.cluster_virtualization.esx.cloudru
+      - jupiter.cluster_virtualization.proxmox.vk
+      - jupiter.cluster_virtualization.vmware.sber
+  jupiter.kb.policy.kyverno:
     description: Политики безопасности для кластеров Kubernetes
     tag: Policy
     network_connection:
-      - flix.lan.192.168.101.0
-      - flix.lan.192.168.2.0
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
+      - jupiter.network.lan.192.168.101.0
+      - jupiter.network.lan.192.168.2.0
+      - jupiter.network.lan.dc01.int.it.services
+      - jupiter.network.lan.dc02.int.it.services
     software_name: Kyverno
     status: Используется
     technology: Политики Kubernetes
     title: Kyverno Policy
+    protected_services:
+      - jupiter.k8s.01
+      - jupiter.k8s.02
+      - jupiter.k8s.llm.01
+  jupiter.kb.dlp.corp:
+    title: Корпоративная DLP система
+    description: Защита от утечек информации
+    technology: Защита от утечек информации
+    software_name: InfoWatch
+    tag: DLP
+    status: Используется
+    network_connection:
+      - jupiter.network.lan.office.int.lan
+    protected_services:
+      - jupiter.user_device.pc
+      - jupiter.user_device.laptop
+    app_components:
+      - jupiter.app_system.1c_erp
+      - jupiter.app_system.ecm_news
+  jupiter.kb.uam.teramind:
+    title: Система мониторинга действий пользователей
+    description: Контроль действий персонала на рабочих местах
+    technology: Мониторинг действий пользователей
+    software_name: Teramind
+    tag: UAM
+    status: Используется
+    network_connection:
+      - jupiter.network.lan.office.int.lan
+    protected_services:
+      - jupiter.user_device.pc
+      - jupiter.user_device.laptop
+    app_components:
+      - jupiter.app_system.1c_erp
+      - jupiter.app_system.ecm_news

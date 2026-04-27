@@ -1,263 +1,747 @@
-seaf.ta.components.server:
-  flix.server_metal.01:
-    cpu:
-      cores: 16
-      frequency: 2400
-    disks:
-      - disk0:
-          size: 200
-          type: SSD
-    external_id: server_metal.01
-    fqdn: server-metal-01.vk.flix.ru
-    is_part_of_cluster_virtualization: -flix.cluster_virtualization.proxmox.vk
-    location:
-      - flix.dc.02
-    model: DL360 G10
-    nic_qty: 4
-    os:
-      bit: '64'
-      type: Proxmox VE
-    ram: 128
-    sber:
-      fan_qty: 4
-      power_module_qty: 2
-      rack_mount: true
-      raid_level:
-        - 1
-        - 6
-      raid_spare_disks: 2
-    stand:
-      - flix.stand.prod
+seaf.company.ta.components.servers:
+  jupiter.server_metal.01:
     title: Физический сервер 01
     type: Физический
+    host_role: [Гипервизор]
     vendor: HP
-  flix.server_metal.02:
-    cpu:
-      cores: 16
-      frequency: 2400
-    disks:
-      - disk0:
-          size: 200
-          type: SSD
-    external_id: server_metal.02
-    fqdn: server-metal-02.vk.flix.ru
-    is_part_of_cluster_virtualization: -flix.cluster_virtualization.proxmox.vk
-    location:
-      - flix.dc.02
     model: DL360 G10
-    nic_qty: 4
+    fqdn: server-metal-01.vk.jupiter.ru
+    external_id: server_metal.01
     os:
       bit: '64'
       type: Proxmox VE
+      family: Linux
+      edition: Proxmox VE 8
+    cpu:
+      cores: 16
+      frequency: 2400
+      architecture: x86-64
+    numa_nodes: 2
     ram: 128
-    sber:
-      fan_qty: 4
-      power_module_qty: 2
-      rack_mount: true
-      raid_level:
-        - 1
-        - 6
-      raid_spare_disks: 2
+    disks:
+    - name: disk0
+      size: 200
+      type: SSD
+    nic_qty: 4
+    location:
+    - jupiter.dc.moscow_dc02
+    is_part_of:
+    - jupiter.cluster_virtualization.proxmox.vk
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    fan_qty: 4
+    power_module_qty: 2
+    subnets:
+    - jupiter.network.lan.dc02.int.prod
+    rack_mount: true
+    raid_level:
+    - 1
+    - 6
+    raid_spare_disks: 2
+
+  jupiter.server_metal.02:
     title: Физический сервер 02
     type: Физический
+    host_role: [Гипервизор]
     vendor: HP
-  flix.server_virtual.ad01:
-    az:
-      - flix.dc_az.moscow
-    cpu:
-      cores: 4
-      frequency: 2200
-    disks:
-      - disk0:
-          size: 100
-          type: SSD
-    external_id: server_virtual.ad01
-    fqdn: ad01.sber.flix.ru
-    is_part_of_cluster:
-      - flix.cluster.ad
-    location:
-      - flix.dc.01
-    nic_qty: 2
+    model: DL360 G10
+    fqdn: server-metal-02.vk.jupiter.ru
+    external_id: server_metal.02
     os:
       bit: '64'
-      type: Windows Server 2019
-    ram: 16
+      type: Proxmox VE
+      family: Linux
+      edition: Proxmox VE 8
+    cpu:
+      cores: 16
+      frequency: 2400
+      architecture: x86-64
+    numa_nodes: 2
+    ram: 128
+    disks:
+    - name: disk0
+      size: 200
+      type: SSD
+    nic_qty: 4
+    location:
+    - jupiter.dc.moscow_dc02
+    is_part_of:
+    - jupiter.cluster_virtualization.proxmox.vk
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    fan_qty: 4
+    power_module_qty: 2
+    rack_mount: true
+    raid_level:
+    - 1
+    - 6
+    subnets:
+    - jupiter.network.lan.dc02.int.prod
+    raid_spare_disks: 2
+
+  jupiter.server_virtual.ad01:
     title: Виртуальный сервер AD01
     type: Виртуальный
-    virtualization: flix.cluster_virtualization.vmware.sber
-  flix.server_virtual.ad02:
-    az:
-      - flix.dc_az.moscow
-    cpu:
-      cores: 4
-      frequency: 2200
-    disks:
-      - disk0:
-          size: 100
-          type: SSD
-    external_id: server_virtual.ad02
-    fqdn: ad02.sber.flix.ru
-    is_part_of_cluster:
-      - flix.cluster.ad
-    location:
-      - flix.dc.01
-    nic_qty: 2
+    host_role: [Приложение]
+    fqdn: ad01.sber.jupiter.ru
+    external_id: server_virtual.ad01
     os:
       bit: '64'
       type: Windows Server 2019
+      family: Windows
+    cpu:
+      cores: 4
+      frequency: 2200
+      architecture: x86-64
     ram: 16
+    disks:
+    - name: disk0
+      size: 100
+      type: SSD
+    nic_qty: 2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    virtualization: jupiter.cluster_virtualization.vmware.sber
+    is_part_of:
+    - jupiter.compute_service.ad
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    subnets:
+    - jupiter.network.lan.dc01.int.it.services
+
+  jupiter.server_virtual.ad02:
     title: Виртуальный сервер AD02
     type: Виртуальный
-    virtualization: flix.cluster_virtualization.vmware.sber
-  flix.server_virtual.k8s01-master1:
-    az:
-      - flix.dc_az.moscow
+    host_role: [Приложение]
+    fqdn: ad02.sber.jupiter.ru
+    external_id: server_virtual.ad02
+    os:
+      bit: '64'
+      type: Windows Server 2019
+      family: Windows
+    cpu:
+      cores: 4
+      frequency: 2200
+      architecture: x86-64
+    ram: 16
+    disks:
+    - name: disk0
+      size: 100
+      type: SSD
+    nic_qty: 2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    virtualization: jupiter.cluster_virtualization.vmware.sber
+    is_part_of:
+    - jupiter.compute_service.ad
+    stand:
+    - jupiter.stand.prod
+    subnets:
+    - jupiter.network.lan.dc01.int.it.services
+
+  jupiter.server_virtual.k8s01-master1:
+    title: K8s Master 1 (Cloud.ru)
+    type: Виртуальный
+    host_role: [Узел K8s]
+    fqdn: k8s01-m1.cloud.jupiter.ru
+    external_id: server_virtual.k8s01-m1
+    os:
+      bit: '64'
+      type: Ubuntu 20.04
+      family: Linux
     cpu:
       cores: 2
       frequency: 2200
-    disks:
-      - disk0:
-          size: 100
-          type: SSD
-    external_id: server_virtual.k8s01-m1
-    fqdn: k8s01-m1.cloud.flix.ru
-    is_part_of_k8s_cluster: -flix.k8s.01
-    nic_qty: 2
-    os:
-      bit: '64'
-      type: Ubuntu 20.04
+      architecture: x86-64
     ram: 8
-    stand:
-      - flix.stand.prod
-    title: K8s Master 1 (Cloud.ru)
-    type: Виртуальный
-    virtualization: flix.cluster_virtualization.esx.cloudru
-  flix.server_virtual.k8s01-worker1:
-    az:
-      - flix.dc_az.moscow
-    cpu:
-      cores: 4
-      frequency: 2200
     disks:
-      - disk0:
-          size: 100
-          type: SSD
-    external_id: server_virtual.k8s01-w1
-    fqdn: k8s01-w1.cloud.flix.ru
-    is_part_of_k8s_cluster: -flix.k8s.01
+    - name: disk0
+      size: 100
+      type: SSD
     nic_qty: 2
-    os:
-      bit: '64'
-      type: Ubuntu 20.04
-    ram: 16
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    virtualization: jupiter.cluster_virtualization.esx.cloudru
+    is_part_of:
+    - jupiter.k8s.01
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    subnets:
+    - jupiter.network.lan.192.168.101.0
+    - jupiter.network.lan.192.168.2.0
+
+  jupiter.server_virtual.k8s01-worker1:
     title: K8s Worker 1 (Cloud.ru)
     type: Виртуальный
-    virtualization: flix.cluster_virtualization.esx.cloudru
-  flix.server_virtual.mail01:
-    az:
-      - flix.dc_az.moscow
+    host_role: [Узел K8s]
+    fqdn: k8s01-w1.cloud.jupiter.ru
+    external_id: server_virtual.k8s01-w1
+    os:
+      bit: '64'
+      type: Ubuntu 20.04
+      family: Linux
     cpu:
       cores: 4
       frequency: 2200
-    disks:
-      - disk0:
-          size: 200
-          type: SSD
-    external_id: server_virtual.mail01
-    fqdn: mail01.sber.flix.ru
-    is_part_of_cluster:
-      - flix.cluster.mail
-    location:
-      - flix.dc.01
-    nic_qty: 2
-    os:
-      bit: '64'
-      type: Windows Server 2019
+      architecture: x86-64
     ram: 16
+    disks:
+    - name: disk0
+      size: 100
+      type: SSD
+    nic_qty: 2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    virtualization: jupiter.cluster_virtualization.esx.cloudru
+    is_part_of:
+    - jupiter.k8s.01
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    subnets:
+    - jupiter.network.lan.192.168.101.0
+    - jupiter.network.lan.192.168.2.0
+
+  jupiter.server_virtual.mail01:
     title: Виртуальный сервер Mail01
     type: Виртуальный
-    virtualization: flix.cluster_virtualization.vmware.sber
-  flix.server_virtual.mail02:
-    az:
-      - flix.dc_az.moscow
-    cpu:
-      cores: 4
-      frequency: 2200
-    disks:
-      - disk0:
-          size: 200
-          type: SSD
-    external_id: server_virtual.mail02
-    fqdn: mail02.sber.flix.ru
-    is_part_of_cluster:
-      - flix.cluster.mail
-    location:
-      - flix.dc.01
-    nic_qty: 2
+    host_role: [Приложение]
+    fqdn: mail01.sber.jupiter.ru
+    external_id: server_virtual.mail01
     os:
       bit: '64'
       type: Windows Server 2019
+      family: Windows
+    cpu:
+      cores: 4
+      frequency: 2200
+      architecture: x86-64
     ram: 16
+    disks:
+    - name: disk0
+      size: 200
+      type: SSD
+    nic_qty: 2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    virtualization: jupiter.cluster_virtualization.vmware.sber
+    is_part_of:
+    - jupiter.compute_service.mail
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    subnets:
+    - jupiter.network.lan.dc01.int.it.services
+
+  jupiter.server_virtual.mail02:
     title: Виртуальный сервер Mail02
     type: Виртуальный
-    virtualization: flix.cluster_virtualization.vmware.sber
-  flix.server_virtual.wildfly01:
-    az:
-      - flix.dc_az.moscow
+    host_role: [Приложение]
+    fqdn: mail02.sber.jupiter.ru
+    external_id: server_virtual.mail02
+    os:
+      bit: '64'
+      type: Windows Server 2019
+      family: Windows
     cpu:
       cores: 4
       frequency: 2200
-    disks:
-      - disk0:
-          size: 100
-          type: SSD
-    external_id: server_virtual.wildfly01
-    fqdn: wildfly01.vk.flix.ru
-    is_part_of_cluster:
-      - flix.cluster.wildfly
-    nic_qty: 2
-    os:
-      bit: '64'
-      type: Ubuntu 20.04
+      architecture: x86-64
     ram: 16
+    disks:
+    - name: disk0
+      size: 200
+      type: SSD
+    nic_qty: 2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    virtualization: jupiter.cluster_virtualization.vmware.sber
+    is_part_of:
+    - jupiter.compute_service.mail
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    subnets:
+    - jupiter.network.lan.dc01.int.it.services
+
+  jupiter.server_virtual.wildfly01:
     title: Виртуальный сервер Wildfly 01
     type: Виртуальный
-    virtualization: flix.cluster_virtualization.proxmox.vk
-  flix.server_virtual.wildfly02:
-    az:
-      - flix.dc_az.moscow
-    cpu:
-      cores: 4
-      frequency: 2200
-    disks:
-      - disk0:
-          size: 100
-          type: SSD
-    external_id: server_virtual.wildfly02
-    fqdn: wildfly02.vk.flix.ru
-    is_part_of_cluster:
-      - flix.cluster.wildfly
-    nic_qty: 2
+    host_role: [Приложение]
+    fqdn: wildfly01.vk.jupiter.ru
+    external_id: server_virtual.wildfly01
     os:
       bit: '64'
       type: Ubuntu 20.04
+      family: Linux
+    cpu:
+      cores: 4
+      frequency: 2200
+      architecture: x86-64
     ram: 16
+    disks:
+    - name: disk0
+      size: 100
+      type: SSD
+    nic_qty: 2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    virtualization: jupiter.cluster_virtualization.proxmox.vk
+    is_part_of:
+    - jupiter.compute_service.wildfly
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    subnets:
+    - jupiter.network.lan.192.168.101.0
+    - jupiter.network.lan.192.168.2.0
+
+  jupiter.server_virtual.wildfly02:
     title: Виртуальный сервер Wildfly 02
     type: Виртуальный
-    virtualization: flix.cluster_virtualization.proxmox.vk
+    host_role: [Приложение]
+    fqdn: wildfly02.vk.jupiter.ru
+    external_id: server_virtual.wildfly02
+    os:
+      bit: '64'
+      type: Ubuntu 20.04
+      family: Linux
+    cpu:
+      cores: 4
+      frequency: 2200
+      architecture: x86-64
+    ram: 16
+    disks:
+    - name: disk0
+      size: 100
+      type: SSD
+    nic_qty: 2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    virtualization: jupiter.cluster_virtualization.proxmox.vk
+    is_part_of:
+    - jupiter.compute_service.wildfly
+    stand:
+    - jupiter.stand.prod
+    subnets:
+    - jupiter.network.lan.192.168.101.0
+    - jupiter.network.lan.192.168.2.0
+
+  jupiter.server_virtual.elk01:
+    title: Виртуальный сервер ELK 01
+    type: Виртуальный
+    host_role: [Приложение]
+    fqdn: elk01.sber.jupiter.ru
+    external_id: server_virtual.elk01
+    os:
+      bit: '64'
+      type: Ubuntu 22.04
+      family: Linux
+    cpu:
+      cores: 8
+      frequency: 2400
+      architecture: x86-64
+    ram: 32
+    disks:
+    - name: disk0
+      size: 300
+      type: SSD
+    nic_qty: 2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    virtualization: jupiter.cluster_virtualization.vmware.sber
+    is_part_of:
+    - jupiter.monitoring.elk
+    stand:
+    - jupiter.stand.prod
+    subnets:
+    - jupiter.network.lan.dc01.int.it.services
+
+  jupiter.server_virtual.zabbix01:
+    title: Виртуальный сервер Zabbix 01
+    type: Виртуальный
+    host_role: [Приложение]
+    fqdn: zabbix01.sber.jupiter.ru
+    external_id: server_virtual.zabbix01
+    os:
+      bit: '64'
+      type: Ubuntu 22.04
+      family: Linux
+    cpu:
+      cores: 8
+      frequency: 2400
+      architecture: x86-64
+    ram: 32
+    disks:
+    - name: disk0
+      size: 200
+      type: SSD
+    nic_qty: 2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc02
+    virtualization: jupiter.cluster_virtualization.proxmox.vk
+    is_part_of:
+    - jupiter.monitoring.zabbix
+    stand:
+    - jupiter.stand.prod
+    subnets:
+    - jupiter.network.lan.dc02.int.it.services
+
+  jupiter.server_virtual.jaeger01:
+    title: Виртуальный сервер Jaeger 01
+    type: Виртуальный
+    host_role: [Приложение]
+    fqdn: jaeger01.sber.jupiter.ru
+    external_id: server_virtual.jaeger01
+    os:
+      bit: '64'
+      type: Ubuntu 22.04
+      family: Linux
+    cpu:
+      cores: 8
+      frequency: 2400
+      architecture: x86-64
+    ram: 16
+    disks:
+    - name: disk0
+      size: 150
+      type: SSD
+    nic_qty: 2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    virtualization: jupiter.cluster_virtualization.vmware.sber
+    is_part_of:
+    - jupiter.monitoring.jaeger
+    stand:
+    - jupiter.stand.prod
+    subnets:
+    - jupiter.network.lan.dc01.int.it.services
+
+  jupiter.server_virtual.jaeger02:
+    title: Виртуальный сервер Jaeger 02
+    type: Виртуальный
+    host_role: [Приложение]
+    fqdn: jaeger02.sber.jupiter.ru
+    external_id: server_virtual.jaeger02
+    os:
+      bit: '64'
+      type: Ubuntu 22.04
+      family: Linux
+    cpu:
+      cores: 8
+      frequency: 2400
+      architecture: x86-64
+    ram: 16
+    disks:
+    - name: disk0
+      size: 150
+      type: SSD
+    nic_qty: 2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc02
+    virtualization: jupiter.cluster_virtualization.proxmox.vk
+    is_part_of:
+    - jupiter.monitoring.jaeger
+    stand:
+    - jupiter.stand.prod
+    subnets:
+    - jupiter.network.lan.dc02.int.it.services
+
+  jupiter.server_metal.gpu-worker-01:
+    title: Физический сервер для LLM-воркеров 01
+    type: Физический
+    host_role: [Приложение]
+    vendor: Supermicro
+    model: SYS-421GU-TNXR
+    fqdn: gpu-worker-01.sber.jupiter.ru
+    os:
+      type: Ubuntu 22.04
+      family: Linux
+      bit: '64'
+    cpu:
+      cores: 64
+      frequency: 3000
+      architecture: x86-64
+    numa_nodes: 4
+    ram: 512
+    disks:
+    - name: disk0
+      size: 4000
+      type: SSD
+    nic_qty: 2
+    location:
+    - jupiter.dc.moscow_dc01
+    subnets:
+    - jupiter.network.lan.dc01.int.prod
+    is_part_of:
+    - jupiter.k8s.llm.01
+    stand:
+    - jupiter.stand.prod
+    gpu:
+    - model: NVIDIA H100
+      count: 4
+      memory_gb: 80
+
+  jupiter.server_metal.gpu-worker-02:
+    title: Физический сервер для LLM-воркеров 02
+    type: Физический
+    host_role: [Приложение]
+    vendor: Supermicro
+    model: SYS-421GU-TNXR
+    fqdn: gpu-worker-02.vk.jupiter.ru
+    os:
+      type: Ubuntu 22.04
+      family: Linux
+      bit: '64'
+    cpu:
+      cores: 64
+      frequency: 3000
+      architecture: x86-64
+    numa_nodes: 4
+    ram: 512
+    disks:
+    - name: disk0
+      size: 4000
+      type: SSD
+    nic_qty: 2
+    location:
+    - jupiter.dc.moscow_dc02
+    subnets:
+    - jupiter.network.lan.dc02.int.prod
+    is_part_of:
+    - jupiter.k8s.llm.01
+    stand:
+    - jupiter.stand.prod
+    gpu:
+    - model: NVIDIA H100
+      count: 4
+      memory_gb: 80
+
+  jupiter.server_virtual.llm-master-01:
+    title: Виртуальный сервер для LLM-мастера 01
+    type: Виртуальный
+    host_role: [Узел K8s]
+    fqdn: llm-master-01.sber.jupiter.ru
+    os:
+      type: Ubuntu 22.04
+      family: Linux
+      bit: '64'
+    cpu:
+      cores: 8
+      frequency: 2200
+      architecture: x86-64
+    ram: 32
+    disks:
+    - name: disk0
+      size: 200
+      type: SSD
+    nic_qty: 2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    subnets:
+    - jupiter.network.lan.dc01.int.it.services
+    virtualization: jupiter.cluster_virtualization.esx.cloudru
+    is_part_of:
+    - jupiter.k8s.llm.01
+    stand:
+    - jupiter.stand.prod
+
+  jupiter.server_virtual.llm-master-02:
+    title: Виртуальный сервер для LLM-мастера 02
+    type: Виртуальный
+    host_role: [Узел K8s]
+    fqdn: llm-master-02.sber.jupiter.ru
+    os:
+      type: Ubuntu 22.04
+      family: Linux
+      bit: '64'
+    cpu:
+      cores: 8
+      frequency: 2200
+      architecture: x86-64
+    ram: 32
+    disks:
+    - name: disk0
+      size: 200
+      type: SSD
+    nic_qty: 2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    subnets:
+    - jupiter.network.lan.dc01.int.it.services
+    virtualization: jupiter.cluster_virtualization.esx.cloudru
+    is_part_of:
+    - jupiter.k8s.llm.01
+    stand:
+    - jupiter.stand.prod
+
+  jupiter.server_virtual.llm-master-03:
+    title: Виртуальный сервер для LLM-мастера 03
+    type: Виртуальный
+    host_role: [Узел K8s]
+    fqdn: llm-master-03.vk.jupiter.ru
+    os:
+      type: Ubuntu 22.04
+      family: Linux
+      bit: '64'
+    cpu:
+      cores: 8
+      frequency: 2200
+      architecture: x86-64
+    ram: 32
+    disks:
+    - name: disk0
+      size: 200
+      type: SSD
+    nic_qty: 2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc02
+    subnets:
+    - jupiter.network.lan.dc02.int.it.services
+    virtualization: jupiter.cluster_virtualization.proxmox.vk
+    is_part_of:
+    - jupiter.k8s.llm.01
+    stand:
+    - jupiter.stand.prod
+
+  jupiter.server_metal.proxmox_node_01:
+    title: Proxmox Node 01
+    type: Физический
+    host_role: [Гипервизор]
+    vendor: HP
+    model: DL360 G10
+    fqdn: proxmox-node-01.vk.jupiter.ru
+    external_id: server_metal.proxmox_node_01
+    os:
+      bit: '64'
+      type: Proxmox VE
+      family: Linux
+      edition: Proxmox VE 8
+    cpu:
+      cores: 32
+      frequency: 2400
+      architecture: x86-64
+    numa_nodes: 2
+    ram: 256
+    disks:
+      - name: sys_disk
+        size: 500
+        type: SSD
+    nic_qty: 4
+    location:
+      - jupiter.dc.moscow_dc02
+    is_part_of:
+      - jupiter.cluster_virtualization.proxmox.vk
+    stand:
+      - jupiter.stand.prod
+    subnets:
+      - jupiter.network.lan.dc02.int.prod
+    rack_mount: true
+
+  jupiter.server_metal.proxmox_node_02:
+    title: Proxmox Node 02
+    type: Физический
+    host_role: [Гипервизор]
+    vendor: HP
+    model: DL360 G10
+    fqdn: proxmox-node-02.vk.jupiter.ru
+    external_id: server_metal.proxmox_node_02
+    os:
+      bit: '64'
+      type: Proxmox VE
+      family: Linux
+      edition: Proxmox VE 8
+    cpu:
+      cores: 32
+      frequency: 2400
+      architecture: x86-64
+    numa_nodes: 2
+    ram: 256
+    disks:
+      - name: sys_disk
+        size: 500
+        type: SSD
+    nic_qty: 4
+    location:
+      - jupiter.dc.moscow_dc02
+    is_part_of:
+      - jupiter.cluster_virtualization.proxmox.vk
+    stand:
+      - jupiter.stand.prod
+    subnets:
+      - jupiter.network.lan.dc02.int.prod
+    rack_mount: true
+
+  jupiter.server_metal.proxmox_node_03:
+    title: Proxmox Node 03
+    type: Физический
+    host_role: [Гипервизор]
+    vendor: HP
+    model: DL360 G10
+    fqdn: proxmox-node-03.vk.jupiter.ru
+    external_id: server_metal.proxmox_node_03
+    os:
+      bit: '64'
+      type: Proxmox VE
+      family: Linux
+      edition: Proxmox VE 8
+    cpu:
+      cores: 32
+      frequency: 2400
+      architecture: x86-64
+    numa_nodes: 2
+    ram: 256
+    disks:
+      - name: sys_disk
+        size: 500
+        type: SSD
+    nic_qty: 4
+    location:
+      - jupiter.dc.moscow_dc02
+    is_part_of:
+      - jupiter.cluster_virtualization.proxmox.vk
+    stand:
+      - jupiter.stand.prod
+    subnets:
+      - jupiter.network.lan.dc02.int.prod
+    rack_mount: true
+
+  jupiter.server_virtual.proxy-edge.01:
+    title: ARM Edge Proxy 01
+    type: Виртуальный
+    host_role: [Прокси]
+    fqdn: proxy-edge-01.jupiter.ru
+    os:
+      family: Linux
+      type: Alpine
+      bit: '64'
+    cpu:
+      architecture: ARM
+      cores: 2
+      frequency: 2000
+    ram: 4
+    disks:
+      - name: root
+        size: 20
+        type: SSD
+    virtualization: jupiter.cluster_virtualization.vmware.sber
+    subnets:
+      - jupiter.network.lan.dc01.int.test

@@ -1,9 +1,41 @@
-seaf.ta.components.user_device:
-  flix.user_device.laptop:
+seaf.company.ta.components.user_devices:
+  jupiter.user_device.pc:
+    description: Клиентский ПК сотрудника
+    device_type: АРМ
+    location:
+    - jupiter.dc_office.hq
+    network_connection:
+    - jupiter.network.lan.office.int.lan
+    title: Ноутбуки сотрудников
+  jupiter.user_device.laptop:
     description: Клиентский ноутбук сотрудника
     device_type: АРМ
     location:
-      - flix.office.hq
+    - jupiter.dc_office.hq
     network_connection:
-      - flix.lan.office.int.lan
+    - jupiter.network.lan.office.int.lan
     title: Ноутбуки сотрудников
+  jupiter.user_device.office_printer:
+    description: Офисный принтер
+    device_type: Принтер
+    location:
+    - jupiter.dc_office.hq
+    network_connection:
+    - jupiter.network.lan.office.int.lan
+    title: Принтер в офисе
+  jupiter.user_device.office_ip_phone:
+    description: Офисный IP-телефон
+    device_type: IP-Телефон
+    location:
+    - jupiter.dc_office.hq
+    network_connection:
+    - jupiter.network.lan.office.int.lan
+    title: IP-телефон в офисе
+  jupiter.user_device.mrm_tablet:
+    description: Защищенный планшет инженера ЦОД
+    device_type: Мобильные рабочие места (МРМ)
+    location:
+      - jupiter.dc.moscow_dc01
+    network_connection:
+      - jupiter.network.lan.office.int.lan
+    title: МРМ Инженера

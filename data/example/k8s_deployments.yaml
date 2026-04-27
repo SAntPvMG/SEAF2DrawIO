@@ -1,0 +1,52 @@
+seaf.company.ta.services.k8s_deployments:
+  jupiter.k8s.deployment.efs_webapp:
+    title: EFS WebApp Deployment
+    description: Развёртывание EFS WebApp
+    cluster: jupiter.k8s.01
+    namespace: jupiter.ns.efs
+    app_components:
+    - jupiter.app_system.efs
+    labels:
+    - app=efs-webapp
+    - domain=efs
+    containers:
+    - name: efs-webapp
+      image: repo.jupiter.ru/containers/efs-webapp:1.0.0
+      resources:
+        limits:
+          cpu: 500m
+          ram: 512Mi
+  jupiter.k8s.deployment.efs_rm:
+    title: EFS RM Deployment
+    description: Развёртывание EFS RM
+    cluster: jupiter.k8s.01
+    namespace: jupiter.ns.efs
+    app_components:
+    - jupiter.app_system.efs
+    labels:
+    - app=efs-rm
+    - domain=efs
+    containers:
+    - name: efs-rm
+      image: repo.jupiter.ru/containers/efs-rm:1.0.0
+      resources:
+        limits:
+          cpu: 700m
+          ram: 768Mi
+  jupiter.k8s.deployment.efs_news:
+    title: EFS News Deployment
+    description: Развёртывание EFS News
+    cluster: jupiter.k8s.01
+    namespace: jupiter.ns.efs
+    app_components:
+    - jupiter.app_system.efs_news_editor
+    labels:
+    - app=efs-news
+    - domain=efs
+    containers:
+    - name: efs-news
+      image: repo.jupiter.ru/containers/efs-news:1.0.0
+      resources:
+        limits:
+          cpu: 600m
+          ram: 512Mi

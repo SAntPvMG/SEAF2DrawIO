@@ -79,17 +79,56 @@ class SeafDrawio:
             return data
 
     @staticmethod
+    def expand_data_yaml_sources(sources):
+        """
+        Преобразует data_yaml_file в плоский список путей к .yaml/.yml файлам.
+
+        Поддерживает:
+        - одну строку: путь к файлу .yaml/.yml или к каталогу (все *.yaml, *.yml в каталоге, по имени);
+        - список строк: каждый элемент — файл и/или каталог (аналогично).
+        """
+        def files_in_dir(path):
+            names = [n for n in os.listdir(path) if n.endswith(('.yaml', '.yml'))]
+            if not names:
+                print(f"Предупреждение: в каталоге нет .yaml/.yml файлов: {path}")
+            return [os.path.join(path, n) for n in sorted(names)]
+
+        def one(path):
+            path = os.path.expanduser(str(path).strip())
+            if not path:
+                return []
+            if os.path.isdir(path):
+                return files_in_dir(path)
+            return [path]
+
+        if sources is None:
+            return []
+        if isinstance(sources, str):
+            return one(sources)
+        if isinstance(sources, list):
+            out = []
+            for item in sources:
+                if not isinstance(item, str):
+                    print(f"Предупреждение: пропуск неверного элемента в data_yaml_file: {item!r}")
+                    continue
+                out.extend(one(item))
+            return out
+        print(f"Предупреждение: data_yaml_file ожидает строку или список, получено {type(sources)}")
+        return []
+
+    @staticmethod
     def read_and_merge_yaml(files, **kwargs):
         """
         Читает и объединяет один или несколько YAML-файлов по ключам.
 
-        :param files: Путь к одному файлу (str) или список путей (list)
+        :param files: Путь к одному файлу (str), каталогу (str) со *.yaml/*.yml,
+            или список таких путей (list)
         :return: dict - объединённый YAML-документ
         """
-
-        # Поддержка одного файла как строки
-        if isinstance(files, str):
-            files = [files]
+        files = SeafDrawio.expand_data_yaml_sources(files)
+        if not files:
+            print("Предупреждение: нет YAML-файлов для слияния.")
+            return {}
 
         # Настройка слияния: работает с dict и списками
         merger = Merger(

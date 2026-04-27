@@ -1,31 +1,86 @@
-seaf.ta.services.cluster_virtualization:
-  flix.cluster_virtualization.esx.cloudru:
-    availabilityzone:
-      - flix.dc_az.moscow
-    description: Кластер виртуализации на базе ESX в ЦОД Cloud.ru
-    drs_support: true
-    hypervisor: ESX
-    location:
-      - flix.dc.01
-    network_connection:
-      - flix.lan.192.168.101.0
-    oversubscription_rate: 1
-    sdrs_support: true
-    stand:
-      - flix.stand.prod
+seaf.company.ta.services.cluster_virtualizations:
+  jupiter.cluster_virtualization.esx.cloudru:
     title: Кластер виртуализации ESX в Cloud.ru
-  flix.cluster_virtualization.proxmox.vk:
-    availabilityzone:
-      - flix.dc_az.moscow
-    description: Кластер виртуализации Proxmox в ЦОД VK Cloud
-    drs_support: false
-    hypervisor: Proxmox VE
-    location:
-      - flix.dc.02
-    network_connection:
-      - flix.lan.192.168.2.0
+    description: Кластер виртуализации на базе ESX в ЦОД Cloud.ru
+    hypervisor: VMware vSphere
+    deployment_model: cloud
     oversubscription_rate: 1
-    sdrs_support: false
+    drs_support: true
+    sdrs_support: true
+    documented_api: true
+    supports_web_console: true
+    supports_cli: true
+    time_sync_sources:
+    - ntp.corp.local
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    network_connection:
+    - jupiter.network.lan.192.168.101.0
+    management_networks:
+    - jupiter.network.lan.dc01.int.sec.prod
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    policy: jupiter.kb.policy.kyverno
+    storage:
+    - jupiter.sw_storage.01
+    hw_storage:
+    - jupiter.hw_storage.01
+  jupiter.cluster_virtualization.proxmox.vk:
     title: Кластер виртуализации Proxmox в VK Cloud
+    description: Кластер виртуализации Proxmox в ЦОД VK Cloud
+    hypervisor: Proxmox VE
+    deployment_model: cloud
+    oversubscription_rate: 1
+    drs_support: true
+    sdrs_support: false
+    documented_api: true
+    supports_web_console: true
+    supports_cli: true
+    time_sync_sources:
+    - ntp.corp.local
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc02
+    network_connection:
+    - jupiter.network.lan.192.168.2.0
+    management_networks:
+    - jupiter.network.lan.dc02.int.sec.prod
+    stand:
+    - jupiter.stand.prod
+    policy: jupiter.kb.policy.kyverno
+    storage:
+    - jupiter.sw_storage.01
+    hw_storage:
+    - jupiter.hw_storage.01
+  jupiter.cluster_virtualization.vmware.sber:
+    title: Кластер виртуализации VMware в Sber DC
+    description: Кластер виртуализации VMware для ресурсов в ЦОД Sber
+    hypervisor: VMware vSphere
+    deployment_model: onprem
+    oversubscription_rate: 1
+    drs_support: true
+    sdrs_support: true
+    documented_api: true
+    supports_web_console: true
+    supports_cli: true
+    time_sync_sources:
+    - ntp.corp.local
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    - jupiter.dc_az.spb
+    location:
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
+    network_connection:
+    - jupiter.network.lan.192.168.101.0
+    management_networks:
+    - jupiter.network.lan.dc01.int.sec.prod
+    stand:
+    - jupiter.stand.prod
+    storage:
+    - jupiter.sw_storage.01
+    hw_storage:
+    - jupiter.hw_storage.01

@@ -1,53 +1,158 @@
-seaf.ta.services.monitoring:
-  flix.monitoring.elk:
+seaf.company.ta.services.monitorings:
+  jupiter.monitoring.elk:
     availabilityzone:
-      - flix.dc_az.moscow
+    - jupiter.dc_az.moscow
     description: Сбор логов
-    ha: false
+    ha: true
     location:
-      - flix.dc.01
-      - flix.dc.02
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
     app_components:
-      - flix.1c.db
-      - flix.1c
-      - flix.home_cinema.payments
+    - jupiter.sys_component.efs_db
+    - jupiter.sys_component.efs_webapp
+    - jupiter.sys_component.efs_rm
+    - jupiter.sys_component.efs_news
+    - jupiter.app_system.aihub
+    - jupiter.app_system.aihub_model_ds1
+    - jupiter.app_system.1c_erp
+    - jupiter.app_system.mes_clothing
+    - jupiter.app_system.ecm_news
+    - jupiter.app_system.tms
+    - jupiter.app_system.mp_favorite_client
+    - jupiter.app_system.monitoring_platform
     network_connection:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
+    - jupiter.network.lan.dc01.int.it.services
+    - jupiter.network.lan.dc02.int.it.services
+    notification_transports:
+    - mail
+    - telegram
+    automation_methods:
+    - api
+    - configuration_as_code
+    monitoring_console: https://elk.jupiter.ru
+    softwares:
+    - jupiter.software.elk_stack
     role:
-      - Журналирование
+    - Журналирование
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
     title: ELK
-  flix.monitoring.zabbix:
+    monitored_services:
+    - jupiter.monitoring.zabbix
+    - jupiter.monitoring.jaeger
+    - jupiter.k8s.01
+    - jupiter.k8s.02
+    - jupiter.k8s.llm.01
+    - jupiter.kb.audit.siem
+    - jupiter.server_virtual.wildfly01
+    - jupiter.server_virtual.wildfly02
+    - jupiter.obj_storage.cloud_s3
+    - jupiter.obj_storage.vk_s3
+  jupiter.monitoring.zabbix:
     availabilityzone:
-      - flix.dc_az.moscow
+    - jupiter.dc_az.moscow
     description: Инфраструктурный мониторинг (ДЗО)
     external_id: monitoring.01
     ha: true
     location:
-      - flix.dc.01
-      - flix.dc.02
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
     network_connection:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
-    role:
-      - Инфраструктурный
-      - Журналирование
+    - jupiter.network.lan.dc01.int.it.services
+    - jupiter.network.lan.dc02.int.it.services
     app_components:
-      - flix.1c.db
-      - flix.1c
-      - flix.home_cinema.payments
+    - jupiter.sys_component.efs_db
+    - jupiter.sys_component.efs_webapp
+    - jupiter.sys_component.efs_rm
+    - jupiter.sys_component.efs_news
+    - jupiter.app_system.aihub
+    - jupiter.app_system.aihub_model_ds1
+    - jupiter.app_system.1c_erp
+    - jupiter.app_system.mes_clothing
+    - jupiter.app_system.ecm_news
+    - jupiter.app_system.tms
+    - jupiter.app_system.mp_favorite_client
+    - jupiter.sys_component.efs_bal
+    - jupiter.app_system.monitoring_platform
+    notification_transports:
+    - mail
+    - tg
+    automation_methods:
+    - auto_discovery
+    - api
+    monitoring_console: https://zabbix.jupiter.ru
+    softwares:
+    - jupiter.software.zabbix
     sber:
       alarm_transport:
-        - mail
-        - TG
+      - mail
+      - TG
       frequency: 5
       history: 365
-      monitoring_console: https://zabbix.flix.ru
+      monitoring_console: https://zabbix.jupiter.ru
       pam_anabled: true
       sber_radar: https://console.radar.sber.ru
       siem_anabled: true
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
     title: Zabbix
+    role:
+    - Инфраструктурный
+    - Журналирование
+    monitored_services:
+    - jupiter.monitoring.elk
+    - jupiter.monitoring.jaeger
+    - jupiter.server_metal.01
+    - jupiter.server_metal.02
+    - jupiter.server_metal.gpu-worker-01
+    - jupiter.server_metal.gpu-worker-02
+    - jupiter.server_metal.proxmox_node_01
+    - jupiter.server_metal.proxmox_node_02
+    - jupiter.server_metal.proxmox_node_03
+    - jupiter.server_virtual.ad01
+    - jupiter.server_virtual.ad02
+    - jupiter.server_virtual.mail01
+    - jupiter.server_virtual.mail02
+    - jupiter.server_virtual.wildfly01
+    - jupiter.server_virtual.wildfly02
+    - jupiter.k8s.01
+    - jupiter.k8s.02
+    - jupiter.k8s.llm.01
+    - jupiter.cluster_virtualization.esx.cloudru
+    - jupiter.cluster_virtualization.proxmox.vk
+    - jupiter.cluster_virtualization.vmware.sber
+    - jupiter.sw_storage.01
+    - jupiter.backup.cyberbackup
+  jupiter.monitoring.jaeger:
+    title: Jaeger
+    description: Система распределенного трейсинга
+    app_components:
+      - jupiter.app_system.monitoring_platform
+    role:
+      - Трейсинг
+    ha: true
+    availabilityzone:
+      - jupiter.dc_az.moscow
+    location:
+      - jupiter.dc.moscow_dc01
+      - jupiter.dc.moscow_dc02
+    network_connection:
+      - jupiter.network.lan.dc01.int.prod
+      - jupiter.network.lan.dc01.int.it.services
+      - jupiter.network.lan.dc01.int.sec.prod
+      - jupiter.network.lan.dc02.int.prod
+      - jupiter.network.lan.dc02.int.it.services
+    monitored_services:
+      - jupiter.compute_service.app_ac1
+      - jupiter.compute_service.app_ac2
+      - jupiter.compute_service.wildfly
+    notification_transports:
+      - mail
+      - telegram
+    automation_methods:
+      - api
+    softwares:
+      - jupiter.software.jaeger
+    monitoring_console: https://jaeger.jupiter.ru
+    stand:
+      - jupiter.stand.prod

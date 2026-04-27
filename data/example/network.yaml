@@ -1,0 +1,607 @@
+seaf.company.ta.services.networks:
+  jupiter.network.lan.192.168.101.0:
+    title: LAN сеть Sber
+    type: LAN
+    description: Сеть внутри Sber
+    external_id: lan.192.168.101.0
+    lan_type: Проводная
+    ipnetwork: 192.168.101.0/24
+    vlan: 101
+    segment:
+    - jupiter.network_segment.dc.int_net
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.lan.dc01.dmz.prod:
+    title: DMZ-PROD
+    type: LAN
+    description: DMZ Prod
+    lan_type: Проводная
+    ipnetwork: 10.10.21.0/24
+    vlan: 21
+    segment:
+    - jupiter.network_segment.dc.dmz
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.lan.dc01.dmz.test:
+    title: DMZ-TEST
+    type: LAN
+    description: DMZ Test in Sber DC
+    lan_type: Проводная
+    ipnetwork: 10.10.24.0/24
+    vlan: 24
+    segment:
+    - jupiter.network_segment.dc.dmz
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.lan.dc01.dmz.vdi:
+    title: DMZ-VDI-DC01
+    type: LAN
+    description: DMZ VDI in Sber DC
+    lan_type: Проводная
+    ipnetwork: 10.10.26.0/24
+    vlan: 216
+    segment:
+    - jupiter.network_segment.dc.dmz
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.lan.dc01.dmz.vpn:
+    title: DMZ-VPN
+    type: LAN
+    description: DMZ VPN in Sber DC
+    lan_type: Проводная
+    ipnetwork: 10.10.25.0/24
+    vlan: 25
+    segment:
+    - jupiter.network_segment.dc.dmz
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.lan.dc01.ext.wan:
+    title: EXT-WAN
+    type: LAN
+    description: External WAN in Sber DC
+    lan_type: Проводная
+    ipnetwork: 203.0.113.0/24
+    vlan: 31
+    segment:
+    - jupiter.network_segment.dc.ext_wan_edge
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.lan.dc01.inet_edge:
+    title: DC01-Internet-edge
+    type: LAN
+    description: Сеть модуля подключения к Интернет в ЦОД-01
+    lan_type: Проводная
+    ipnetwork: 198.51.100.0/24
+    vlan: 110
+    segment:
+    - jupiter.network_segment.dc.inet_edge
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.lan.dc01.int.dmz:
+    title: INT-DMZ
+    type: LAN
+    description: Internal DMZ in Sber DC
+    lan_type: Проводная
+    ipnetwork: 10.10.30.0/24
+    vlan: 30
+    segment:
+    - jupiter.network_segment.dc.dmz
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.lan.dc01.int.it.services:
+    title: INT-IT Services
+    type: LAN
+    description: Internal It services in Sber DC
+    lan_type: Проводная
+    ipnetwork: 10.10.27.0/24
+    vlan: 27
+    segment:
+    - jupiter.network_segment.dc.int_net
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.lan.dc01.int.prod:
+    title: INT-PROD
+    type: LAN
+    description: Internal Prod in Sber DC
+    lan_type: Проводная
+    ipnetwork: 10.10.40.0/24
+    vlan: 40
+    segment:
+    - jupiter.network_segment.dc.int_net
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.lan.dc01.int.sec.prod:
+    title: SDZ-PROD
+    type: LAN
+    description: Внутренняя защищенная сеть ЦОД-а
+    lan_type: Проводная
+    ipnetwork: 10.10.29.0/24
+    vlan: 29
+    segment:
+    - jupiter.network_segment.dc.int_security_net
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.lan.dc01.int.test:
+    title: INT-TEST
+    type: LAN
+    description: Internal test network in Sber DC
+    lan_type: Проводная
+    ipnetwork: 10.10.26.0/24
+    vlan: 26
+    segment:
+    - jupiter.network_segment.dc.int_net
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.lan.dc01.int.wan:
+    title: INT-WAN
+    type: LAN
+    description: Internal WAN in Sber DC
+    lan_type: Проводная
+    ipnetwork: 10.10.32.0/24
+    vlan: 32
+    segment:
+    - jupiter.network_segment.dc.int_wan_edge
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.wan.dc01.isp.01:
+    title: ISP01 DC01
+    type: WAN
+    wan_ip: 10.30.10.0/24
+    provider: Beeline
+    autonomous_system: AS65001
+    ip_version: v4
+    segment:
+    - jupiter.network_segment.dc.internet
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.wan.dc01.isp.02:
+    title: ISP02 DC01
+    type: WAN
+    wan_ip: 10.30.11.0/24
+    provider: Ростелеком
+    autonomous_system: AS65002
+    ip_version: v4
+    segment:
+    - jupiter.network_segment.dc.internet
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.wan.dc01.sp.01:
+    title: SP01 DC01
+    type: WAN
+    wan_ip: 10.30.12.0/24
+    provider: МТС
+    autonomous_system: AS65003
+    ip_version: v4
+    segment:
+    - jupiter.network_segment.dc.transport
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.wan.dc01.sp.02:
+    title: SP02 DC01
+    type: WAN
+    wan_ip: 10.30.13.0/24
+    provider: Ростелеком
+    autonomous_system: AS65004
+    ip_version: v4
+    segment:
+    - jupiter.network_segment.dc.transport
+    location:
+    - jupiter.dc.moscow_dc01
+  jupiter.network.lan.192.168.2.0:
+    title: LAN сеть VK
+    type: LAN
+    description: Сеть внутри VK
+    external_id: lan.192.168.2.0
+    lan_type: Проводная
+    ipnetwork: 192.168.2.0/24
+    vlan: 150
+    segment:
+    - jupiter.network_segment.dc02.int_net
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.lan.dc02.dmz.prod:
+    title: DMZ-PROD-DC02
+    type: LAN
+    description: DMZ Prod in VK DC
+    lan_type: Проводная
+    ipnetwork: 10.20.21.0/24
+    vlan: 221
+    segment:
+    - jupiter.network_segment.dc02.dmz
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.lan.dc02.dmz.test:
+    title: DMZ-TEST DC02
+    type: LAN
+    description: DMZ Test in VK DC
+    lan_type: Проводная
+    ipnetwork: 10.20.24.0/24
+    vlan: 124
+    segment:
+    - jupiter.network_segment.dc02.dmz
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.lan.dc02.dmz.vdi:
+    title: DMZ-VDI-DC02
+    type: LAN
+    description: DMZ VDI in VK DC
+    lan_type: Проводная
+    ipnetwork: 10.20.26.0/24
+    vlan: 226
+    segment:
+    - jupiter.network_segment.dc02.dmz
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.lan.dc02.dmz.vpn:
+    title: DMZ-VPN-DC02
+    type: LAN
+    description: DMZ VPN in VK DC
+    lan_type: Проводная
+    ipnetwork: 10.20.25.0/24
+    vlan: 225
+    segment:
+    - jupiter.network_segment.dc02.dmz
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.lan.dc02.ext.wan:
+    title: EXT-WAN DC02
+    type: LAN
+    description: External WAN in VK DC
+    lan_type: Проводная
+    ipnetwork: 203.0.114.0/24
+    vlan: 131
+    segment:
+    - jupiter.network_segment.dc02.ext_wan_edge
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.lan.dc02.inet_edge:
+    title: DC02-Internet-edge
+    type: LAN
+    description: Сеть модуля подключения к Интернет в ЦОД-02
+    lan_type: Проводная
+    ipnetwork: 198.51.101.0/24
+    vlan: 120
+    segment:
+    - jupiter.network_segment.dc02.inet_edge
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.lan.dc02.int.dmz:
+    title: INT-DMZ DC02
+    type: LAN
+    description: Internal DMZ in VK DC
+    lan_type: Проводная
+    ipnetwork: 10.20.30.0/24
+    vlan: 130
+    segment:
+    - jupiter.network_segment.dc02.dmz
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.lan.dc02.int.it.services:
+    title: INT-IT Services DC02
+    type: LAN
+    description: Internal It services in VK DC
+    lan_type: Проводная
+    ipnetwork: 10.20.27.0/24
+    vlan: 127
+    segment:
+    - jupiter.network_segment.dc02.int_net
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.lan.dc02.int.prod:
+    title: INT-PROD DC02
+    type: LAN
+    description: Internal Prod in VK DC
+    lan_type: Проводная
+    ipnetwork: 10.20.40.0/24
+    vlan: 140
+    segment:
+    - jupiter.network_segment.dc02.int_net
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.lan.dc02.int.sec.prod:
+    title: SDZ-PROD DC02
+    type: LAN
+    description: Внутренняя защищенная сеть ЦОД-а
+    lan_type: Проводная
+    ipnetwork: 10.20.29.0/24
+    vlan: 129
+    segment:
+    - jupiter.network_segment.dc02.int_security_net
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.lan.dc02.int.test:
+    title: INT-TEST DC02
+    type: LAN
+    description: Internal test network in VK DC
+    lan_type: Проводная
+    ipnetwork: 10.20.26.0/24
+    vlan: 126
+    segment:
+    - jupiter.network_segment.dc02.int_net
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.lan.dc02.int.wan:
+    title: INT-WAN DC02
+    type: LAN
+    description: Internal WAN in VK DC
+    lan_type: Проводная
+    ipnetwork: 10.20.32.0/24
+    vlan: 132
+    segment:
+    - jupiter.network_segment.dc02.int_wan_edge
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.wan.dc02.isp.01:
+    title: ISP01 DC02
+    type: WAN
+    wan_ip: 10.40.10.0/24
+    provider: Beeline
+    autonomous_system: AS12345
+    ip_version: v4
+    segment:
+    - jupiter.network_segment.dc02.internet
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.wan.dc02.isp.02:
+    title: ISP02 DC02
+    type: WAN
+    wan_ip: 10.40.11.0/24
+    provider: Ростелеком
+    autonomous_system: AS12345
+    ip_version: v4
+    segment:
+    - jupiter.network_segment.dc02.internet
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.wan.dc02.sp.01:
+    title: SP01 DC02
+    type: WAN
+    wan_ip: 10.40.12.0/24
+    provider: МТС
+    autonomous_system: AS12345
+    ip_version: v4
+    segment:
+    - jupiter.network_segment.dc02.transport
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.wan.dc02.sp.02:
+    title: SP02 DC02
+    type: WAN
+    wan_ip: 10.40.13.0/24
+    provider: Ростелеком
+    autonomous_system: AS12345
+    ip_version: v4
+    segment:
+    - jupiter.network_segment.dc02.transport
+    location:
+    - jupiter.dc.moscow_dc02
+  jupiter.network.lan.office.admin.ARM:
+    title: АРМ Admin
+    type: LAN
+    description: Сеть АРМ администраторов
+    lan_type: Проводная
+    ipnetwork: 192.168.5.0/24
+    vlan: 19
+    segment:
+    - jupiter.network_segment.office.int
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.lan.office.ext.lan:
+    title: OF-EXT LAN
+    type: LAN
+    description: Core сети УС офиса
+    lan_type: Проводная
+    ipnetwork: 192.168.10.0/24
+    vlan: 13
+    segment:
+    - jupiter.network_segment.office.access
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.lan.office.inet_edge:
+    title: OF-Internet EDGE LAN
+    type: LAN
+    description: Сеть модуля подключения к внешним сетям
+    lan_type: Проводная
+    ipnetwork: 203.0.113.0/24
+    vlan: 11
+    segment:
+    - jupiter.network_segment.office.inet_edge
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.lan.office.inet_guest_edge:
+    title: OF-Guest Internet EDGE LAN
+    type: LAN
+    description: Сеть модуля подключения к внешним сетям - гостевая
+    lan_type: Проводная
+    ipnetwork: 198.51.100.0/24
+    vlan: 10
+    segment:
+    - jupiter.network_segment.office.inet_edge
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.lan.office.int.lan:
+    title: OF-INT LAN
+    type: LAN
+    description: Core сети УС офиса
+    lan_type: Проводная
+    ipnetwork: 192.168.0.0/20
+    vlan: 16
+    segment:
+    - jupiter.network_segment.office.int
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.lan.office.ipphones:
+    title: IP Phones
+    type: LAN
+    description: Сеть IP телефонов
+    lan_type: Проводная
+    ipnetwork: 192.168.7.0/24
+    vlan: 21
+    segment:
+    - jupiter.network_segment.office.int
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.lan.office.mgmt:
+    title: OF-MGMT
+    type: LAN
+    description: Сеть интерфейсов управления
+    lan_type: Проводная
+    ipnetwork: 192.168.9.0/24
+    vlan: 22
+    segment:
+    - jupiter.network_segment.office.int
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.lan.office.pr.security:
+    title: PR-Security
+    type: LAN
+    description: Сеть периметровых средств безопасности
+    lan_type: Проводная
+    ipnetwork: 192.168.8.0/24
+    vlan: 22
+    segment:
+    - jupiter.network_segment.office.int
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.lan.office.printers:
+    title: Printers
+    type: LAN
+    description: Сеть печатающих устройств
+    lan_type: Проводная
+    ipnetwork: 192.168.6.0/24
+    vlan: 20
+    segment:
+    - jupiter.network_segment.office.int
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.lan.office.security:
+    title: OF-Security
+    type: LAN
+    description: Сеть систем безопасности офиса
+    lan_type: Проводная
+    ipnetwork: 192.168.12.0/24
+    vlan: 15
+    segment:
+    - jupiter.network_segment.office.access
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.lan.office.wan_edge:
+    title: OF-WAN EDGE LAN
+    type: LAN
+    description: Сеть модуля транспортной сети
+    lan_type: Проводная
+    ipnetwork: 10.10.12.0/24
+    vlan: 12
+    segment:
+    - jupiter.network_segment.office.wan_edge
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.lan.office.wifi.arm:
+    title: Wi-Fi АРМ
+    type: LAN
+    description: Беспроводная сеть АРМ
+    lan_type: Беспроводная
+    ipnetwork: 192.168.3.0/24
+    vlan: 17
+    segment:
+    - jupiter.network_segment.office.int
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.lan.office.wifi.guest:
+    title: WiFi Guest LAN
+    type: LAN
+    description: Сеть гостевого WiFi
+    lan_type: Беспроводная
+    ipnetwork: 192.168.11.0/24
+    vlan: 14
+    segment:
+    - jupiter.network_segment.office.access
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.lan.office.wired.ARM:
+    title: Wired АРМ
+    type: LAN
+    description: Проводная сеть АРМ
+    lan_type: Проводная
+    ipnetwork: 192.168.4.0/24
+    vlan: 18
+    segment:
+    - jupiter.network_segment.office.int
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.wan.office.isp.01:
+    title: ISP01 Office
+    type: WAN
+    wan_ip: 10.20.11.0/24
+    provider: МТС
+    autonomous_system: AS12345
+    ip_version: v4
+    segment:
+    - jupiter.network_segment.internet
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.wan.office.isp.02:
+    title: ISP02 Office
+    type: WAN
+    wan_ip: 10.20.12.0/24
+    provider: Megafon
+    autonomous_system: AS12345
+    ip_version: v4
+    segment:
+    - jupiter.network_segment.internet
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.wan.office.isp.guest:
+    title: ISP Guest
+    type: WAN
+    wan_ip: 10.20.10.0/24
+    provider: МТС
+    autonomous_system: AS12345
+    ip_version: v4
+    segment:
+    - jupiter.network_segment.internet
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.wan.office.sp.01:
+    title: SP01 Office
+    type: WAN
+    wan_ip: 10.20.13.0/24
+    provider: МТС
+    autonomous_system: AS12345
+    ip_version: v4
+    segment:
+    - jupiter.network_segment.transport
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.wan.office.sp.02:
+    title: SP02 Office
+    type: WAN
+    wan_ip: 10.20.14.0/24
+    provider: Ростелеком
+    autonomous_system: AS12345
+    ip_version: v4
+    segment:
+    - jupiter.network_segment.transport
+    location:
+    - jupiter.dc_office.hq
+  jupiter.network.wan.v6:
+    title: IPv6 WAN Link
+    type: WAN
+    wan_ip: "2001:db8:ac10:fe01::/64"
+    provider: Ростелеком
+    ip_version: v6
+    location:
+      - jupiter.dc.moscow_dc01
+    segment:
+      - jupiter.network_segment.dc.internet
+  jupiter.network.lan.wifi_office:
+    title: Корпоративный Wi-Fi
+    type: LAN
+    lan_type: Беспроводная
+    ip_version: v4
+    ipnetwork: 10.50.10.0/24
+    vlan: 500
+    location:
+      - jupiter.dc_office.hq
+    segment:
+      - jupiter.network_segment.office.access

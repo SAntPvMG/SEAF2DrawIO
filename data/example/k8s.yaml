@@ -1,87 +1,100 @@
-seaf.ta.services.k8s:
-  flix.k8s.01:
-    auth: flix.kb.idp.keycloak
+seaf.company.ta.services.k8s:
+  jupiter.k8s.01:
     app_components:
-      - flix.home_cinema.auth.app
-      - flix.home_cinema.catalog.app
-      - flix.home_cinema.canals.app
-      - flix.home_cinema.payments.app
-      - flix.home_cinema.recomendation.app
-      - flix.home_cinema.auth.token_manager
+    - jupiter.sys_component.efs_webapp
+    - jupiter.sys_component.efs_rm
+    - jupiter.sys_component.efs_news
+    - jupiter.app_system.aihub
     availabilityzone:
-      - flix.dc_az.moscow
+    - jupiter.dc_az.moscow
+    - jupiter.dc_az.moscow_dr
     cluster_autoscaler: true
-    cni: Calico
+    cni:
+      product: Calico
+      network_mode: overlay
     description: K8s кластер в az.moscow
     external_id: k8s.01
     is_own: true
-    keys: flix.kb.secrets.vault
     location:
-      - flix.dc.01
-      - flix.dc.02
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
     network_connection:
-      - flix.lan.192.168.101.0
-      - flix.lan.192.168.2.0
-    policy: flix.kb.policy.kyverno
-    audit: flix.kb.audit.siem
-    audit_policy: flix.kb.audit.siem
-    idm: flix.kb.idm.corp
-    pam: flix.kb.pam.central
-    ca: flix.kb.cmc
+    - jupiter.network.lan.192.168.101.0
+    - jupiter.network.lan.192.168.2.0
     registries:
-      - flix.kb.registry.harbor
-      - flix.kb.repo.corp
+    - jupiter.kb.registry.harbor
+    - jupiter.kb.repo.corp
     monitoring:
-      - flix.monitoring.elk
-    backup:
-      - flix.backup.cyberbackup
+    - jupiter.monitoring.elk
+    - jupiter.monitoring.zabbix
     management_networks:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
+    - jupiter.network.lan.dc01.int.it.services
+    - jupiter.network.lan.dc02.int.it.services
     service_mesh: Istio
-    software: '1.28'
+    softwares:
+    - jupiter.software.k8s_1_28
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
     title: K8s кластер
-  flix.k8s.02:
-    auth: flix.kb.idp.keycloak
-    app_components:
-      - flix.home_cinema.auth.app
-      - flix.home_cinema.catalog.app
-      - flix.home_cinema.canals.app
-      - flix.home_cinema.payments.app
-      - flix.home_cinema.recomendation.app
-      - flix.home_cinema.auth.token_manager
+  jupiter.k8s.02:
     availabilityzone:
-      - flix.dc_az.moscow
+    - jupiter.dc_az.moscow
+    - jupiter.dc_az.moscow_dr
     cluster_autoscaler: true
-    cni: Calico
+    cni:
+      product: Calico
+      network_mode: overlay
     description: K8s кластер в az.moscow расширенный для ДЗО
     external_id: k8s.02
     is_own: false
-    keys: flix.kb.secrets.vault
     location:
-      - flix.dc.01
-      - flix.dc.02
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
     network_connection:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
-    policy: flix.kb.policy.kyverno
-    audit: flix.kb.audit.siem
-    audit_policy: flix.kb.audit.siem
-    idm: flix.kb.idm.corp
-    pam: flix.kb.pam.central
-    ca: flix.kb.cmc
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
     registries:
-      - flix.kb.registry.harbor
-      - flix.kb.repo.corp
-    monitoring:
-      - flix.monitoring.elk
-    backup:
-      - flix.backup.cyberbackup
+    - jupiter.kb.registry.harbor
+    - jupiter.kb.repo.corp
     management_networks:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
+    - jupiter.network.lan.dc01.int.it.services
+    - jupiter.network.lan.dc02.int.it.services
     service_mesh: Istio
-    software: '1.28'
+    softwares:
+    - jupiter.software.k8s_1_28
+    monitoring:
+    - jupiter.monitoring.elk
+    - jupiter.monitoring.zabbix
     title: K8s кластер расширенный (ДЗО)
+  jupiter.k8s.llm.01:
+    title: LLM Kubernetes Cluster
+    description: K8s кластер для LLM сервисов на bare-metal GPU нодах и виртуальных
+      мастерах
+    external_id: k8s.llm.01
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    - jupiter.dc_az.moscow_dr
+    location:
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
+    is_own: true
+    softwares:
+    - jupiter.software.k8s_1_29
+    cni:
+      product: Calico
+      network_mode: overlay
+    service_mesh: Istio
+    cluster_autoscaler: false
+    network_connection:
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
+    management_networks:
+    - jupiter.network.lan.dc01.int.it.services
+    - jupiter.network.lan.dc02.int.it.services
+    stand:
+    - jupiter.stand.prod
+    monitoring:
+    - jupiter.monitoring.elk
+    - jupiter.monitoring.zabbix
+    registries:
+    - jupiter.kb.registry.harbor

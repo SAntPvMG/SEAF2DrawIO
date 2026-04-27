@@ -1,22 +1,19 @@
-seaf.ta.components.k8s_hpa:
-  flix.k8s.hpa.auth:
-    title: HPA for auth
-    cluster_ref: flix.k8s.01
+seaf.company.ta.components.k8s_hpa:
+  jupiter.k8s.hpa.efs_webapp:
+    title: HPA for EFS WebApp
+    cluster: jupiter.k8s.01
     min: 2
     max: 6
-    target_ref: flix.k8s.deployment.auth
-
-  flix.k8s.hpa.catalog:
-    title: HPA for catalog
-    cluster_ref: flix.k8s.01
+    target: jupiter.k8s.deployment.efs_webapp
+  jupiter.k8s.hpa.efs_rm:
+    title: HPA for EFS RM
+    cluster: jupiter.k8s.01
     min: 2
     max: 6
-    target_ref: flix.k8s.deployment.catalog
-
-  flix.k8s.hpa.payments:
-    title: HPA for payments
-    cluster_ref: flix.k8s.01
+    target: jupiter.k8s.deployment.efs_rm
+  jupiter.k8s.hpa.efs_news:
+    title: HPA for EFS News
+    cluster: jupiter.k8s.01
     min: 2
     max: 6
-    target_ref: flix.k8s.deployment.payments
-
+    target: jupiter.k8s.deployment.efs_news

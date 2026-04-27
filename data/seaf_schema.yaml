@@ -31,7 +31,7 @@
                 title: Имя стенда внутри окружения
                 type: array
                 items:
-                  $ref: "#/$rels/seaf.ta.services.stand.stand"
+                  $ref: "#/$rels/seaf.company.ta.services.stands.stand"
             external_id:
                 title: Идентификатор во внешней системе
                 type: string
@@ -54,13 +54,13 @@
                 title: Имя стенда внутри окружения
                 type: array
                 items:
-                  $ref: "#/$rels/seaf.ta.services.stand.stand"
+                  $ref: "#/$rels/seaf.company.ta.services.stands.stand"
               external_id:
                 title: Идентификатор во внешней системе
                 type: string
 
 #### Описания технологических сервисов. Добавляются все необходимые поля и устанавливаются правила их наполнения ####
-  seaf.ta.services.dc_region:
+  seaf.company.ta.services.dc_regions:
     title: Region for DCs
     objects:
       dc_region:
@@ -73,7 +73,7 @@
           $ref: "#/$defs/seaf.ta.services.base.entity"
 
 #### Описания зоны доступности.
-  seaf.ta.services.dc_az:
+  seaf.company.ta.services.dc_azs:
     title: Availability Zone
     objects:
       dc_az:
@@ -90,14 +90,14 @@
               type: string
             region:
               title: В какой регион входит зона доступности
-              $ref: "#/$rels/seaf.ta.services.dc_region.dc_region"
+              $ref: "#/$rels/seaf.company.ta.services.dc_regions.dc_region"
           required:
             - external_id
             - vendor
             - region
 
 ################## ЦОД ################################################
-  seaf.ta.services.dc:
+  seaf.company.ta.services.dcs:
     title: Datacenter
     objects:
       dc:
@@ -129,7 +129,7 @@
               type: string
             availabilityzone:
               title: В какую зону доступности входит DC
-              $ref: "#/$rels/seaf.ta.services.dc_az.dc_az"
+              $ref: "#/$rels/seaf.company.ta.services.dc_azs.dc_az"
           required:
             - ownership
             - type
@@ -140,7 +140,7 @@
             - availabilityzone
 
 ################ Офис ####################################################
-  seaf.ta.services.office:
+  seaf.company.ta.services.dc_offices:
     title: Офис или иное место присутствия
     objects:
       office:
@@ -158,13 +158,13 @@
               type: string
             region:
               title: В какой регион входит офис
-              $ref: "#/$rels/seaf.ta.services.dc_region.dc_region"
+              $ref: "#/$rels/seaf.company.ta.services.dc_regions.dc_region"
           required:
             - address
 
 ################ Зоны безопасности ###########################################################
 
-  seaf.ta.services.network_segment:
+  seaf.company.ta.services.network_segments:
     title: Network Segment
     objects:
       network_segment:
@@ -182,8 +182,8 @@
                 type: string
                 items:
                     anyOf:
-                    - $ref: "#/$rels/seaf.ta.services.dc.dc"
-                    - $ref: "#/$rels/seaf.ta.services.office.office"
+                    - $ref: "#/$rels/seaf.company.ta.services.dcs.dc"
+                    - $ref: "#/$rels/seaf.company.ta.services.dc_offices.office"
               zone:
                 title: Сетевая зона
                 enum:
@@ -198,7 +198,7 @@
                     - INT-SECURITY-NET
 ################ Сети WAN/LAN ################################################################
 
-  seaf.ta.services.network:
+  seaf.company.ta.services.networks:
     title: Network
     objects:
       network:
@@ -218,8 +218,8 @@
               type: string
               items:
                 anyOf:
-                  - $ref: "#/$rels/seaf.ta.services.dc.dc"
-                  - $ref: "#/$rels/seaf.ta.services.office.office"
+                  - $ref: "#/$rels/seaf.company.ta.services.dcs.dc"
+                  - $ref: "#/$rels/seaf.company.ta.services.dc_offices.office"
             ch_number:
               title: Номер канала
               type: string
@@ -236,14 +236,14 @@
               title: ID оборудования коммутации сети
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.components.network.network"
+                $ref: "#/$rels/seaf.company.ta.components.networks.network"
             lan_type:
               title: Тип LAN
               type: string
               enum: [ Проводная, Беспроводная ]
             segment:
               title: Вхождение в сетевые сегменты сети
-              $ref: "#/$rels/seaf.ta.components.network_segment.network_segment"
+              $ref: "#/$rels/seaf.company.ta.components.networks_segment.network_segment"
             vlan:
               title: Имя виртуальной сети (VLAN)
               type: integer
@@ -256,7 +256,7 @@
 
 ################ Сетевое устройство ##########################################################
 
-  seaf.ta.components.network:
+  seaf.company.ta.components.networks:
     title: Network Appliance
     objects:
       network:
@@ -264,7 +264,7 @@
         title: Сетевое устройство
     schema: # JSON Schema контролирующая описание объекта сущности
       $defs:
-        seaf.ta.components.network:
+        seaf.company.ta.components.networks:
           type: object
           $ref: "#/$defs/seaf.ta.components.base.entity"
           properties:
@@ -279,12 +279,12 @@
               title: Перечисление связанных сетей
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.network.network"
+                $ref: "#/$rels/seaf.company.ta.services.networks.network"
             network_connection_devices:
               title: Перечисление связанных сетевых линков
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.network_links.network_links"
+                $ref: "#/$rels/seaf.company.ta.services.network_links.network_links"
             purpose:
               title: Функциональное назначение сетевого аплаенса
               type: string
@@ -296,8 +296,8 @@
               type: array
               items:
                 anyOf:
-                  - $ref: "#/$rels/seaf.ta.services.dc.dc"
-                  - $ref: "#/$rels/seaf.ta.services.office.office"
+                  - $ref: "#/$rels/seaf.company.ta.services.dcs.dc"
+                  - $ref: "#/$rels/seaf.company.ta.services.dc_offices.office"
             type:
                 title: Сетевая зона
                 enum:
@@ -310,23 +310,23 @@
                     - Коммутатор
             segment:
               title: Вхождение в сетевые сегменты сети
-              $ref: "#/$rels/seaf.ta.services.network_segment.network_segment"
+              $ref: "#/$rels/seaf.company.ta.services.network_segments.network_segment"
             is_part_of_IS_service:
               title: Перечисление связанных КБ сервисов
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.kb.kb"
+                $ref: "#/$rels/seaf.company.ta.services.kb.kb"
           required:
             - model
             - realization_type
       type: object
       patternProperties:
         "^[a-zA-Z0-9_\\.]*$":
-          $ref: "#/$defs/seaf.ta.components.network"
+          $ref: "#/$defs/seaf.company.ta.components.networks"
 
 ############### Сетевые устройства ИБ #######################################################
 
-  seaf.ta.services.kb:
+  seaf.company.ta.services.kb:
     title: Сервисы кибербезопасности
     objects:
       service:
@@ -334,7 +334,7 @@
         title: Сервисы КБ
     schema: # JSON Schema контролирующая описание объекта сущности
       $defs:
-        seaf.ta.services.kb:
+        seaf.company.ta.services.kb:
           type: object
           $ref: "#/$defs/seaf.ta.components.base.entity"
           properties:
@@ -365,7 +365,7 @@
                 title: Перечисление связанных сетей
                 type: array
                 items:
-                  $ref: "#/$rels/seaf.ta.services.network.network"
+                  $ref: "#/$rels/seaf.company.ta.services.networks.network"
             label:
               type: string
               enum: [ AV,UAM,Sandbox, SCAN, FW, IDFW, NAC, Proxy, IDS, IPS, NBA, DDoS, WAF, ALG,  DLP, Log, CS, CMS, AntiFraud ]
@@ -381,17 +381,17 @@
               title: Перечисление связанных сетей
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.network.network"
+                $ref: "#/$rels/seaf.company.ta.services.networks.network"
           required:
             - technology
       type: object
       patternProperties:
         "[a-zA-Z0-9_]*(\\.[a-zA-Z0-9_]*)*$":
           type: object
-          $ref: "#/$defs/seaf.ta.services.kb"
+          $ref: "#/$defs/seaf.company.ta.services.kb"
 
 ############### Сервисы TA (Compute) #######################################################
-  seaf.ta.services.compute_service:
+  seaf.company.ta.services.compute_services:
     title: Compute Service
     objects:
       compute_service:
@@ -399,14 +399,14 @@
         title: Вычислительный сервис
     schema: # JSON Schema контролирующая описание объекта сущности
       $defs:
-        seaf.ta.services.compute_service:
+        seaf.company.ta.services.compute_services:
           $ref: "#/$defs/seaf.ta.services.base.entity"
           properties:
             availabilityzone:
               title: В какие зоны доступности входит
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.dc_az.dc_az"
+                $ref: "#/$rels/seaf.company.ta.services.dc_azs.dc_az"
             service_type:
               title: Тип сервиса
               type: string
@@ -429,22 +429,22 @@
               type: array
               items:
                 anyOf:
-                  - $ref: "#/$rels/seaf.ta.services.dc.dc"
-                  - $ref: "#/$rels/seaf.ta.services.office.office"
+                  - $ref: "#/$rels/seaf.company.ta.services.dcs.dc"
+                  - $ref: "#/$rels/seaf.company.ta.services.dc_offices.office"
             network_connection:
               title: Перечисление связанных сетей
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.network.network"
+                $ref: "#/$rels/seaf.company.ta.services.networks.network"
           required:
             - availabilityzone
       type: object
       patternProperties:
         "^[a-zA-Z0-9_\\.]*$":
-          $ref: "#/$defs/seaf.ta.services.compute_service"
+          $ref: "#/$defs/seaf.company.ta.services.compute_services"
 
 ############### Сервисы TA (Cluster) #######################################################
-  seaf.ta.services.cluster:
+  seaf.company.ta.services.compute_services:
     title: Cluster
     objects:
       cluster:
@@ -452,21 +452,21 @@
         title: Кластер
     schema: # JSON Schema контролирующая описание объекта сущности
       $defs:
-        seaf.ta.services.cluster:
+        seaf.company.ta.services.compute_services:
           $ref: "#/$defs/seaf.ta.services.base.entity"
           properties:
             availabilityzone:
               title: В какие зоны доступности входит
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.dc_az.dc_az"
+                $ref: "#/$rels/seaf.company.ta.services.dc_azs.dc_az"
             location:
               title: ID ЦОД или Офиса
               type: array
               items:
                 anyOf:
-                  - $ref: "#/$rels/seaf.ta.services.dc.dc"
-                  - $ref: "#/$rels/seaf.ta.services.office.office"
+                  - $ref: "#/$rels/seaf.company.ta.services.dcs.dc"
+                  - $ref: "#/$rels/seaf.company.ta.services.dc_offices.office"
             fqdn:
               title: FQDN имя кластера
               type: string
@@ -477,7 +477,7 @@
               title: Перечисление связанных сетей
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.network.network"
+                $ref: "#/$rels/seaf.company.ta.services.networks.network"
             service_type:
               title: Тип сервиса
               type: string
@@ -500,10 +500,10 @@
       type: object
       patternProperties:
         "^[a-zA-Z0-9_\\.]*$":
-          $ref: "#/$defs/seaf.ta.services.cluster"
+          $ref: "#/$defs/seaf.company.ta.services.compute_services"
 
 ############### Бэкап #######################################################
-  seaf.ta.services.backup:
+  seaf.company.ta.services.backups:
     title: Backup Service
     objects:
       backup:
@@ -519,19 +519,19 @@
               title: В какие зоны доступности входит
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.dc_az.dc_az"
+                $ref: "#/$rels/seaf.company.ta.services.dc_azs.dc_az"
             network_connection:
               title: Перечисление связанных сетей
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.network.network"
+                $ref: "#/$rels/seaf.company.ta.services.networks.network"
             location:
               title: ID ЦОД или Офиса
               type: array
               items:
                 anyOf:
-                  - $ref: "#/$rels/seaf.ta.services.dc.dc"
-                  - $ref: "#/$rels/seaf.ta.services.office.office"
+                  - $ref: "#/$rels/seaf.company.ta.services.dcs.dc"
+                  - $ref: "#/$rels/seaf.company.ta.services.dc_offices.office"
             path:
               title: Место хранения РК
               type: string
@@ -542,7 +542,7 @@
             - availabilityzone
             - path
 ############### Мониторинг ##################################################
-  seaf.ta.services.monitoring:
+  seaf.company.ta.services.monitorings:
     title: Monitoring Service
     objects:
       monitoring:
@@ -550,19 +550,19 @@
         title: Сервис мониторинга
     schema: # JSON Schema контролирующая описание объекта сущности
       $defs:
-        seaf.ta.services.monitoring:
+        seaf.company.ta.services.monitorings:
           $ref: "#/$defs/seaf.ta.services.base.entity"
           properties:
             availabilityzone:
               title: В какие зоны доступности входит
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.dc_az.dc_az"
+                $ref: "#/$rels/seaf.company.ta.services.dc_azs.dc_az"
             dc:
               title: Имя ЦОД/Серверной комнаты
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.dc.dc"
+                $ref: "#/$rels/seaf.company.ta.services.dcs.dc"
             name:
               title: Производитель и название системы мониторинга
               type: string
@@ -578,7 +578,7 @@
               title: Перечисление связанных сетей
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.network.network"
+                $ref: "#/$rels/seaf.company.ta.services.networks.network"
           required:
             - availabilityzone
             - role
@@ -586,10 +586,10 @@
       type: object
       patternProperties:
         "^[a-zA-Z0-9_\\.]*$":
-          $ref: "#/$defs/seaf.ta.services.monitoring"
+          $ref: "#/$defs/seaf.company.ta.services.monitorings"
 
 ############### K8S #######################################################
-  seaf.ta.services.k8s:
+  seaf.company.ta.services.k8s:
     title: Kubernetes Cluster
     objects:
       k8s:
@@ -597,21 +597,21 @@
         title: Kubernetes кластер
     schema: # JSON Schema контролирующая описание объекта сущности
       $defs:
-        seaf.ta.services.k8s:
+        seaf.company.ta.services.k8s:
           $ref: "#/$defs/seaf.ta.services.base.entity"
           properties:
             availabilityzone:
               title: В какие зоны доступности входит
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.dc_az.dc_az"
+                $ref: "#/$rels/seaf.company.ta.services.dc_azs.dc_az"
             location:
               title: ID ЦОД или Офиса
               type: array
               items:
                 anyOf:
-                  - $ref: "#/$rels/seaf.ta.services.dc.dc"
-                  - $ref: "#/$rels/seaf.ta.services.office.office"
+                  - $ref: "#/$rels/seaf.company.ta.services.dcs.dc"
+                  - $ref: "#/$rels/seaf.company.ta.services.dc_offices.office"
             is_own:
               title: Кластер куплен как услуга
               type: boolean
@@ -646,7 +646,7 @@
               title: Перечисление связанных сетей
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.network.network"
+                $ref: "#/$rels/seaf.company.ta.services.networks.network"
           required:
             - availabilityzone
             - software
@@ -658,10 +658,10 @@
       type: object
       patternProperties:
         "^[a-zA-Z0-9_\\.]*$":
-          $ref: "#/$defs/seaf.ta.services.k8s"
+          $ref: "#/$defs/seaf.company.ta.services.k8s"
 
 ############### Кластер виртуализации ######################################
-  seaf.ta.services.cluster_virtualization:
+  seaf.company.ta.services.cluster_virtualizations:
     title: Описание кластера виртуализации
     objects:
       cluster_virtualization:
@@ -689,25 +689,25 @@
               title: В какие зоны доступности входит
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.dc_az.dc_az"
+                $ref: "#/$rels/seaf.company.ta.services.dc_azs.dc_az"
             location:
               title: ID ЦОД или Офиса
               type: array
               items:
                 anyOf:
-                  - $ref: "#/$rels/seaf.ta.services.dc.dc"
-                  - $ref: "#/$rels/seaf.ta.services.office.office"
+                  - $ref: "#/$rels/seaf.company.ta.services.dcs.dc"
+                  - $ref: "#/$rels/seaf.company.ta.services.dc_offices.office"
             network_connection:
               title: Перечисление связанных сетей
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.network.network"
+                $ref: "#/$rels/seaf.company.ta.services.networks.network"
           required:
             - availabilityzone
 
 ############### User Devices ###############################################
 
-  seaf.ta.components.user_device:
+  seaf.company.ta.components.user_devices:
     title: Пользовательское устройство
     objects:
       user_device:
@@ -723,33 +723,33 @@
             device_type:
               title: Тип устройства
               type: string
-              enum: [ АРМ, Терминалы сбора данных (ТСД), Мобильные рабочие места (МРМ), IoT ]
+              enum: [ АРМ, Терминалы сбора данных (ТСД), Мобильные рабочие места (МРМ), IoT, IP-Телефон, Принтер, IP-камера ]
             network_connection:
               title: Перечисление связанных сетей
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.network.network"
+                $ref: "#/$rels/seaf.company.ta.services.networks.network"
             location:
               title: ID ЦОД или Офиса
               type: array
               items:
                 anyOf:
-                  - $ref: "#/$rels/seaf.ta.services.dc.dc"
-                  - $ref: "#/$rels/seaf.ta.services.office.office"
+                  - $ref: "#/$rels/seaf.company.ta.services.dcs.dc"
+                  - $ref: "#/$rels/seaf.company.ta.services.dc_offices.office"
             segment:
               title: Вхождение в сетевые сегменты сети
-              $ref: "#/$rels/seaf.ta.services.network_segment.network_segment"
+              $ref: "#/$rels/seaf.company.ta.services.network_segments.network_segment"
             network_connection_devices:
               title: Перечисление связанных сетевых линков
               type: array
               items:
-                $ref: "#/$rels/seaf.ta.services.network_links.network_links"
+                $ref: "#/$rels/seaf.company.ta.services.network_links.network_links"
           required:
             - device_type
 
 ############### Logical Links ###############################################
 
-  seaf.ta.services.logical_link:
+  seaf.company.ta.services.logical_links:
     title: Логическая связь
     objects:
       logical_link:

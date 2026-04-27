@@ -1,9 +1,71 @@
-seaf.ta.services.software:
-  flix.licenses.cryptopro:
-    expiration: eternal
-    external_id: licenses.cryptopro
-    lic_qty: 10
-    support: Expired
-    title: КриптоПро
+seaf.company.ta.services.softwares:
+  jupiter.software.windows_server:
+    title: Windows Server 2019
+    vendor: Microsoft
     type: Закрытая платная
-    vendor: CryptoPro
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 100
+  jupiter.software.ubuntu:
+    title: Ubuntu 22.04 LTS
+    vendor: Canonical
+    type: Открытая
+    support: Нет
+    expiration: 01.01.2027
+    lic_qty: 9999
+  jupiter.software.k8s_1_28:
+    title: Kubernetes 1.28
+    vendor: CNCF
+    type: Открытая
+    support: Нет
+    expiration: 01.01.2030
+    lic_qty: 9999
+  jupiter.software.k8s_1_29:
+    title: Kubernetes 1.29
+    vendor: CNCF
+    type: Открытая
+    support: Нет
+    expiration: 01.01.2030
+    lic_qty: 9999
+  jupiter.software.ceph:
+    title: Ceph
+    vendor: Ceph Foundation
+    type: Открытая
+    support: Нет
+    expiration: 01.01.2030
+    lic_qty: 9999
+  jupiter.software.s3_service:
+    title: S3 Object Storage Service
+    vendor: Cloud Provider
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 2
+  jupiter.software.elk_stack:
+    title: Elastic Stack
+    vendor: Elastic
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 8
+    vendor_country: Россия
+    registry_record: REESTR-ELK-001
+    escrow_available: false
+  jupiter.software.zabbix:
+    title: Zabbix
+    vendor: Zabbix
+    type: Открытая
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 8
+    vendor_country: Россия
+    escrow_available: true
+  jupiter.software.jaeger:
+    title: Jaeger Tracing
+    vendor: CNCF
+    type: Открытая
+    support: Нет
+    expiration: 01.01.2030
+    lic_qty: 8
+    vendor_country: Россия
+    escrow_available: true

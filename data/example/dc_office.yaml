@@ -1,0 +1,7 @@
+seaf.company.ta.services.dc_offices:
+  jupiter.dc_office.hq:
+    title: Головной офис
+    description: Головная площадка обслуживания пользователей Jupiter
+    address: Москва, Берёзовый бульвар, д. 14
+    region: jupiter.dc_region.russia
+    external_id: office.hq

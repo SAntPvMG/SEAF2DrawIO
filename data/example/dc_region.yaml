@@ -1,5 +1,5 @@
-seaf.ta.services.dc_region:
-  flix.dc_region.russia:
-    description: Регион доступности Россия ООО Фликс
-    external_id: dc_region.russia
+seaf.company.ta.services.dc_regions:
+  jupiter.dc_region.russia:
     title: Регион Россия
+    description: Регион присутствия ЦОДов и офисов Jupiter
+    external_id: dc_region.russia

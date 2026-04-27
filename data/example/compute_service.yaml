@@ -1,224 +1,586 @@
-seaf.ta.services.compute_service:
-  flix.compute_service.ac9.app:
-    availabilityzone:
-      - flix.dc_az.moscow
-    description: Фронт (десктопное приложение)
-    network_connection:
-      - flix.lan.dc01.int.prod
-      - flix.lan.dc02.int.prod
-    service_type: Серверы приложений и т.д.
-    stand:
-      - flix.stand.prod
+seaf.company.ta.services.compute_services:
+  jupiter.compute_service.ac9.app:
     title: Фронт (десктопное приложение)
-  flix.compute_service.ac9.db:
+    description: Фронт (десктопное приложение)
+    service_type: Серверы приложений и т.д.
     availabilityzone:
-      - flix.dc_az.moscow
-    description: База данных Simphony
+    - jupiter.dc_az.moscow
     network_connection:
-      - flix.lan.dc01.int.prod
-      - flix.lan.dc02.int.prod
-    service_type: СУБД
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.ac9.db:
     title: База данных AS9
-  flix.compute_service.as8.app:
+    description: База данных Simphony
+    service_type: СУБД
     availabilityzone:
-      - flix.dc_az.moscow
-    description: Сервер АС AdReality
+    - jupiter.dc_az.moscow
     network_connection:
-      - flix.lan.dc01.int.prod
-      - flix.lan.dc02.int.prod
-    service_type: Серверы приложений и т.д.
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.as8.app:
     title: Фронт (десктопное приложение) АС8
-  flix.compute_service.as8.web:
-    availabilityzone:
-      - flix.dc_az.moscow
     description: Сервер АС AdReality
-    network_connection:
-      - flix.lan.dc01.dmz.prod
-      - flix.lan.dc02.dmz.prod
     service_type: Серверы приложений и т.д.
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.as8.web:
     title: Web сервер АС8
-  flix.compute_service.bpm.db:
+    description: Сервер АС AdReality
+    service_type: Серверы приложений и т.д.
     availabilityzone:
-      - flix.dc_az.moscow
-    description: База данных BPM
+    - jupiter.dc_az.moscow
     network_connection:
-      - flix.lan.dc01.int.prod
-      - flix.lan.dc02.int.prod
-    service_type: СУБД
+    - jupiter.network.lan.dc01.dmz.prod
+    - jupiter.network.lan.dc02.dmz.prod
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.bpm.db:
     title: База данных BPM
-  flix.compute_service.bpm.front:
+    description: База данных BPM
+    service_type: СУБД
     availabilityzone:
-      - flix.dc_az.moscow
-    description: Система управления бизнес-процессами
+    - jupiter.dc_az.moscow
     network_connection:
-      - flix.lan.dc01.dmz.prod
-      - flix.lan.dc02.dmz.prod
-    service_type: Серверы приложений и т.д.
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.bpm.front:
     title: Фронт (web-приложение) BPM
-  flix.compute_service.cms:
+    description: Система управления бизнес-процессами
+    service_type: Серверы приложений и т.д.
     availabilityzone:
-      - flix.dc_az.moscow
-    description: Система управления контентом
+    - jupiter.dc_az.moscow
     network_connection:
-      - flix.lan.dc01.int.prod
-      - flix.lan.dc02.int.prod
-    service_type: СУБД
+    - jupiter.network.lan.dc01.dmz.prod
+    - jupiter.network.lan.dc02.dmz.prod
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.cms:
     title: CMS
-  flix.compute_service.db_ac5:
+    description: Система управления контентом
+    service_type: СУБД
     availabilityzone:
-      - flix.dc_az.moscow
-    description: База данных AC5
+    - jupiter.dc_az.moscow
     network_connection:
-      - flix.lan.dc01.int.prod
-      - flix.lan.dc02.int.prod
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.db_ac5:
+    title: База данных AC5
+    description: База данных AC5
+    service_type: СУБД
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.dhcp:
+    title: DHCP
+    description: Сервис DHCP в ЦОД1
+    service_type: Управление сетевым адресным пространством (DHCP, DNS и т.д.)
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.int.it.services
+    - jupiter.network.lan.dc02.int.it.services
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.dns:
+    title: DNS
+    description: Сервис DNS в ЦОД1
+    service_type: Управление сетевым адресным пространством (DHCP, DNS и т.д.)
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.int.it.services
+    - jupiter.network.lan.dc02.int.it.services
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.fir:
+    title: Файловый ресурс
+    description: Файловый ресурс
+    service_type: Файловый ресурс (FTP, NFS, SMB, S3 и т.д.)
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.ntp:
+    title: NTP
+    description: Сервис NTP в ЦОД1
+    service_type: Управление сетевым адресным пространством (DHCP, DNS и т.д.)
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.int.it.services
+    - jupiter.network.lan.dc02.int.it.services
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.web_ac4:
+    title: Фронт (web-приложение) AC4
+    description: Фронт (web-приложение) AC4
+    service_type: Серверы приложений и т.д.
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.web_ac5:
+    title: Фронт (web-приложение) AC5
+    description: Фронт (web-приложение)AC5
+    service_type: Серверы приложений и т.д.
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.web_ac6:
+    title: Шлюз AC6
+    description: Шлюз AC6
+    service_type: Шлюз, Балансировщик, прокси
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.web_ac7:
+    title: Web AC7
+    description: Web AC7
+    service_type: Шлюз, Балансировщик, прокси
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.yandex_metrika:
+    title: Yandex Metrika
+    description: Yandex Metrika
+    service_type: Серверы приложений и т.д.
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.gitlab:
+    title: Devops инструменты GitLab
+    description: Инструменты разработки GitLab
+    service_type: Управление разработкой и хранения кода (Gitlab, Jira и т.д.)
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.int.it.services
+    - jupiter.network.lan.dc02.int.it.services
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.infra.tools_1:
+    title: Ansible
+    description: Инструменты автоматизации развертывания инфраструктуры
+    service_type: Управление и автоматизацией (Ansible, Terraform, Jenkins и т.д.)
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.network.remote_1:
+    title: R.Access
+    description: Сервис удаленного доступа
+    service_type: Инфраструктура удаленного доступа
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.dmz.vpn
+    - jupiter.network.lan.dc02.dmz.vpn
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.network.tools_1:
+    title: DNS
+    description: Внутренний DNS
+    service_type: Управление сетевым адресным пространством (DHCP, DNS и т.д.)
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc01.int.it.services
+    - jupiter.network.lan.dc02.int.it.services
+    high_availability:
+      type: Нет
+      capacity_reservation_type: Отсутствует
+      capacity_management: Отсутствует
+  jupiter.compute_service.ad:
+    title: Кластер AD
+    description: Кластер Active Directory
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
+    network_connection:
+    - jupiter.network.lan.dc01.int.it.services
+    - jupiter.network.lan.dc02.int.it.services
+    service_type: Управление ИТ-службой, ИТ-инфраструктурой и ИТ-активами (CMDB, ITSM и т.д.)
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Да
+      capacity_reservation_type: Active
+      capacity_management: Частичное
+  jupiter.compute_service.app_ac1:
+    title: Кластер приложений AC1
+    description: Кластер приложений AC1
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
+    network_connection:
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
+    service_type: Серверы приложений и т.д.
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Да
+      capacity_reservation_type: Active
+      capacity_management: Частичное
+  jupiter.compute_service.app_ac2:
+    title: Кластер приложений AC2
+    description: Кластер приложений AC2
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
+    network_connection:
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
+    service_type: Серверы приложений и т.д.
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Да
+      capacity_reservation_type: Active
+      capacity_management: Частичное
+  jupiter.compute_service.db_ac1:
+    title: Кластер СУБД рекомендаций
+    description: Кластер СУБД рекомендаций
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
+    network_connection:
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
     service_type: СУБД
     stand:
-      - flix.stand.prod
-    title: База данных AC5
-  flix.compute_service.dhcp:
+    - jupiter.stand.prod
+    high_availability:
+      type: Да
+      capacity_reservation_type: Active
+      capacity_management: Частичное
+  jupiter.compute_service.db_ac2:
+    title: Кластер СУБД токенов
+    description: Кластер СУБД токенов
     availabilityzone:
-      - flix.dc_az.moscow
-    description: Сервис DHCP в ЦОД1
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
     network_connection:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
-    service_type: Управление сетевым адресным пространством (DHCP, DNS и т.д.)
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
+    service_type: СУБД
     stand:
-      - flix.stand.prod
-    title: DHCP
-  flix.compute_service.dns:
+    - jupiter.stand.prod
+    high_availability:
+      type: Да
+      capacity_reservation_type: Active
+      capacity_management: Частичное
+  jupiter.compute_service.db_ac3:
+    title: Кластер базы данных 1С
+    description: Кластер базы данных 1С
     availabilityzone:
-      - flix.dc_az.moscow
-    description: Сервис DNS в ЦОД1
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
     network_connection:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
-    service_type: Управление сетевым адресным пространством (DHCP, DNS и т.д.)
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
+    service_type: СУБД
     stand:
-      - flix.stand.prod
-    title: DNS
-  flix.compute_service.fir:
+    - jupiter.stand.prod
+    app_components:
+    - jupiter.app_system.1c_erp
+    high_availability:
+      type: Да
+      capacity_reservation_type: Active
+      capacity_management: Частичное
+  jupiter.compute_service.mail:
+    title: Почтовый кластер
+    description: Почтовый кластер
     availabilityzone:
-      - flix.dc_az.moscow
-    description: Файловый ресурс
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
     network_connection:
-      - flix.lan.dc01.int.prod
-      - flix.lan.dc02.int.prod
-    service_type: Файловый ресурс (FTP, NFS, SMB, S3 и т.д.)
+    - jupiter.network.lan.dc01.int.it.services
+    - jupiter.network.lan.dc02.int.it.services
+    service_type: Коммуникации (АТС, Почта, мессенджеры, СМС шлюзы и т.д.)
     stand:
-      - flix.stand.prod
-    title: Файловый ресурс
-  flix.compute_service.ntp:
+    - jupiter.stand.prod
+    high_availability:
+      type: Да
+      capacity_reservation_type: Active
+      capacity_management: Частичное
+  jupiter.compute_service.vdi:
+    title: Кластер vdi
+    description: Кластер vdi
     availabilityzone:
-      - flix.dc_az.moscow
-    description: Сервис NTP в ЦОД1
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
     network_connection:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
-    service_type: Управление сетевым адресным пространством (DHCP, DNS и т.д.)
+    - jupiter.network.lan.dc01.dmz.vdi
+    - jupiter.network.lan.dc02.dmz.vdi
+    service_type: Виртуализация рабочих мест (ВАРМ и VDI)
     stand:
-      - flix.stand.prod
-    title: NTP
-  flix.compute_service.web_ac4:
+    - jupiter.stand.prod
+    high_availability:
+      type: Да
+      capacity_reservation_type: Active
+      capacity_management: Частичное
+  jupiter.compute_service.wildfly:
+    title: Кластер приложений Wildfly
+    description: Кластер для корпоративных Java-приложений
     availabilityzone:
-      - flix.dc_az.moscow
-    description: Фронт (web-приложение) AC4
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
     network_connection:
-      - flix.lan.dc01.int.prod
-      - flix.lan.dc02.int.prod
+    - jupiter.network.lan.192.168.101.0
+    - jupiter.network.lan.192.168.2.0
     service_type: Серверы приложений и т.д.
     stand:
-      - flix.stand.prod
-    title: Фронт (web-приложение) AC4
-  flix.compute_service.web_ac5:
+    - jupiter.stand.prod
+    app_components:
+    - jupiter.app_system.mes_clothing
+    - jupiter.app_system.ecm_news
+    - jupiter.app_system.tms
+    external_id: cluster.01
+    high_availability:
+      type: Да
+      capacity_reservation_type: Active
+      capacity_management: Частичное
+  jupiter.compute_service.1c:
+    title: Кластер приложений 1С
+    description: jupiter.cluster.wildfly
     availabilityzone:
-      - flix.dc_az.moscow
-    description: Фронт (web-приложение)AC5
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
     network_connection:
-      - flix.lan.dc01.int.prod
-      - flix.lan.dc02.int.prod
+    - jupiter.network.lan.192.168.2.0
+    - jupiter.network.lan.192.168.101.0
     service_type: Серверы приложений и т.д.
     stand:
-      - flix.stand.prod
-    title: Фронт (web-приложение) AC5
-  flix.compute_service.web_ac6:
+    - jupiter.stand.prod
+    app_components:
+    - jupiter.app_system.1c_erp
+    external_id: cluster.1c
+    high_availability:
+      type: Да
+      capacity_reservation_type: Active
+      capacity_management: Частичное
+  jupiter.compute_service.db_efs:
+    title: Кластер СУБД для АС ЕФС
+    description: Отказоустойчивый кластер баз данных типа Pangolin для нужд АС "Единый Фронт Сотрудника".
+    app_components:
+    - jupiter.sys_component.efs_db
+    location:
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
     availabilityzone:
-      - flix.dc_az.moscow
-    description: Шлюз AC6
+    - jupiter.dc_az.moscow
     network_connection:
-      - flix.lan.dc01.int.prod
-      - flix.lan.dc02.int.prod
-    service_type: Шлюз, Балансировщик, прокси
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
     stand:
-      - flix.stand.prod
-    title: Шлюз AC6
-  flix.compute_service.web_ac7:
+    - jupiter.stand.prod
+    service_type: СУБД
+    high_availability:
+      type: Да
+      capacity_reservation_type: Active
+      capacity_management: Частичное
+  jupiter.compute_service.redis_cache:
+    title: Redis Cache Cluster
+    description: Распределенный кэш для сессий и метаданных
+    service_type: Распределенный кэш
     availabilityzone:
-      - flix.dc_az.moscow
-    description: Web AC7
+    - jupiter.dc_az.moscow
     network_connection:
-      - flix.lan.dc01.int.prod
-      - flix.lan.dc02.int.prod
-    service_type: Шлюз, Балансировщик, прокси
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
     stand:
-      - flix.stand.prod
-    title: Web AC7
-  flix.compute_service.yandex_metrika:
+    - jupiter.stand.prod
+    high_availability:
+      type: Да
+      capacity_reservation_type: Active
+      capacity_management: Полное
+    app_components:
+      - jupiter.app_system.aihub
+      - jupiter.app_system.mp_favorite_client
+  jupiter.compute_service.kafka_bus:
+    title: Kafka Message Bus
+    description: Центральная шина событий
+    service_type: Интеграционная шина  (MQ, ETL, API)
     availabilityzone:
-      - flix.dc_az.moscow
-    description: Yandex Metrika
+    - jupiter.dc_az.moscow
     network_connection:
-      - flix.lan.dc01.int.prod
-      - flix.lan.dc02.int.prod
-    service_type: Серверы приложений и т.д.
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.dc02.int.prod
     stand:
-      - flix.stand.prod
-    title: Yandex Metrika
-  flix.gitlab:
-    availabilityzone:
-      - flix.dc_az.moscow
-    description: Инструменты разработки GitLab
-    network_connection:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
-    service_type: Управление разработкой и хранения кода (Gitlab, Jira и т.д.)
-    title: Devops инструменты GitLab
-  flix.infra.tools_1:
-    availabilityzone:
-      - flix.dc_az.moscow
-    description: Инструменты автоматизации развертывания инфраструктуры
-    network_connection:
-      - flix.lan.dc01.int.prod
-      - flix.lan.dc02.int.prod
-    service_type: Управление и автоматизацией (Ansible, Terraform, Jenkins и т.д.)
-    title: Ansible
-  flix.network.remote_1:
-    availabilityzone:
-      - flix.dc_az.moscow
-    description: Сервис удаленного доступа
-    network_connection:
-      - flix.lan.dc01.dmz.vpn
-      - flix.lan.dc02.dmz.vpn
+    - jupiter.stand.prod
+    high_availability:
+      type: Да
+      capacity_reservation_type: Active
+      capacity_management: Полное
+    app_components:
+      - jupiter.app_system.aihub
+      - jupiter.app_system.monitoring_platform
+  jupiter.compute_service.guacamole:
+    title: Guacamole Gateway
+    description: Шлюз удаленного доступа через браузер
     service_type: Инфраструктура удаленного доступа
-    title: R.Access
-  flix.network.tools_1:
     availabilityzone:
-      - flix.dc_az.moscow
-    description: Внутренний DNS
+    - jupiter.dc_az.moscow
     network_connection:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
-    service_type: Управление сетевым адресным пространством (DHCP, DNS и т.д.)
-    title: DNS
+    - jupiter.network.lan.dc01.dmz.vpn
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Да
+      capacity_reservation_type: StandBy
+      capacity_management: Частичное
+    app_components:
+      - jupiter.app_system.monitoring_platform
+  jupiter.compute_service.db_standby:
+    title: Резервная БД (StandBy)
+    description: Холодный резерв для критических данных
+    service_type: СУБД
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.dc02.int.prod
+    stand:
+    - jupiter.stand.prod
+    high_availability:
+      type: Да
+      capacity_reservation_type: StandBy
+      capacity_management: Полное
+    app_components:
+      - jupiter.sys_component.efs_db

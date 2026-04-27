@@ -1,0 +1,4 @@
+# SEAF2DrawIO — Python 3.9+
+N2G>=0.3.0
+PyYAML>=6.0
+deepmerge>=1.1.0

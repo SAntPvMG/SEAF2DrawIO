@@ -1,0 +1,845 @@
+seaf.company.ta.components.networks:
+  jupiter.kb.fpsu_1:
+    description: ФПСУ для шифрования канала
+    location:
+    - jupiter.dc.moscow_dc01
+    model: Защита 100
+    network_connection:
+    - jupiter.network.lan.dc01.dmz.vpn
+    - jupiter.network.wan.dc01.isp.01
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.dmz
+    title: FPSU-1
+    type: Межсетевой экран (файрвол)
+    stand:
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.01:
+    address: 10.10.21.1
+    description: Пограничный NGFW
+    location:
+    - jupiter.dc.moscow_dc01
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc01.inet_edge
+    - jupiter.network.lan.dc01.dmz.prod
+    - jupiter.network.lan.dc01.dmz.test
+    purpose: Пограничный NGFW Internet
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.dmz
+    title: NGFW-01
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.02:
+    address: 10.10.21.2
+    description: Пограничный NGFW
+    location:
+    - jupiter.dc.moscow_dc01
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc01.inet_edge
+    - jupiter.network.lan.dc01.dmz.test
+    - jupiter.network.lan.dc01.dmz.prod
+    purpose: Пограничный NGFW Internet
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.dmz
+    title: NGFW-02
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.03:
+    address: 10.10.21.3
+    description: Сегментирующий NGFW
+    location:
+    - jupiter.dc.moscow_dc01
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc01.ext.wan
+    - jupiter.network.lan.dc01.dmz.prod
+    - jupiter.network.lan.dc01.int.dmz
+    - jupiter.network.lan.dc01.dmz.test
+    purpose: Сегментирующий NGFW
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.dmz
+    title: NGFW-03
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.04:
+    address: 10.10.21.4
+    description: Сегментирующий NGFW
+    location:
+    - jupiter.dc.moscow_dc01
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc01.ext.wan
+    - jupiter.network.lan.dc01.dmz.prod
+    - jupiter.network.lan.dc01.int.dmz
+    - jupiter.network.lan.dc01.dmz.test
+    purpose: Сегментирующий NGFW
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.dmz
+    title: NGFW-04
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.05:
+    address: 10.10.26.1
+    description: Сегментирующий NGFW
+    location:
+    - jupiter.dc.moscow_dc01
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc01.int.wan
+    - jupiter.network.lan.dc01.int.test
+    purpose: Сегментирующий NGFW
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.int_wan_edge
+    title: NGFW-05
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.06:
+    address: 10.10.26.2
+    description: Сегментирующий NGFW
+    location:
+    - jupiter.dc.moscow_dc01
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc01.int.wan
+    - jupiter.network.lan.dc01.int.test
+    purpose: Сегментирующий NGFW
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.int_wan_edge
+    title: NGFW-06
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.07:
+    address: 10.10.29.1
+    description: Сегментирующий NGFW
+    location:
+    - jupiter.dc.moscow_dc01
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc01.int.sec.prod
+    - jupiter.network.lan.dc01.int.prod
+    purpose: Сегментирующий NGFW
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.int_security_net
+    title: NGFW-07
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.08:
+    address: 10.10.29.2
+    description: Сегментирующий NGFW
+    location:
+    - jupiter.dc.moscow_dc01
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc01.int.sec.prod
+    - jupiter.network.lan.dc01.int.prod
+    purpose: Сегментирующий NGFW
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.int_security_net
+    title: NGFW-08
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.ngfw.cntxt1:
+    description: Контекст правил безопасности NGFW
+    location:
+    - jupiter.dc.moscow_dc01
+    model: FortiGate 4800F
+    network_connection:
+    - jupiter.network.lan.dc01.dmz.prod
+    - jupiter.network.lan.dc01.int.prod
+    - jupiter.network.lan.192.168.101.0
+    - jupiter.network.lan.dc01.int.it.services
+    purpose: Контекст NGFW
+    realization_type: Виртуальный
+    segment: jupiter.network_segment.dc.dmz
+    title: CNTXT1 NGFW-01/02
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.router.01:
+    address: 10.110.10.2
+    description: Пограничный Маршрутизатор (роутер) интернет провайдера
+    location:
+    - jupiter.dc.moscow_dc01
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.dc01.isp.01
+    - jupiter.network.lan.dc01.inet_edge
+    purpose: Пограничный Маршрутизатор (роутер)
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.inet_edge
+    title: DC Router 01
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.router.02:
+    address: 10.110.10.3
+    description: Пограничный Маршрутизатор (роутер) интернет провайдера
+    location:
+    - jupiter.dc.moscow_dc01
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.dc01.isp.02
+    - jupiter.network.lan.dc01.inet_edge
+    purpose: Пограничный Маршрутизатор (роутер)
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.inet_edge
+    title: DC Router 02
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.router.03:
+    address: 10.10.31.3
+    description: Пограничный Маршрутизатор (роутер) SP1
+    location:
+    - jupiter.dc.moscow_dc01
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.dc01.isp.01
+    - jupiter.network.lan.dc01.ext.wan
+    purpose: Пограничный Маршрутизатор (роутер) EXT_WAN
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.ext_wan_edge
+    title: DC Router 03
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.router.04:
+    address: 10.10.31.4
+    description: Пограничный Маршрутизатор (роутер) SP2
+    location:
+    - jupiter.dc.moscow_dc01
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.dc01.isp.02
+    - jupiter.network.lan.dc01.ext.wan
+    purpose: Пограничный Маршрутизатор (роутер) EXT_WAN
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.ext_wan_edge
+    title: DC Router 04
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.router.05:
+    address: 10.10.32.5
+    description: Пограничный Маршрутизатор (роутер) WAN SP1
+    location:
+    - jupiter.dc.moscow_dc01
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.dc01.sp.01
+    - jupiter.network.lan.dc01.int.wan
+    purpose: Пограничный Маршрутизатор (роутер)
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.int_wan_edge
+    title: DC Router 05
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.router.06:
+    address: 10.10.32.6
+    description: Пограничный Маршрутизатор (роутер) WAN SP2
+    location:
+    - jupiter.dc.moscow_dc01
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.dc01.sp.02
+    - jupiter.network.lan.dc01.int.wan
+    purpose: Пограничный Маршрутизатор (роутер)
+    realization_type: Физический
+    segment: jupiter.network_segment.dc.int_wan_edge
+    title: DC Router 06
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.kb.fpsu_1_dc02:
+    description: ФПСУ для шифрования канала
+    location:
+    - jupiter.dc.moscow_dc02
+    model: Защита 100
+    network_connection:
+    - jupiter.network.lan.dc02.dmz.vpn
+    - jupiter.network.wan.dc02.isp.01
+    - jupiter.network.lan.dc02.dmz.vdi
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.dmz
+    title: FPSU-1 DC02
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.01_dc02:
+    address: 10.10.21.1
+    description: Пограничный NGFW
+    location:
+    - jupiter.dc.moscow_dc02
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc02.inet_edge
+    - jupiter.network.lan.dc02.dmz.prod
+    - jupiter.network.lan.dc02.dmz.test
+    purpose: Пограничный NGFW Internet
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.dmz
+    title: NGFW-01 DC02
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.02_dc02:
+    address: 10.10.21.2
+    description: Пограничный NGFW
+    location:
+    - jupiter.dc.moscow_dc02
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc02.inet_edge
+    - jupiter.network.lan.dc02.dmz.prod
+    - jupiter.network.lan.dc02.dmz.test
+    purpose: Пограничный NGFW Internet
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.dmz
+    title: NGFW-02 DC02
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.03_dc02:
+    address: 10.10.21.3
+    description: Сегментирующий NGFW
+    location:
+    - jupiter.dc.moscow_dc02
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc02.ext.wan
+    - jupiter.network.lan.dc02.dmz.prod
+    - jupiter.network.lan.dc02.int.dmz
+    - jupiter.network.lan.dc02.dmz.test
+    purpose: Сегментирующий NGFW
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.dmz
+    title: NGFW-03 DC02
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.04_dc02:
+    address: 10.10.21.4
+    description: Сегментирующий NGFW
+    location:
+    - jupiter.dc.moscow_dc02
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc02.ext.wan
+    - jupiter.network.lan.dc02.dmz.prod
+    - jupiter.network.lan.dc02.int.dmz
+    - jupiter.network.lan.dc02.dmz.test
+    purpose: Сегментирующий NGFW
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.dmz
+    title: NGFW-04 DC02
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.05_dc02:
+    address: 10.10.26.1
+    description: Сегментирующий NGFW
+    location:
+    - jupiter.dc.moscow_dc02
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc02.int.wan
+    - jupiter.network.lan.dc02.int.test
+    purpose: Сегментирующий NGFW
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.int_wan_edge
+    title: NGFW-05 DC02
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.06_dc02:
+    address: 10.10.26.2
+    description: Сегментирующий NGFW
+    location:
+    - jupiter.dc.moscow_dc02
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc02.int.wan
+    - jupiter.network.lan.dc02.int.test
+    purpose: Сегментирующий NGFW
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.int_wan_edge
+    title: NGFW-06 DC02
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.07_dc02:
+    address: 10.10.29.1
+    description: Сегментирующий NGFW
+    location:
+    - jupiter.dc.moscow_dc02
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc02.int.sec.prod
+    - jupiter.network.lan.dc02.int.prod
+    purpose: Сегментирующий NGFW
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.int_security_net
+    title: NGFW-07 DC02
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.fw.08_dc02:
+    address: 10.10.29.2
+    description: Сегментирующий NGFW
+    location:
+    - jupiter.dc.moscow_dc02
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.dc02.int.sec.prod
+    - jupiter.network.lan.dc02.int.prod
+    purpose: Сегментирующий NGFW
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.int_security_net
+    title: NGFW-08 DC02
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.ngfw.cntxt1_dc02:
+    description: Контекст правил безопасности NGFW
+    location:
+    - jupiter.dc.moscow_dc02
+    model: FortiGate 4800F
+    network_connection:
+    - jupiter.network.lan.dc02.dmz.prod
+    - jupiter.network.lan.dc02.int.it.services
+    - jupiter.network.lan.dc02.int.prod
+    - jupiter.network.lan.192.168.2.0
+    purpose: Контекст NGFW
+    realization_type: Виртуальный
+    segment: jupiter.network_segment.dc02.dmz
+    title: CNTXT1 NGFW-01/02 DC02
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.router.01_dc02:
+    address: 10.110.10.2
+    description: Пограничный Маршрутизатор (роутер) интернет провайдера
+    location:
+    - jupiter.dc.moscow_dc02
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.dc02.isp.01
+    - jupiter.network.lan.dc02.inet_edge
+    purpose: Пограничный Маршрутизатор (роутер)
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.inet_edge
+    title: DC Router 01 DC02
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.router.02_dc02:
+    address: 10.110.10.3
+    description: Пограничный Маршрутизатор (роутер) интернет провайдера
+    location:
+    - jupiter.dc.moscow_dc02
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.dc02.isp.02
+    - jupiter.network.lan.dc02.inet_edge
+    purpose: Пограничный Маршрутизатор (роутер)
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.inet_edge
+    title: DC Router 02 DC02
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.router.03_dc02:
+    address: 10.20.31.3
+    description: Пограничный Маршрутизатор (роутер) SP1
+    location:
+    - jupiter.dc.moscow_dc02
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.dc02.isp.01
+    - jupiter.network.lan.dc02.ext.wan
+    purpose: Пограничный Маршрутизатор (роутер) EXT_WAN
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.ext_wan_edge
+    title: DC Router 03 DC02
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.router.04_dc02:
+    address: 10.20.31.4
+    description: Пограничный Маршрутизатор (роутер) SP2
+    location:
+    - jupiter.dc.moscow_dc02
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.dc02.isp.02
+    - jupiter.network.lan.dc02.ext.wan
+    purpose: Пограничный Маршрутизатор (роутер) EXT_WAN
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.ext_wan_edge
+    title: DC Router 04 DC02
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.router.05_dc02:
+    address: 10.20.32.5
+    description: Пограничный Маршрутизатор (роутер) WAN SP1
+    location:
+    - jupiter.dc.moscow_dc02
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.dc02.sp.01
+    - jupiter.network.lan.dc02.int.wan
+    purpose: Пограничный Маршрутизатор (роутер)
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.int_wan_edge
+    title: DC Router 05 DC02
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.dc.router.06_dc02:
+    address: 10.20.32.6
+    description: Пограничный Маршрутизатор (роутер) WAN SP2
+    location:
+    - jupiter.dc.moscow_dc02
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.dc02.sp.02
+    - jupiter.network.lan.dc02.int.wan
+    purpose: Пограничный Маршрутизатор (роутер)
+    realization_type: Физический
+    segment: jupiter.network_segment.dc02.int_wan_edge
+    title: DC Router 06 DC02
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.guest.router:
+    address: 192.168.8.15
+    description: Пограничный Маршрутизатор (роутер) гостевого интернет провайдера
+    location:
+    - jupiter.dc_office.hq
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.office.isp.guest
+    - jupiter.network.lan.office.inet_guest_edge
+    purpose: Пограничный Маршрутизатор (роутер)
+    realization_type: Физический
+    segment: jupiter.network_segment.office.inet_edge
+    title: Guest Router
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.ngfw.01:
+    address: 192.168.8.21
+    description: Пограничный NGFW 1
+    location:
+    - jupiter.dc_office.hq
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.office.inet_edge
+    - jupiter.network.lan.office.ext.lan
+    - jupiter.network.lan.office.security
+    purpose: Пограничный NGFW
+    realization_type: Физический
+    segment: jupiter.network_segment.office.inet_edge
+    title: NGFW 01
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.ngfw.02:
+    address: 192.168.8.22
+    description: Пограничный NGFW 2
+    location:
+    - jupiter.dc_office.hq
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.office.inet_edge
+    - jupiter.network.lan.office.ext.lan
+    - jupiter.network.lan.office.security
+    purpose: Пограничный NGFW
+    realization_type: Физический
+    segment: jupiter.network_segment.office.inet_edge
+    title: NGFW 02
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.ngfw.cntxt1:
+    description: Контекст правил безопасности NGFW
+    location:
+    - jupiter.dc_office.hq
+    model: FortiGate 4800F
+    network_connection:
+    - jupiter.network.lan.office.ext.lan
+    - jupiter.network.lan.office.int.lan
+    purpose: Контекст NGFW
+    realization_type: Виртуальный
+    segment: jupiter.network_segment.office.access
+    title: CNTXT1-NGFW
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.ngfw.cntxt10:
+    description: Контекст правил безопасности NGFW для PR-Security
+    location:
+    - jupiter.dc_office.hq
+    model: FortiGate 4800F
+    network_connection:
+    - jupiter.network.lan.office.pr.security
+    - jupiter.network.lan.office.int.lan
+    purpose: Контекст NGFW
+    realization_type: Виртуальный
+    segment: jupiter.network_segment.office.int
+    title: CNTXT10-NGFW
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.ngfw.cntxt2:
+    description: Контекст правил безопасности NGFW
+    location:
+    - jupiter.dc_office.hq
+    model: FortiGate 4800F
+    network_connection:
+    - jupiter.network.lan.office.ext.lan
+    - jupiter.network.lan.office.int.lan
+    purpose: Контекст NGFW
+    realization_type: Виртуальный
+    segment: jupiter.network_segment.office.access
+    title: CNTXT2-NGFW
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.ngfw.cntxt3:
+    description: Контекст правил безопасности NGFW
+    location:
+    - jupiter.dc_office.hq
+    model: FortiGate 4800F
+    network_connection:
+    - jupiter.network.lan.office.int.lan
+    - jupiter.network.lan.office.wifi.arm
+    purpose: Контекст NGFW
+    realization_type: Виртуальный
+    segment: jupiter.network_segment.office.int
+    title: CNTXT3-NGFW
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.ngfw.cntxt4:
+    description: Контекст правил безопасности NGFW
+    location:
+    - jupiter.dc_office.hq
+    model: FortiGate 4800F
+    network_connection:
+    - jupiter.network.lan.office.int.lan
+    - jupiter.network.lan.office.wired.ARM
+    purpose: Контекст NGFW
+    realization_type: Виртуальный
+    segment: jupiter.network_segment.office.int
+    title: CNTXT4-NGFW
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.ngfw.cntxt5:
+    description: Контекст правил безопасности NGFW
+    location:
+    - jupiter.dc_office.hq
+    model: FortiGate 4800F
+    network_connection:
+    - jupiter.network.lan.office.int.lan
+    - jupiter.network.lan.office.admin.ARM
+    purpose: Контекст NGFW
+    realization_type: Виртуальный
+    segment: jupiter.network_segment.office.int
+    title: CNTXT5-NGFW
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.ngfw.cntxt6:
+    description: Контекст правил безопасности NGFW
+    location:
+    - jupiter.dc_office.hq
+    model: FortiGate 4800F
+    network_connection:
+    - jupiter.network.lan.office.int.lan
+    - jupiter.network.lan.office.printers
+    purpose: Контекст NGFW
+    realization_type: Виртуальный
+    segment: jupiter.network_segment.office.int
+    title: CNTXT6-NGFW
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.ngfw.cntxt7:
+    description: Контекст правил безопасности NGFW
+    location:
+    - jupiter.dc_office.hq
+    model: FortiGate 4800F
+    network_connection:
+    - jupiter.network.lan.office.int.lan
+    - jupiter.network.lan.office.ipphones
+    purpose: Контекст NGFW
+    realization_type: Виртуальный
+    segment: jupiter.network_segment.office.int
+    title: CNTXT7-NGFW
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.ngfw.cntxt8:
+    description: Контекст правил безопасности NGFW
+    location:
+    - jupiter.dc_office.hq
+    model: FortiGate 4800F
+    network_connection:
+    - jupiter.network.lan.office.int.lan
+    - jupiter.network.lan.office.mgmt
+    purpose: Контекст NGFW
+    realization_type: Виртуальный
+    segment: jupiter.network_segment.office.int
+    title: CNTXT8-NGFW
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.ngfw.cntxt9:
+    description: Контекст правил безопасности NGFW для новой MGMT-сети
+    location:
+    - jupiter.dc_office.hq
+    model: FortiGate 4800F
+    network_connection:
+    - jupiter.network.lan.office.int.lan
+    - jupiter.network.lan.office.wan_edge
+    purpose: Контекст NGFW
+    realization_type: Виртуальный
+    segment: jupiter.network_segment.office.int
+    title: CNTXT9-NGFW
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.ngfw.guest:
+    address: 192.168.8.23
+    description: Пограничный NGFW Guest
+    location:
+    - jupiter.dc_office.hq
+    model: 4800F
+    network_connection:
+    - jupiter.network.lan.office.inet_guest_edge
+    - jupiter.network.lan.office.wifi.guest
+    purpose: Пограничный NGFW подключения к интернет гостевой
+    realization_type: Физический
+    segment: jupiter.network_segment.office.inet_edge
+    title: NGFW Guest
+    type: Межсетевой экран (файрвол)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.router.01:
+    address: 192.168.1.1
+    description: Пограничный Маршрутизатор (роутер) ISP1
+    location:
+    - jupiter.dc_office.hq
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.office.isp.01
+    - jupiter.network.lan.office.inet_edge
+    purpose: Пограничный Маршрутизатор (роутер)
+    realization_type: Физический
+    segment: jupiter.network_segment.office.inet_edge
+    title: Router 1
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.router.02:
+    address: 192.168.8.17
+    description: Пограничный Маршрутизатор (роутер) ISP2
+    location:
+    - jupiter.dc_office.hq
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.office.isp.02
+    - jupiter.network.lan.office.inet_edge
+    purpose: Пограничный Маршрутизатор (роутер)
+    realization_type: Физический
+    segment: jupiter.network_segment.office.inet_edge
+    title: Router 2
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.router.03:
+    address: 192.168.8.18
+    description: Пограничный Маршрутизатор (роутер) SP1
+    location:
+    - jupiter.dc_office.hq
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.office.sp.01
+    - jupiter.network.lan.office.wan_edge
+    purpose: Пограничный Маршрутизатор (роутер)
+    realization_type: Физический
+    segment: jupiter.network_segment.office.wan_edge
+    title: Router 3
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.router.04:
+    address: 192.168.8.19
+    description: Пограничный Маршрутизатор (роутер) SP2
+    location:
+    - jupiter.dc_office.hq
+    model: ASR 1001-X
+    network_connection:
+    - jupiter.network.wan.office.sp.02
+    - jupiter.network.lan.office.wan_edge
+    purpose: Пограничный Маршрутизатор (роутер)
+    realization_type: Физический
+    segment: jupiter.network_segment.office.wan_edge
+    title: Router 4
+    type: Маршрутизатор (роутер)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.wificontroller.arm:
+    address: 192.168.8.20
+    description: WIiFi Router ARM
+    location:
+    - jupiter.dc_office.hq
+    model: Cisco
+    network_connection:
+    - jupiter.network.lan.office.mgmt
+    purpose: Controller сети WiFI ARM
+    realization_type: Физический
+    segment: jupiter.network_segment.office.int
+    title: Wireless Controller ARM
+    type: Точка доступа (Wi-Fi)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.wificontroller.guest:
+    address: 192.168.8.20
+    description: WIiFi Router Guest
+    location:
+    - jupiter.dc_office.hq
+    model: Cisco
+    network_connection:
+    - jupiter.network.lan.office.wifi.guest
+    purpose: Controller сети WiFI Guest
+    realization_type: Физический
+    segment: jupiter.network_segment.office.access
+    title: Wireless Controller Guest
+    type: Точка доступа (Wi-Fi)
+    stand: 
+      - jupiter.stand.prod
+  jupiter.network_device.efs_lb:
+    title: L7 балансировщик для АС ЕФС
+    description: Виртуальный балансировщик нагрузки для распределения трафика на веб-компоненты АС ЕФС.
+    type: Балансировщик нагрузки (Load Balancer)
+    realization_type: Виртуальный
+    location:
+    - jupiter.dc.moscow_dc01
+    segment: jupiter.network_segment.dc.dmz
+    network_connection:
+    - jupiter.network.lan.dc01.dmz.prod
+    - jupiter.network.lan.dc01.int.prod

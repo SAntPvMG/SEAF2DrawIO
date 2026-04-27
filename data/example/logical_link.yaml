@@ -1,11 +1,12 @@
-seaf.ta.services.logical_link:
-  flix.link.fw_to_servers:
+seaf.company.ta.services.logical_links:
+  jupiter.link.fw_to_servers:
     description: Логическая связь от NGFW к серверам в ЦОД Sber
     direction: <==>
-    source: flix.network.dc.fw.01
+    source: jupiter.network_device.dc.fw.01
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
     target:
-      - flix.cluster.ad
-      - flix.cluster.mail
+    - jupiter.compute_service.ad
+    - jupiter.compute_service.mail
     title: Связь NGFW с серверами
+

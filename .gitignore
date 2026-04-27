@@ -1,0 +1,24 @@
+# OS / editor
+.DS_Store
+**/.DS_Store
+
+# Accidental local artifacts
+/MISMATCH
+/OK
+/Формирую
+
+# Local backup / duplicate pattern copies
+data_old/
+data/patterns 1/
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/

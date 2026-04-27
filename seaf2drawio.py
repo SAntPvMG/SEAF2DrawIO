@@ -34,14 +34,28 @@ DEFAULT_CONFIG = {
 
 d = seaf_drawio.SeafDrawio(DEFAULT_CONFIG)
 
+def _validate_data_yaml_source(path):
+    """Файл .yaml/.yml или каталог с такими файлами (как в data_yaml_file)."""
+    p = os.path.expanduser(path)
+    if os.path.isdir(p):
+        if not os.access(p, os.R_OK | os.X_OK):
+            raise argparse.ArgumentTypeError(f"Каталог недоступен: {path}")
+        return path
+    if os.path.isfile(p):
+        if not re.search(r"\.(yaml|yml)\Z", path, re.I):
+            raise argparse.ArgumentTypeError(f"Ожидается .yaml/.yml или каталог с ними: {path}")
+        if not os.access(p, os.R_OK):
+            raise argparse.ArgumentTypeError(f"Файл недоступен для чтения: {path}")
+        return path
+    raise argparse.ArgumentTypeError(f"Файл или каталог не найден: {path}")
+
 def cli_vars(config):
     try:
         parser = argparse.ArgumentParser(description="Параметры командной строки.")
 
-        src_validator = d.create_validator(r'^.+(\.yaml)$')
         dst_validator = d.create_validator(r'^.+(\.drawio)$')
 
-        parser.add_argument("-s", "--src", type=src_validator, action=seaf_drawio.ValidateFile, help="файл данных SEAF",
+        parser.add_argument("-s", "--src", type=_validate_data_yaml_source, help="файл или каталог YAML данных SEAF",
                             required=False)
         parser.add_argument("-d", "--dst", type=dst_validator, help="путь и имя файла вывода результатов",
                             required=False)

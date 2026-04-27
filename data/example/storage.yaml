@@ -1,47 +1,62 @@
-seaf.ta.services.storage:
-  flix.obj_storage.cloud_s3:
-    availabilityzone:
-      - flix.dc_az.moscow
-    description: S3 Storage in Sber Cloud
-    external_id: obj_storage.cloud_s3
-    network_connection:
-      - flix.lan.dc01.int.it.services
-    sla: 99
-    software: SaaS
-    stand:
-      - flix.stand.prod
+seaf.company.ta.services.storages:
+  jupiter.obj_storage.cloud_s3:
     title: S3 Storage in Sber
+    description: S3 Storage in Sber Cloud
     type: Simple Storage Service
-  flix.obj_storage.vk_s3:
+    softwares:
+    - jupiter.software.s3_service
     availabilityzone:
-      - flix.dc_az.moscow
-    description: S3 Storage in VK Cloud
-    external_id: obj_storage.vk_s3
+    - jupiter.dc_az.moscow
     network_connection:
-      - flix.lan.192.168.2.0
-    sla: 99
-    software: SaaS
+    - jupiter.network.lan.dc01.int.it.services
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
+    app_components:
+    - jupiter.app_system.aihub
+    - jupiter.app_system.aihub_model_ds1
+    - jupiter.sys_component.efs_news
+    external_id: obj_storage.cloud_s3
+    sla: 99
+  jupiter.obj_storage.vk_s3:
     title: S3 Storage in VK
+    description: S3 Storage in VK Cloud
     type: Simple Storage Service
-  flix.sw_storage.01:
+    softwares:
+    - jupiter.software.s3_service
     availabilityzone:
-      - flix.dc_az.moscow
+    - jupiter.dc_az.moscow
+    network_connection:
+    - jupiter.network.lan.192.168.2.0
+    stand:
+    - jupiter.stand.prod
+    app_components:
+    - jupiter.app_system.aihub
+    - jupiter.app_system.ecm_news
+    external_id: obj_storage.vk_s3
+    sla: 99
+  jupiter.sw_storage.01:
+    title: Storage CEPH
     description: SDS Storage
+    type: Software Defined Storage
+    softwares:
+    - jupiter.software.ceph
+    volume: 1000
     disk_type: SSD
     erasure_coding: 2
-    external_id: sw_storage.01
-    location:
-      - flix.dc.01
-      - flix.dc.02
-    network_connection:
-      - flix.lan.192.168.101.0
-      - flix.lan.192.168.2.0
     protocols: SMB, S3
-    software: CEPH
+    availabilityzone:
+    - jupiter.dc_az.moscow
+    location:
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
+    network_connection:
+    - jupiter.network.lan.192.168.101.0
+    - jupiter.network.lan.192.168.2.0
     stand:
-      - flix.stand.prod
-    title: Storage CEPH
-    type: Software Defined Storage
-    volume: 1000
+    - jupiter.stand.prod
+    app_components:
+    - jupiter.app_system.aihub
+    - jupiter.app_system.mes_clothing
+    - jupiter.app_system.ecm_news
+    - jupiter.sys_component.efs_db
+    external_id: sw_storage.01

@@ -1,0 +1,13 @@
+seaf.company.ta.components.k8s_namespaces:
+  jupiter.ns.efs:
+    title: EFS Namespace
+    description: Namespace для компонентов АС "Единый Фронт Сотрудника"
+    cluster: jupiter.k8s.01
+    labels:
+    - app=efs
+  jupiter.ns.llm_apps:
+    title: LLM Apps Namespace
+    description: Namespace для LLM приложений
+    cluster: jupiter.k8s.llm.01
+    labels:
+    - domain=llm-services

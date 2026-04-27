@@ -1,16 +1,50 @@
-seaf.ta.services.backup:
-  flix.backup.cyberbackup:
+seaf.company.ta.services.backups:
+  jupiter.backup.cyberbackup:
     availabilityzone:
-      - flix.dc_az.moscow
+    - jupiter.dc_az.moscow
     description: Резервное копирование Cyberbackup
     location:
-      - flix.dc.01
-      - flix.dc.02
+    - jupiter.dc.moscow_dc01
+    - jupiter.dc.moscow_dc02
     network_connection:
-      - flix.lan.dc01.int.it.services
-      - flix.lan.dc02.int.it.services
+    - jupiter.network.lan.dc01.int.it.services
+    - jupiter.network.lan.dc02.int.it.services
+    app_components:
+    - jupiter.sys_component.efs_db
+    - jupiter.sys_component.efs_webapp
+    - jupiter.sys_component.efs_rm
+    - jupiter.sys_component.efs_news
+    - jupiter.app_system.aihub
+    - jupiter.app_system.aihub_model_ds1
+    - jupiter.app_system.1c_erp
+    - jupiter.app_system.mes_clothing
+    - jupiter.app_system.ecm_news
+    - jupiter.app_system.tms
+    - jupiter.app_system.mp_favorite_client
     path: /mnt/backup
-    replication: false
+    replication: true
     stand:
-      - flix.stand.prod
+    - jupiter.stand.prod
     title: Cyberbackup
+    backed_up_services:
+    - jupiter.server_virtual.ad01
+    - jupiter.server_virtual.ad02
+    - jupiter.server_virtual.mail01
+    - jupiter.server_virtual.mail02
+    - jupiter.server_virtual.wildfly01
+    - jupiter.server_virtual.wildfly02
+    - jupiter.monitoring.elk
+    - jupiter.monitoring.zabbix
+    - jupiter.monitoring.jaeger
+    - jupiter.k8s.01
+    - jupiter.k8s.02
+    - jupiter.k8s.llm.01
+    - jupiter.cluster_virtualization.esx.cloudru
+    - jupiter.cluster_virtualization.proxmox.vk
+    - jupiter.cluster_virtualization.vmware.sber
+    - jupiter.sw_storage.01
+    - jupiter.kb.audit.siem
+    - jupiter.kb.idm.corp
+    - jupiter.kb.secrets.vault
+    - jupiter.kb.registry.harbor
+    - jupiter.kb.repo.corp

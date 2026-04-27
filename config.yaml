@@ -1,41 +1,23 @@
 # Переменные по умолчанию
 #
 seaf2drawio:
-  data_yaml_file:
-    - data/example/backup.yaml
-    - data/example/cluster_virtualization.yaml
-    - data/example/cluster.yaml
-    - data/example/components_network_dc01.yaml
-    - data/example/components_network_dc02.yaml
-    - data/example/components_network_office.yaml
-    - data/example/compute_service.yaml
-    - data/example/dc_az.yaml
-    - data/example/dc_region.yaml
-    - data/example/dc.yaml
-    - data/example/environment.yaml
-    - data/example/hw_storage.yaml
-    - data/example/k8s.yaml
-    - data/example/kb.yaml
-    - data/example/logical_link.yaml
-    - data/example/monitoring.yaml
-    - data/example/network_links.yaml
-    - data/example/network_segment.yaml
-    - data/example/networks_dc01.yaml
-    - data/example/networks_dc02.yaml
-    - data/example/networks_office.yaml
-    - data/example/office.yaml
-    - data/example/server.yaml
-    - data/example/software.yaml
-    - data/example/stand.yaml
-    - data/example/storage.yaml
-    - data/example/user_device.yaml
+  # Один путь: файл .yaml/.yml или каталог (все *.yaml, *.yml в каталоге, по имени).
+  # Список: несколько файлов и/или каталогов. Примеры:
+  #   data_yaml_file: data/example
+  #   data_yaml_file: [data/example/dc.yaml, data/example/k8s.yaml]
+  data_yaml_file: 
+    - /Users/sergey/IdeaProjects/seaf-company-example-jupiter/architecture/ta
   drawio_pattern: data/base.drawio
-#  drawio_pattern: data/base_for_example.drawio
+  #  drawio_pattern: data/base_for_example.drawio
   output_file: result/Sample_graph.drawio
   verify_generation: true
+  auto_layout_grid: true
+  auto_layout_script: scripts/layout_tech_services.py
+  auto_layout_diagram: all
+# auto_layout_filter: DC,ЦОД,Office,Офис,Головной
+#  link_style: straight  # опционально: устанавливает прямые связи вместо угловых
 
 drawio2seaf:
   schema_file: data/seaf_schema.yaml
   drawio_file: result/Sample_graph.drawio
   output_file: result/seaf.yaml
-

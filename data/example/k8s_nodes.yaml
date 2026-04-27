@@ -1,0 +1,198 @@
+seaf.company.ta.components.k8s_nodes:
+  jupiter.k8s.node01.master1:
+    title: K8s Master 1
+    description: Нода master для кластера jupiter.k8s.01
+    cluster: jupiter.k8s.01
+    version: 1.28.0
+    architecture: amd64
+    cpu: 2
+    ram: 8
+    zone: jupiter.dc_az.moscow
+    labels:
+    - node-role.kubernetes.io/master=true
+    stand:
+    - jupiter.stand.prod
+  jupiter.k8s.node01.master2:
+    title: K8s Master 2
+    description: Нода master для кластера jupiter.k8s.01
+    cluster: jupiter.k8s.01
+    version: 1.28.0
+    architecture: amd64
+    cpu: 2
+    ram: 8
+    zone: jupiter.dc_az.moscow
+    labels:
+    - node-role.kubernetes.io/master=true
+    stand:
+    - jupiter.stand.prod
+  jupiter.k8s.node01.master3:
+    title: K8s Master 3
+    description: Нода master для кластера jupiter.k8s.01
+    cluster: jupiter.k8s.01
+    version: 1.28.0
+    architecture: amd64
+    cpu: 2
+    ram: 8
+    zone: jupiter.dc_az.moscow
+    labels:
+    - node-role.kubernetes.io/master=true
+    stand:
+    - jupiter.stand.prod
+  jupiter.k8s.node01.worker1:
+    title: K8s Worker 1
+    description: Нода worker для кластера jupiter.k8s.01
+    cluster: jupiter.k8s.01
+    version: 1.28.0
+    architecture: amd64
+    cpu: 4
+    ram: 16
+    zone: jupiter.dc_az.moscow_dr
+    labels:
+    - node-role.kubernetes.io/worker=true
+    stand:
+    - jupiter.stand.prod
+  jupiter.k8s.node01.worker2:
+    title: K8s Worker 2
+    description: Нода worker для кластера jupiter.k8s.01
+    cluster: jupiter.k8s.01
+    version: 1.28.0
+    architecture: amd64
+    cpu: 4
+    ram: 16
+    zone: jupiter.dc_az.moscow_dr
+    labels:
+    - node-role.kubernetes.io/worker=true
+    stand:
+    - jupiter.stand.prod
+  jupiter.k8s.llm.master01:
+    title: LLM K8s Master 1
+    description: Мастер-нода для кластера jupiter.k8s.llm.01
+    cluster: jupiter.k8s.llm.01
+    version: 1.29.0
+    architecture: amd64
+    cpu: 8
+    ram: 32
+    zone: jupiter.dc_az.moscow
+    labels:
+    - node-role.kubernetes.io/master=true
+    stand:
+    - jupiter.stand.prod
+  jupiter.k8s.llm.master02:
+    title: LLM K8s Master 2
+    description: Мастер-нода для кластера jupiter.k8s.llm.01
+    cluster: jupiter.k8s.llm.01
+    version: 1.29.0
+    architecture: amd64
+    cpu: 8
+    ram: 32
+    zone: jupiter.dc_az.moscow
+    labels:
+    - node-role.kubernetes.io/master=true
+    stand:
+    - jupiter.stand.prod
+  jupiter.k8s.llm.master03:
+    title: LLM K8s Master 3
+    description: Мастер-нода для кластера jupiter.k8s.llm.01
+    cluster: jupiter.k8s.llm.01
+    version: 1.29.0
+    architecture: amd64
+    cpu: 8
+    ram: 32
+    zone: jupiter.dc_az.moscow
+    labels:
+    - node-role.kubernetes.io/master=true
+    stand:
+    - jupiter.stand.prod
+  jupiter.k8s.llm.worker01:
+    title: LLM K8s GPU Worker 1
+    description: Воркер-нода с GPU для кластера jupiter.k8s.llm.01
+    cluster: jupiter.k8s.llm.01
+    version: 1.29.0
+    architecture: amd64
+    cpu: 64
+    ram: 512
+    zone: jupiter.dc_az.moscow_dr
+    labels:
+    - node-role.kubernetes.io/worker=true
+    - accelerator=nvidia-h100
+    stand:
+    - jupiter.stand.prod
+  jupiter.k8s.llm.worker02:
+    title: LLM K8s GPU Worker 2
+    description: Воркер-нода с GPU для кластера jupiter.k8s.llm.01
+    cluster: jupiter.k8s.llm.01
+    version: 1.29.0
+    architecture: amd64
+    cpu: 64
+    ram: 512
+    zone: jupiter.dc_az.moscow_dr
+    labels:
+    - node-role.kubernetes.io/worker=true
+    - accelerator=nvidia-h100
+    stand:
+    - jupiter.stand.prod
+  jupiter.k8s.02.master01:
+    title: K8s-02 Master 1
+    description: Master node for extended cluster
+    cluster: jupiter.k8s.02
+    version: 1.28.0
+    architecture: amd64
+    cpu: 2
+    ram: 8
+    zone: jupiter.dc_az.moscow
+    labels:
+    - node-role.kubernetes.io/master=true
+    stand:
+    - jupiter.stand.prod
+  jupiter.k8s.02.master02:
+    title: K8s-02 Master 2
+    description: Master node for extended cluster
+    cluster: jupiter.k8s.02
+    version: 1.28.0
+    architecture: amd64
+    cpu: 2
+    ram: 8
+    zone: jupiter.dc_az.moscow
+    labels:
+    - node-role.kubernetes.io/master=true
+    stand:
+    - jupiter.stand.prod
+  jupiter.k8s.02.master03:
+    title: K8s-02 Master 3
+    description: Master node for extended cluster
+    cluster: jupiter.k8s.02
+    version: 1.28.0
+    architecture: amd64
+    cpu: 2
+    ram: 8
+    zone: jupiter.dc_az.moscow_dr
+    labels:
+    - node-role.kubernetes.io/master=true
+    stand:
+    - jupiter.stand.prod
+  jupiter.k8s.02.worker01:
+    title: K8s-02 Worker 1
+    description: Worker node for extended cluster
+    cluster: jupiter.k8s.02
+    version: 1.28.0
+    architecture: amd64
+    cpu: 4
+    ram: 16
+    zone: jupiter.dc_az.moscow_dr
+    labels:
+    - node-role.kubernetes.io/worker=true
+    stand:
+    - jupiter.stand.prod
+  jupiter.k8s.02.worker02:
+    title: K8s-02 Worker 2
+    description: Worker node for extended cluster
+    cluster: jupiter.k8s.02
+    version: 1.28.0
+    architecture: amd64
+    cpu: 4
+    ram: 16
+    zone: jupiter.dc_az.moscow
+    labels:
+    - node-role.kubernetes.io/worker=true
+    stand:
+    - jupiter.stand.prod

@@ -1,111 +1,89 @@
-seaf.ta.services.network_segment:
-  flix.network_segment.dc.dmz:
-    sber:
-      location: flix.dc.01
-      zone: DMZ
+seaf.company.ta.services.network_segments:
+  jupiter.network_segment.dc.dmz:
     title: DMZ
-  flix.network_segment.dc.ext_wan_edge:
-    sber:
-      location: flix.dc.01
-      zone: EXT-WAN-EDGE
+    location: jupiter.dc.moscow_dc01
+    zone: DMZ
+  jupiter.network_segment.dc.ext_wan_edge:
     title: EXT WAN-EDGE
-  flix.network_segment.dc.inet_edge:
-    sber:
-      location: flix.dc.01
-      zone: INET-EDGE
+    location: jupiter.dc.moscow_dc01
+    zone: EXT-WAN-EDGE
+  jupiter.network_segment.dc.inet_edge:
     title: INET-EDGE
-  flix.network_segment.dc.int_net:
-    sber:
-      location: flix.dc.01
-      zone: INT-NET
+    location: jupiter.dc.moscow_dc01
+    zone: INET-EDGE
+  jupiter.network_segment.dc.int_net:
     title: Внутренняя сеть ЦОД
-  flix.network_segment.dc.int_security_net:
-    sber:
-      location: flix.dc.01
-      zone: INT-SECURITY-NET
+    location: jupiter.dc.moscow_dc01
+    zone: INT-NET
+  jupiter.network_segment.dc.int_security_net:
     title: Защищенный сегмент данных
-  flix.network_segment.dc.int_wan_edge:
-    sber:
-      location: flix.dc.01
-      zone: INT-WAN-EDGE
+    location: jupiter.dc.moscow_dc01
+    zone: INT-SECURITY-NET
+  jupiter.network_segment.dc.int_wan_edge:
     title: INT WAN-EDGE
-  flix.network_segment.dc.internet:
-    sber:
-      location: flix.dc.01
-      zone: INTERNET
+    location: jupiter.dc.moscow_dc01
+    zone: INT-WAN-EDGE
+  jupiter.network_segment.dc.internet:
     title: Internet
-  flix.network_segment.dc.transport:
-    sber:
-      location: flix.dc.01
-      zone: TRANSPORT-WAN
+    location: jupiter.dc.moscow_dc01
+    zone: INTERNET
+  jupiter.network_segment.dc.transport:
     title: Транспортная сеть
-  flix.network_segment.dc02.dmz:
-    sber:
-      location: flix.dc.02
-      zone: DMZ
+    location: jupiter.dc.moscow_dc01
+    zone: TRANSPORT-WAN
+  jupiter.network_segment.dc02.dmz:
     title: DMZ DC02
-  flix.network_segment.dc02.ext_wan_edge:
-    sber:
-      location: flix.dc.02
-      zone: EXT-WAN-EDGE
+    location: jupiter.dc.moscow_dc02
+    zone: DMZ
+  jupiter.network_segment.dc02.ext_wan_edge:
     title: EXT WAN-EDGE DC02
-  flix.network_segment.dc02.inet_edge:
-    sber:
-      location: flix.dc.02
-      zone: INET-EDGE
+    location: jupiter.dc.moscow_dc02
+    zone: EXT-WAN-EDGE
+  jupiter.network_segment.dc02.inet_edge:
     title: INET-EDGE DC02
-  flix.network_segment.dc02.int_net:
-    sber:
-      location: flix.dc.02
-      zone: INT-NET
+    location: jupiter.dc.moscow_dc02
+    zone: INET-EDGE
+  jupiter.network_segment.dc02.int_net:
     title: Внутренняя сеть ЦОД DC02
-  flix.network_segment.dc02.int_security_net:
-    sber:
-      location: flix.dc.02
-      zone: INT-SECURITY-NET
+    location: jupiter.dc.moscow_dc02
+    zone: INT-NET
+  jupiter.network_segment.dc02.int_security_net:
     title: Защищенный сегмент данных DC02
-  flix.network_segment.dc02.int_wan_edge:
-    sber:
-      location: flix.dc.02
-      zone: INT-WAN-EDGE
+    location: jupiter.dc.moscow_dc02
+    zone: INT-SECURITY-NET
+  jupiter.network_segment.dc02.int_wan_edge:
     title: INT WAN-EDGE DC02
-  flix.network_segment.dc02.internet:
-    sber:
-      location: flix.dc.02
-      zone: INTERNET
+    location: jupiter.dc.moscow_dc02
+    zone: INT-WAN-EDGE
+  jupiter.network_segment.dc02.internet:
     title: Internet DC02
-  flix.network_segment.dc02.transport:
-    sber:
-      location: flix.dc.02
-      zone: TRANSPORT-WAN
+    location: jupiter.dc.moscow_dc02
+    zone: INTERNET
+  jupiter.network_segment.dc02.transport:
     title: Транспортная сеть DC02
-  flix.network_segment.internet:
-    sber:
-      location: flix.office.hq
-      zone: INTERNET
+    location: jupiter.dc.moscow_dc02
+    zone: TRANSPORT-WAN
+  jupiter.network_segment.internet:
     title: Internet
-  flix.network_segment.office.access:
-    sber:
-      location: flix.office.hq
-      zone: DMZ
+    location: jupiter.dc_office.hq
+    zone: INTERNET
+  jupiter.network_segment.office.access:
     title: УС уровня доступа
-  flix.network_segment.office.inet_edge:
-    sber:
-      location: flix.office.hq
-      zone: INET-EDGE
+    location: jupiter.dc_office.hq
+    zone: DMZ
+  jupiter.network_segment.office.inet_edge:
     title: INET-EDGE
-  flix.network_segment.office.int:
-    sber:
-      location: flix.office.hq
-      zone: INT-NET
+    location: jupiter.dc_office.hq
+    zone: INET-EDGE
+  jupiter.network_segment.office.int:
     title: Внутренняя сеть офиса (ЛВС)
-  flix.network_segment.office.wan_edge:
-    sber:
-      location: flix.office.hq
-      zone: INT-WAN-EDGE
+    location: jupiter.dc_office.hq
+    zone: INT-NET
+  jupiter.network_segment.office.wan_edge:
     title: WAN-EDGE
-  flix.network_segment.transport:
-    sber:
-      location: flix.office.hq
-      zone: TRANSPORT-WAN
+    location: jupiter.dc_office.hq
+    zone: INT-WAN-EDGE
+  jupiter.network_segment.transport:
     title: Транспортная сеть
+    location: jupiter.dc_office.hq
+    zone: TRANSPORT-WAN

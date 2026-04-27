@@ -1,11 +1,11 @@
-seaf.ta.services.network_links:
-  flix.link.hq_to_dc01:
+seaf.company.ta.services.network_links:
+  jupiter.link.hq_to_dc01:
     description: VPN туннель между головным офисом и ЦОД Sber
     encapsulation: GRE
     encryption: ipsec
     network_connection:
-      - flix.lan.office.ext.lan
-      - flix.lan.dc01.int.test
+    - jupiter.network.lan.office.ext.lan
+    - jupiter.network.lan.dc01.int.test
     routing: bgpevpn
     sla: provider
     technology: s2svpn
