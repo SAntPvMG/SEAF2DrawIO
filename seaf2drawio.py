@@ -12,7 +12,8 @@ import xml.etree.ElementTree as ET
 patterns_dir = 'data/patterns/'
 diagram = drawio_diagram()
 node_xml_default = diagram.drawio_node_object_xml
-root_object = 'seaf.ta.services.dc_region'
+# Ключ схемы в объединённых YAML (см. data/example/dc_region.yaml)
+root_object = 'seaf.company.ta.services.dc_regions'
 diagram_pages = {'main': ['Main Schema'], 'office': [], 'dc': []}
 diagram_ids = {'Main Schema': []}
 conf = {}
@@ -307,8 +308,14 @@ if __name__ == '__main__':
             for k, object_pattern in d.read_yaml_file(patterns_dir + file_name + '.yaml').items():
                 print('.', end='')
                 try:
-                    object_data = d.get_object(conf['data_yaml_file'], object_pattern['schema'], type=object_pattern.get('type'),
-                        sort=object_pattern['parent_id'] if object_pattern.get('parent_id') else None)
+                    object_data = d.get_object(
+                        conf['data_yaml_file'],
+                        object_pattern['schema'],
+                        type=object_pattern.get('type'),
+                        sort=object_pattern['parent_id'] if object_pattern.get('parent_id') else None,
+                        require_fields=object_pattern.get('require_fields'),
+                        exclude_fields=object_pattern.get('exclude_fields'),
+                    )
 
                     add_pages(object_pattern)
                     object_pattern.update({

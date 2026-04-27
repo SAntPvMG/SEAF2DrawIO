@@ -241,6 +241,8 @@ wan_edge_internet_strip:
   schema: 'seaf.company.ta.services.networks'
   parent_id: 'segment'
   type: "type:WAN"
+  exclude_fields:
+    - provider
   id_regex: '^$'
   deep: 2
   offset: 110
@@ -260,6 +262,8 @@ wan_edge_transport_strip:
   schema: 'seaf.company.ta.services.networks'
   parent_id: 'segment'
   type: "type:WAN"
+  exclude_fields:
+    - provider
   id_regex: '^$'
   deep: 4
   offset: 110

@@ -338,6 +338,18 @@ class SeafDrawio:
         return False
 
 
+    @staticmethod
+    def _field_nonempty(obj, field):
+        """True if obj is a dict and field is present with a non-empty scalar or non-empty list."""
+        if not isinstance(obj, dict) or field not in obj:
+            return False
+        val = obj[field]
+        if val is None or val == '':
+            return False
+        if isinstance(val, list) and len(val) == 0:
+            return False
+        return True
+
     def get_object(self, file, key, **kwargs):
         """
             Get JSON leave from file by key
@@ -345,6 +357,8 @@ class SeafDrawio:
             :param file: input file name.
             :param key: key for finding sub JSON.
             :param kwargs['type'] find json which contain value in key, kwargs['sort'] sorting by key
+            :param kwargs['require_fields'] optional list of field names — оставить только объекты, у которых все поля заданы
+            :param kwargs['exclude_fields'] optional list — исключить объекты, у которых любое из полей задано (например provider у WAN для отделения ISP от полосы wan_edge)
             :return: json object.
         """
         try:
@@ -357,6 +371,14 @@ class SeafDrawio:
                     k1, v1 = 'type', kwargs['type']
 
                 r = {k2: v2 for k2, v2 in x.items() if self.list_contain(self.find_key_value(v2, k1), v1)}
+
+                req = kwargs.get('require_fields')
+                if req and isinstance(req, list):
+                    r = {k: v for k, v in r.items() if all(self._field_nonempty(v, f) for f in req)}
+
+                exc = kwargs.get('exclude_fields')
+                if exc and isinstance(exc, list):
+                    r = {k: v for k, v in r.items() if not any(self._field_nonempty(v, f) for f in exc)}
 
                 if kwargs.get('sort'):
                     try:
