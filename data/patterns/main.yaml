@@ -234,7 +234,7 @@ isp:
 network_links:
   xml: >
     <object id="{id}" label="{label}">
-        <mxCell style="{style}" edge="1" parent="100" source="{source}" target="{target}">
+        <mxCell style="{style}" edge="1" parent="100" source="{source_id}" target="{target_id}">
             <mxGeometry relative="1" as="geometry"/>
         </mxCell>
     </object>

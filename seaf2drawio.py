@@ -162,9 +162,31 @@ def add_object(pattern, data, key_id):
             except Exception:
                 pass
 
-            if current_parent != pattern['last_parent'] and pattern['parent_id'] !='network_connection':   # reset to default pattern
-                default_pattern['parent'] = get_parent_value(pattern, current_parent)
-                pattern.update(default_pattern)
+            if current_parent != pattern['last_parent'] and pattern['parent_id'] != 'network_connection':
+                new_pt = get_parent_value(pattern, current_parent)
+                old_last = pattern['last_parent']
+                old_pt = get_parent_value(pattern, old_last) if old_last else None
+                default_pattern['parent'] = new_pt
+                # Тип зоны (INTERNET / TRANSPORT-WAN) задаёт «колонку». Раньше pattern.update
+                # сбрасывал y при каждом смене сегмента; при возврате в INTERNET после
+                # TRANSPORT-WAN (другой DC) DC01 и DC02 оказывались на одних y — полное
+                # перекрытие. Сохраняем курсор y по зоне и восстанавливаем при повторе.
+                if not old_last:
+                    pattern.update(default_pattern)
+                elif new_pt == old_pt:
+                    default_pattern['parent'] = new_pt
+                    pattern['parent'] = new_pt
+                else:
+                    if old_pt == 'INTERNET' and new_pt != 'INTERNET':
+                        pattern['_isp_y_internet'] = pattern.get('y', default_pattern.get('y'))
+                    if old_pt == 'TRANSPORT-WAN' and new_pt != 'TRANSPORT-WAN':
+                        pattern['_isp_y_transport'] = pattern.get('y', default_pattern.get('y'))
+                    pattern.update(default_pattern)
+                    if new_pt == 'INTERNET' and '_isp_y_internet' in pattern:
+                        pattern['y'] = pattern['_isp_y_internet']
+                    if new_pt == 'TRANSPORT-WAN' and '_isp_y_transport' in pattern:
+                        pattern['y'] = pattern['_isp_y_transport']
+                pattern['parent'] = new_pt
                 pattern['last_parent'] = current_parent
 
 
@@ -222,7 +244,7 @@ def add_links(pattern,  **kwargs):
     source_id = 'Unknown'
 
     for source_id, targets in d.get_object(conf['data_yaml_file'], pattern['schema'],
-                                           type=object_pattern.get('type')).items():  # source_id - ID объекта
+                                           type=pattern.get('type')).items():  # source_id - ID объекта
 
         if kwargs.get('logical_link'):
             targets['OID'] = source_id
@@ -233,15 +255,25 @@ def add_links(pattern,  **kwargs):
             if source_id in diagram_ids[page_name]:  # Объект присутствует на текущей диаграмме
                 if pattern.get('parent_id'):
                     # parent_id may be a list (e.g., WAN.segment). Derive targets for each parent entry.
-                    parent_val = targets.get(pattern['parent_id'])
-                    parent_ids = parent_val if isinstance(parent_val, list) else ([parent_val] if parent_val else [])
+                    # Prefer explicit list on the object (e.g. network.location) when pattern targets match.
+                    tkey = pattern.get('targets')
                     derived_targets = []
-                    for pid in parent_ids:
-                        val = get_parent_value(pattern, pid)
-                        if isinstance(val, list):
-                            derived_targets.extend(val)
-                        elif val is not None:
-                            derived_targets.append(val)
+                    if tkey and tkey == 'location' and targets.get('location') is not None:
+                        loc = targets.get('location')
+                        if isinstance(loc, list):
+                            derived_targets = [x for x in loc if x is not None and x != '']
+                        else:
+                            if loc not in (None, ''):
+                                derived_targets = [loc]
+                    if not derived_targets:
+                        parent_val = targets.get(pattern['parent_id'])
+                        parent_ids = parent_val if isinstance(parent_val, list) else ([parent_val] if parent_val else [])
+                        for pid in parent_ids:
+                            val = get_parent_value(pattern, pid)
+                            if isinstance(val, list):
+                                derived_targets.extend(val)
+                            elif val is not None:
+                                derived_targets.append(val)
                     targets = {pattern['targets']: derived_targets}
                 for target_id in targets[pattern['targets']]:
                     if target_id in diagram_ids[page_name]:  # Объект для связи присутствует на диаграмме
@@ -323,6 +355,8 @@ if __name__ == '__main__':
                                 'last_parent': '',        # Триггер для отслеживания изменения родительского объекта
                                 'parent': ''              # Родительский объект
                     })
+                    for _pop_k in [x for x in list(object_pattern.keys()) if str(x).startswith('_isp_y_')]:
+                        object_pattern.pop(_pop_k, None)
                     default_pattern = deepcopy(object_pattern)
 
                     # Collect expected IDs and data per schema (for verification)
