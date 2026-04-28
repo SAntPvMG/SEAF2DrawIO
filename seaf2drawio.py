@@ -7,6 +7,11 @@ import argparse
 from copy import deepcopy
 from lib import seaf_drawio
 from lib.link_manager import remove_obsolete_links, draw_verify, advanced_analysis
+from auto_layout.edge_segments_layout import (
+    edge_segments_layout as compute_wan_edge_layout,
+    resolve_page_location_roots,
+)
+from auto_layout.dmz_segments_layout import dmz_segments_layout as compute_dmz_layout
 import xml.etree.ElementTree as ET
 
 patterns_dir = 'data/patterns/'
@@ -23,6 +28,7 @@ layout_counters = {}
 expected_counts = {}
 expected_data = {}
 pattern_specs = {}
+wan_edge_layout_cache = {'positions': {}, 'segment_size': {}, 'segment_origin': {}}
 
 # Переменные по умолчанию
 DEFAULT_CONFIG = {
@@ -199,6 +205,21 @@ def _is_main_schema_zone_segment(pattern):
     t = pattern.get('type') or ''
     return t in ('zone:INTERNET', 'zone:TRANSPORT-WAN')
 
+
+def _is_segment_auto_size_from_layout(pattern):
+    """network_segments: размер контейнера из wan_edge_layout_cache.segment_size."""
+    if pattern.get('schema') != 'seaf.company.ta.services.network_segments':
+        return False
+    t = pattern.get('type') or ''
+    if not t.startswith('zone:'):
+        return False
+    zone = t.split(':', 1)[1]
+    return zone in (
+        'INT-WAN-EDGE', 'INET-EDGE', 'EXT-WAN-EDGE',
+        'DMZ', 'INT-NET', 'INT-SECURITY-NET',
+    )
+
+
 def add_pages(pattern):
 
     if pattern.get('ext_page'):
@@ -305,6 +326,22 @@ def add_object(pattern, data, key_id):
                 nw, nh = compute_main_schema_segment_dimensions(key_id, pattern)
                 pattern['w'], pattern['h'] = nw, nh
 
+            wan_override = wan_edge_layout_cache.get('positions', {}).get(key_id)
+            if wan_override:
+                pattern['x'] = wan_override['x']
+                pattern['y'] = wan_override['y']
+                pattern['w'] = wan_override['w']
+                pattern['h'] = wan_override['h']
+            seg_auto = wan_edge_layout_cache.get('segment_size', {}).get(key_id)
+            if seg_auto and _is_segment_auto_size_from_layout(pattern):
+                pattern['w'], pattern['h'] = seg_auto['w'], seg_auto['h']
+            seg_origin = wan_edge_layout_cache.get('segment_origin', {}).get(key_id)
+            if seg_origin:
+                if 'x' in seg_origin:
+                    pattern['x'] = seg_origin['x']
+                if 'y' in seg_origin:
+                    pattern['y'] = seg_origin['y']
+
             # Если не содержит конструкции <object></object>, то изменять ID добавляя порядковый номер
             diagram.add_node(
                 id=f"{key_id}_{pattern_count}" if not d.contains_object_tag(xml_pattern, 'object') else key_id,
@@ -318,7 +355,8 @@ def add_object(pattern, data, key_id):
             )
             d.append_to_dict(diagram_ids, page_name, key_id)  # Добавляет ID root элементов
 
-            if pattern_count == 0:  # Change position of element
+            if pattern_count == 0 and key_id not in wan_edge_layout_cache.get('positions', {}) \
+                    and key_id not in wan_edge_layout_cache.get('segment_origin', {}):  # Change position of element
                 position_offset(pattern)
             pattern_count += 1
 
@@ -423,6 +461,16 @@ if __name__ == '__main__':
         for page_name in pages:
 
             diagram.go_to_diagram(page_name)
+            _py = os.path.join(patterns_dir, file_name + '.yaml')
+            _roots = diagram_ids.get(page_name) or []
+            if not _roots:
+                _roots = resolve_page_location_roots(d, conf, page_name, _py)
+            wan_edge_layout_cache = compute_wan_edge_layout(d, conf, page_name, _roots, _py)
+            wan_edge_layout_cache.setdefault('segment_origin', {})
+            _dmz_layout = compute_dmz_layout(d, conf, page_name, _roots, _py, wan_edge_layout_cache)
+            wan_edge_layout_cache['positions'].update(_dmz_layout.get('positions', {}))
+            wan_edge_layout_cache['segment_size'].update(_dmz_layout.get('segment_size', {}))
+            wan_edge_layout_cache['segment_origin'].update(_dmz_layout.get('segment_origin', {}))
             print(f"\n> Формирую диаграмму страницы \033[32m{page_name}\033[0m ", end='')
             for k, object_pattern in d.read_yaml_file(patterns_dir + file_name + '.yaml').items():
                 print('.', end='')

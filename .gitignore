@@ -2,6 +2,9 @@
 .DS_Store
 **/.DS_Store
 
+# Draw.io editor backups
+**/.$*.bkp
+
 # Accidental local artifacts
 /MISMATCH
 /OK
