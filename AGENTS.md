@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `seaf2drawio.py` — generate DrawIO diagrams from SEAF YAML data using patterns in `data/patterns/`.
+- `seaf2drawio.py` — generate DrawIO diagrams from SEAF YAML data using patterns in `data/patterns/`. Algorithm overview: `docs/seaf2drawio-algorithm.md`.
 - `drawio2seaf.py` — parse DrawIO back into YAML using `data/seaf_schema.yaml`.
 - `lib/` — shared helpers (`seaf_drawio.py`, `link_manager.py`).
 - `data/` — example YAML inputs, DrawIO templates, schema, and patterns; `data/example/` contains sample datasets.
