@@ -22,7 +22,7 @@ region:
   schema : 'seaf.company.ta.services.dc_regions'
   x : 390
   y : 30
-  h : 630
+  h : 740
   w : 900
   offset: 10
   algo: 'Y+'
@@ -39,8 +39,8 @@ az:
   parent_id: 'region'
   x : 450
   y : 30
-  h: 300
-  w : 360
+  h: 340
+  w : 380
   offset: 10
   algo: 'Y+'
   deep: 3

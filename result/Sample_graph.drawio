@@ -38,15 +38,15 @@
         </object>
       <object id="jupiter.dc_region.russia" label="Регион Россия" title="Регион Россия" description="Регион присутствия ЦОДов и офисов Jupiter" external_id="dc_region.russia" OID="jupiter.dc_region.russia" schema="seaf.company.ta.services.dc_regions">
   <mxCell style="swimlane;whiteSpace=wrap;html=1;fillColor=#CCE5FF;" vertex="1" parent="1">
-    <mxGeometry x="390" y="30" width="900" height="630" as="geometry" />
+    <mxGeometry x="390" y="30" width="900" height="740" as="geometry" />
   </mxCell>
 </object><object id="jupiter.dc_az.moscow" label="AZ Москва" title="AZ Москва" description="Основная зона доступности Jupiter в Москве" external_id="dc_az.moscow" region="jupiter.dc_region.russia" vendor="Jupiter IT" OID="jupiter.dc_az.moscow" schema="seaf.company.ta.services.dc_azs">
   <mxCell style="swimlane;whiteSpace=wrap;html=1;fillColor=#CCFFE6;" vertex="1" parent="jupiter.dc_region.russia">
-    <mxGeometry x="450" y="30" width="360" height="300" as="geometry" />
+    <mxGeometry x="450" y="30" width="380" height="340" as="geometry" />
   </mxCell>
 </object><object id="jupiter.dc_az.moscow_dr" label="AZ резервный (DR)" title="AZ резервный (DR)" description="Резервная зона доступности в другом ЦОД" external_id="dc_az.moscow_dr" region="jupiter.dc_region.russia" vendor="Jupiter IT" OID="jupiter.dc_az.moscow_dr" schema="seaf.company.ta.services.dc_azs">
   <mxCell style="swimlane;whiteSpace=wrap;html=1;fillColor=#CCFFE6;" vertex="1" parent="jupiter.dc_region.russia">
-    <mxGeometry x="450" y="340" width="360" height="300" as="geometry" />
+    <mxGeometry x="450" y="380" width="380" height="340" as="geometry" />
   </mxCell>
 </object><object id="jupiter.dc_office.hq" label="Головной офис" title="Головной офис" description="Головная площадка обслуживания пользователей Jupiter" address="Москва, Берёзовый бульвар, д. 14" region="jupiter.dc_region.russia" external_id="office.hq" OID="jupiter.dc_office.hq" schema="seaf.company.ta.services.dc_offices" link="data:page/id,jupiter.dc_office.hq_page">
   <mxCell style="shape=mxgraph.cisco.buildings.generic_building;html=1;pointerEvents=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;" vertex="1" parent="jupiter.dc_region.russia">
