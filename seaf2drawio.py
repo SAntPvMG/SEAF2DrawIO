@@ -10,6 +10,7 @@ from lib.link_manager import remove_obsolete_links, draw_verify, advanced_analys
 import xml.etree.ElementTree as ET
 
 patterns_dir = 'data/patterns/'
+_main_isp_layout_cache = None
 diagram = drawio_diagram()
 node_xml_default = diagram.drawio_node_object_xml
 # Ключ схемы в объединённых YAML (см. data/example/dc_region.yaml)
@@ -118,6 +119,86 @@ def get_parent_value(pattern, current_parent):
                                                     current_parent), pattern['parent_key'])
     return r
 
+
+def _get_main_isp_layout():
+    """Параметры раскладки isp из data/patterns/main.yaml (без дублирования чисел в коде)."""
+    global _main_isp_layout_cache
+    if _main_isp_layout_cache is None:
+        doc = d.read_yaml_file(patterns_dir + 'main.yaml')
+        isp = doc.get('isp') or {}
+        _main_isp_layout_cache = {
+            'w': int(isp.get('w', 110)),
+            'h': int(isp.get('h', 60)),
+            'offset': int(isp.get('offset', 25)),
+            'deep': int(isp.get('deep', 15)),
+            'x': int(isp.get('x', 10)),
+            'y': int(isp.get('y', 5)),
+        }
+    return _main_isp_layout_cache
+
+
+def _network_segment_refs_match(ndata, segment_oid):
+    """segment в данных — строка или список."""
+    seg = ndata.get('segment')
+    if seg is None:
+        return False
+    if isinstance(seg, list):
+        return segment_oid in seg
+    return seg == segment_oid
+
+
+def compute_main_schema_segment_dimensions(segment_oid, segment_pattern):
+    """
+    Размеры контейнера segment_internet / segment_transport_wan на Main Schema:
+    охватывают все связанные WAN (isp), раскладка как у паттерна isp (Y+, deep колонки).
+    """
+    lay = _get_main_isp_layout()
+    isp_w, isp_h = lay['w'], lay['h']
+    isp_off = lay['offset']
+    isp_deep = max(1, lay['deep'])
+    sx, sy = lay['x'], lay['y']
+    # Подпись "… Router" чуть ниже h группы в шаблоне isp
+    label_slop = 8
+
+    base_w = int(segment_pattern.get('w', 140))
+    base_h = int(segment_pattern.get('h', 350))
+    pad = int(segment_pattern.get('offset', 10))
+
+    try:
+        nets = d.get_object(
+            conf['data_yaml_file'],
+            'seaf.company.ta.services.networks',
+            type='WAN',
+            require_fields=['provider'],
+        )
+    except Exception:
+        return base_w, base_h
+
+    n = sum(1 for oid, nd in nets.items() if _network_segment_refs_match(nd, segment_oid))
+    if n == 0:
+        return base_w, base_h
+
+    max_right = sx
+    max_bottom = sy
+    for i in range(n):
+        col = i // isp_deep
+        row = i % isp_deep
+        xi = sx + col * (isp_w + isp_off)
+        yi = sy + row * (isp_h + isp_off)
+        max_right = max(max_right, xi + isp_w)
+        max_bottom = max(max_bottom, yi + isp_h + label_slop)
+
+    inner_w = max_right + pad
+    inner_h = max_bottom + pad
+    return max(inner_w, base_w), max(inner_h, base_h)
+
+
+def _is_main_schema_zone_segment(pattern):
+    if pattern.get('schema') != 'seaf.company.ta.services.network_segments':
+        return False
+    t = pattern.get('type') or ''
+    return t in ('zone:INTERNET', 'zone:TRANSPORT-WAN')
+
 def add_pages(pattern):
 
     if pattern.get('ext_page'):
@@ -193,7 +274,7 @@ def add_object(pattern, data, key_id):
         try:
             diagram.drawio_node_object_xml = diagram.drawio_node_object_xml.format_map(
                 data | {'Group_ID': f'{key_id}_0', 'parent_id' : current_parent, 'parent_type' : default_pattern['parent'],
-                        'description' : data.get('description','') })  # замена в xml шаблоне переменных в одинарных {}, добавление ID группы
+                        'description' : data.get('description',''), 'id': key_id })  # id для шаблонов вида <object id="{id}">
             data['OID'] = key_id
 
         except KeyError as e:
@@ -219,6 +300,11 @@ def add_object(pattern, data, key_id):
             if 'parent_tmp' in data:
                 del data['parent_tmp']
 
+            # Main Schema: размеры контейнеров INTERNET / TRANSPORT-WAN по числу WAN и раскладке isp из main.yaml
+            if page_name == 'Main Schema' and _is_main_schema_zone_segment(pattern):
+                nw, nh = compute_main_schema_segment_dimensions(key_id, pattern)
+                pattern['w'], pattern['h'] = nw, nh
+
             # Если не содержит конструкции <object></object>, то изменять ID добавляя порядковый номер
             diagram.add_node(
                 id=f"{key_id}_{pattern_count}" if not d.contains_object_tag(xml_pattern, 'object') else key_id,
@@ -233,7 +319,7 @@ def add_object(pattern, data, key_id):
             d.append_to_dict(diagram_ids, page_name, key_id)  # Добавляет ID root элементов
 
             if pattern_count == 0:  # Change position of element
-                position_offset(object_pattern)
+                position_offset(pattern)
             pattern_count += 1
 
         diagram.drawio_node_object_xml = node_xml_default
@@ -324,6 +410,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     conf = cli_vars(d.load_config("config.yaml")['seaf2drawio'])
+    _main_isp_layout_cache = None
 
     diagram.from_xml(d.read_file_with_utf8(conf['drawio_pattern']))
     

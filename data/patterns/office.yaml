@@ -368,7 +368,7 @@ lan:
   parent_id: 'segment'
   type: "type:LAN"
   deep: 4
-  offset: 70
+  offset: 100
   x: -10
   y: 60
   w: 20
