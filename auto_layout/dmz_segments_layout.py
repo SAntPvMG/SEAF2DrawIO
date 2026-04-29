@@ -1,14 +1,15 @@
 """
-Раскладка зоны DMZ и (для office.yaml) абсолютные координаты сетки зон безопасности.
+Раскладка DMZ и абсолютные координаты сетки зон (office.yaml и dc.yaml — одна и та же модель).
 """
 from __future__ import annotations
 
-import os
 from typing import Any, Dict, List, Optional
 
+from auto_layout.layout_pattern_modes import patterns_yaml_uses_interior_layout
 from auto_layout.segment_intrinsic_layout import (
     INET_EXT_VERTICAL_GAP,
     SEGMENT_GAP,
+    apply_cross_segment_firewall_positions,
     compute_intrinsic_band_layout,
     effective_segment_height,
     effective_segment_width,
@@ -48,14 +49,19 @@ def dmz_segments_layout(
     """
     :param wan_layout_cache: результат edge_segments_layout (positions / segment_size по зонам).
     """
-    empty = {'positions': {}, 'segment_size': {}, 'segment_origin': {}}
+    empty: Dict[str, Any] = {
+        'positions': {},
+        'segment_size': {},
+        'segment_origin': {},
+        'cross_segment_firewall_oids': frozenset(),
+    }
     if page_name == 'Main Schema' or not page_roots:
         return empty
 
-    is_office = os.path.basename(patterns_yaml_path).lower() == 'office.yaml'
+    is_interior = patterns_yaml_uses_interior_layout(patterns_yaml_path)
     wan_layout_cache = wan_layout_cache or {}
 
-    if is_office:
+    if is_interior:
         positions = dict(wan_layout_cache.get('positions') or {})
         segment_size = dict(wan_layout_cache.get('segment_size') or {})
     else:
@@ -68,8 +74,10 @@ def dmz_segments_layout(
     try:
         merged = sd.read_and_merge_yaml(conf.get('data_yaml_file'))
         segments = merged.get('seaf.company.ta.services.network_segments') or {}
+        networks = merged.get('seaf.company.ta.services.networks') or {}
+        components = merged.get('seaf.company.ta.components.networks') or {}
     except Exception:
-        return {'positions': positions, 'segment_size': segment_size, 'segment_origin': segment_origin}
+        return dict(empty)
 
     patterns_doc = sd.read_yaml_file(patterns_yaml_path) or {}
 
@@ -82,7 +90,12 @@ def dmz_segments_layout(
     wan_edge_tpl = segment_rect_for_zone(patterns_doc, 'INT-WAN-EDGE')
 
     if not dmz_rect:
-        return {'positions': positions, 'segment_size': segment_size, 'segment_origin': segment_origin}
+        return {
+            'positions': positions,
+            'segment_size': segment_size,
+            'segment_origin': segment_origin,
+            'cross_segment_firewall_oids': frozenset(),
+        }
 
     dmz_dx, dmz_dy, dmz_dw, dmz_dh = dmz_rect
 
@@ -93,8 +106,8 @@ def dmz_segments_layout(
         and location_on_page(seg.get('location'), page_roots)
     ]
 
-    # ---------- office.yaml: полная сетка ----------
-    if is_office and inet_rect and ext_tpl and int_net_tpl and int_sec_tpl and wan_edge_tpl:
+    # ---------- interior (office.yaml / dc.yaml): полная сетка зон ----------
+    if is_interior and inet_rect and ext_tpl and int_net_tpl and int_sec_tpl and wan_edge_tpl:
         ix, iy, iw_t, ih_t = inet_rect
         inet_oid = _oid_zone_on_page(segments, page_roots, 'INET-EDGE')
         ext_oid = _oid_zone_on_page(segments, page_roots, 'EXT-WAN-EDGE')
@@ -148,7 +161,18 @@ def dmz_segments_layout(
         if int_wan_oid:
             segment_origin[int_wan_oid] = {'x': int(int_wan_x), 'y': int(int_wan_y)}
 
-        return {'positions': positions, 'segment_size': segment_size, 'segment_origin': segment_origin}
+        xf = frozenset(
+            apply_cross_segment_firewall_positions(
+                positions, segment_origin, components, networks, page_roots, patterns_doc, segment_size,
+            ),
+        )
+
+        return {
+            'positions': positions,
+            'segment_size': segment_size,
+            'segment_origin': segment_origin,
+            'cross_segment_firewall_oids': xf,
+        }
 
     # ---------- прочие шаблоны (dc и т.д.): только DMZ + сдвиг INT-NET ----------
     rights_inet: List[int] = []
@@ -172,7 +196,12 @@ def dmz_segments_layout(
         anchor_x = int(dmz_dx)
 
     if not dmz_oids_on_page:
-        return {'positions': positions, 'segment_size': segment_size, 'segment_origin': segment_origin}
+        return {
+            'positions': positions,
+            'segment_size': segment_size,
+            'segment_origin': segment_origin,
+            'cross_segment_firewall_oids': frozenset(),
+        }
 
     dmz_w_eff = int(dmz_dw)
     for oid in dmz_oids_on_page:
@@ -206,4 +235,15 @@ def dmz_segments_layout(
                 continue
             segment_origin[oid] = {'x': tpl_x + delta_push, 'y': tpl_y}
 
-    return {'positions': positions, 'segment_size': segment_size, 'segment_origin': segment_origin}
+    xf = frozenset(
+        apply_cross_segment_firewall_positions(
+            positions, segment_origin, components, networks, page_roots, patterns_doc, segment_size,
+        ),
+    )
+
+    return {
+        'positions': positions,
+        'segment_size': segment_size,
+        'segment_origin': segment_origin,
+        'cross_segment_firewall_oids': xf,
+    }

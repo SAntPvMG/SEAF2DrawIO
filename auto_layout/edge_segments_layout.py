@@ -1,17 +1,17 @@
 """
-Раскладка WAN-edge зон и (для office.yaml) DMZ / INT-NET / INT-SECURITY для intrinsic sizes.
-Позиции контейнеров зон на странице office задаются в dmz_segments_layout (сетка).
+Раскладка WAN-edge и (для office.yaml / dc.yaml) intrinsic для DMZ, INT-NET, INT-SECURITY-NET и т.д.
+Позиции контейнеров зон на странице задаются в dmz_segments_layout (сетка как у office для dc тоже).
 """
 from __future__ import annotations
 
-import os
 from typing import Any, Dict, List, Set
 
+from auto_layout.layout_pattern_modes import patterns_yaml_uses_interior_layout
 from auto_layout.segment_intrinsic_layout import compute_intrinsic_band_layout
 
 WAN_EDGE_ZONES = frozenset({'INT-WAN-EDGE', 'INET-EDGE', 'EXT-WAN-EDGE'})
 
-# На странице «Головной офис» считаем содержимое и размеры также для внутренних зон
+# На страницах с interior_layout (офис ЦОД, головной офис) считаем содержимое и размеры также для внутренних зон
 OFFICE_INTRINSIC_ZONES = WAN_EDGE_ZONES | frozenset({
     'DMZ',
     'INT-NET',
@@ -20,8 +20,7 @@ OFFICE_INTRINSIC_ZONES = WAN_EDGE_ZONES | frozenset({
 
 
 def intrinsic_zones_for_pattern(patterns_yaml_path: str) -> Set[str]:
-    base = os.path.basename(patterns_yaml_path).lower()
-    if base == 'office.yaml':
+    if patterns_yaml_uses_interior_layout(patterns_yaml_path):
         return set(OFFICE_INTRINSIC_ZONES)
     return set(WAN_EDGE_ZONES)
 
@@ -34,7 +33,7 @@ def edge_segments_layout(
     patterns_yaml_path: str,
 ) -> Dict[str, Any]:
     """
-    :return: positions / segment_size / segment_origin (origin для не-office не задаём).
+    :return: positions / segment_size / segment_origin (origin для паттернов без interior_layout не задаётся здесь).
     """
     if page_name == 'Main Schema':
         return {'positions': {}, 'segment_size': {}, 'segment_origin': {}}

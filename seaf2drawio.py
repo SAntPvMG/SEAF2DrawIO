@@ -118,6 +118,90 @@ def return_ready(pattern):
 
     return not bool(pattern['count'])
 
+
+def _diagram_root_block_for_object_id(root: ET.Element, node_id: str):
+    """
+    Первый прямой потомок <root>, в котором встречается id у <object> или <mxCell> — порядок в XML задаёт Z в draw.io.
+    """
+    for child in list(root):
+        if child.get('id') == node_id:
+            return child
+        for el in child.iter():
+            if el.get('id') == node_id:
+                return child
+    return None
+
+
+def bring_cross_segment_firewalls_to_front(diagram, page_name: str, node_ids) -> None:
+    """
+    Выводит элементы диаграммы поверх предыдущих (в модели последний sibling рисуется последним — ToFront в XML).
+    """
+    if not node_ids:
+        return
+    diagram.go_to_diagram(diagram_name=page_name)
+    tree_root = diagram.current_root
+    ordered_ids = sorted(node_ids)
+    seen_block = set()
+    blocks = []
+    for oid in ordered_ids:
+        block = _diagram_root_block_for_object_id(tree_root, oid)
+        if block is None:
+            continue
+        bid = id(block)
+        if bid in seen_block:
+            continue
+        seen_block.add(bid)
+        blocks.append(block)
+    for block in blocks:
+        tree_root.remove(block)
+        tree_root.append(block)
+
+
+# Сегменты INET-EDGE / EXT-WAN-EDGE должны рисоваться раньше DMZ: иначе серый контейнер после DMZ в XML перекрывает
+# NGFW с parent=DMZ и отрицательным x (на стыке с INET). См. jupiter.network_segment.dc(.dc02).(inet|ext_wan)_edge vs .dmz
+_OID_NS_INET_EXT = re.compile(r'^jupiter\.network_segment\.[^.]+\.(inet_edge|ext_wan_edge)$')
+_OID_NS_DMZ = re.compile(r'^jupiter\.network_segment\.[^.]+\.dmz$')
+
+
+def reorder_inet_ext_wan_edge_before_dmz_swimlane(diagram, page_name: str) -> None:
+    """
+    Среди прямых потомков <root> переносит object сегментов INET-EDGE и EXT-WAN-EDGE перед первым object DMZ,
+    чтобы полоса DMZ и пограничные FW рисовались поверх серых зон.
+    """
+    diagram.go_to_diagram(diagram_name=page_name)
+    root = diagram.current_root
+    edge_objs: list = []
+    dmz_oid = None  # первый oid сегмента DMZ под root
+    for ch in list(root):
+        if ch.tag != 'object':
+            continue
+        oid = ch.get('id') or ''
+        if _OID_NS_INET_EXT.match(oid):
+            edge_objs.append(ch)
+        elif _OID_NS_DMZ.match(oid) and dmz_oid is None:
+            dmz_oid = oid
+    if not edge_objs or not dmz_oid:
+        return
+
+    def _edge_layer_order(o) -> tuple:
+        oid = (o.get('id') or '').rsplit('.', 1)[-1]
+        return (0 if oid == 'inet_edge' else 1, o.get('id') or '')
+
+    edge_objs.sort(key=_edge_layer_order)
+    for e in edge_objs:
+        root.remove(e)
+    children = list(root)
+    dmz_idx = None
+    for i, ch in enumerate(children):
+        if ch.tag == 'object' and ch.get('id') == dmz_oid:
+            dmz_idx = i
+            break
+    if dmz_idx is None:
+        return
+    for offset, e in enumerate(edge_objs):
+        root.insert(dmz_idx + offset, e)
+
+
 def get_parent_value(pattern, current_parent):
     r = ''
     if pattern.get('parent_key'):
@@ -293,9 +377,19 @@ def add_object(pattern, data, key_id):
 
 
         try:
+            fmt_extra = {
+                'Group_ID': f'{key_id}_0',
+                'parent_id': current_parent,
+                'parent_type': default_pattern['parent'],
+                'description': data.get('description', ''),
+                'id': key_id,
+            }
+            # Родитель-сегмент для шаблонов с parent="{segment}" и согласованного вложения в контейнер
+            if pattern.get('parent_id') == 'segment' and current_parent:
+                fmt_extra['segment'] = current_parent
             diagram.drawio_node_object_xml = diagram.drawio_node_object_xml.format_map(
-                data | {'Group_ID': f'{key_id}_0', 'parent_id' : current_parent, 'parent_type' : default_pattern['parent'],
-                        'description' : data.get('description',''), 'id': key_id })  # id для шаблонов вида <object id="{id}">
+                data | fmt_extra
+            )
             data['OID'] = key_id
 
         except KeyError as e:
@@ -471,6 +565,7 @@ if __name__ == '__main__':
             wan_edge_layout_cache['positions'].update(_dmz_layout.get('positions', {}))
             wan_edge_layout_cache['segment_size'].update(_dmz_layout.get('segment_size', {}))
             wan_edge_layout_cache['segment_origin'].update(_dmz_layout.get('segment_origin', {}))
+            wan_edge_layout_cache['cross_segment_firewall_oids'] = _dmz_layout.get('cross_segment_firewall_oids') or frozenset()
             print(f"\n> Формирую диаграмму страницы \033[32m{page_name}\033[0m ", end='')
             for k, object_pattern in d.read_yaml_file(patterns_dir + file_name + '.yaml').items():
                 print('.', end='')
@@ -513,6 +608,11 @@ if __name__ == '__main__':
 
                 if bool(re.match(r'^logical_links(_\d+)*', k)):
                     add_links(object_pattern, logical_link=True)  # Связывание объектов на текущей диаграмме
+
+            reorder_inet_ext_wan_edge_before_dmz_swimlane(diagram, page_name)
+            bring_cross_segment_firewalls_to_front(
+                diagram, page_name, wan_edge_layout_cache.get('cross_segment_firewall_oids') or frozenset(),
+            )
 
     print('\n')
     # Verifying drawn links & objects ...

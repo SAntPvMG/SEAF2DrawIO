@@ -1,21 +1,33 @@
 """
-Общая раскладка LAN / router / fpsu / vpn / switch слева, firewall справа внутри зоны сегмента.
+Общая раскладка LAN / router / fpsu / vpn / switch: полосы LAN и колонки устройств.
+При нескольких LAN у одного файрвола: LAN со 2-й связи и далее — отдельные строки, полоски «справа».
+Сам файрвол — по горизонтали между полосками LAN1 и LAN2, по вертикали в строке 1-й сети в network_connection
+(центрирование по полоске первой LAN). Несколько FW в одном зазоре между теми же LAN — отдельные ряды без наложения.
+Одна LAN у FW — без изменений.
 Используется для WAN-edge и DMZ (и других наборов зон по OID из данных).
 """
 from __future__ import annotations
 
 import os
 import re
-from typing import Any, AbstractSet, Dict, List, Optional, Tuple
+from collections import defaultdict
+from typing import Any, AbstractSet, Dict, List, Optional, Set, Tuple
 
+from auto_layout.layout_pattern_modes import patterns_yaml_uses_interior_layout
 from auto_layout.layout_cache import (
     data_sources_fingerprint,
     get_intrinsic_cached,
     set_intrinsic_cached,
 )
 
-# Единый зазор между колонками/рядами и от краёв контейнера сегмента (px)
+# Зазор между соседними сегментами на странице (сетка office/dmz), не поля внутри сегмента
 SEGMENT_GAP = 10
+
+# Внутренние поля контента внутри прямоугольника зоны network_segments (px)
+INT_SEGMENT_GAP_TOP = 60
+INT_SEGMENT_GAP_BOTTOM = 30
+INT_SEGMENT_GAP_LEFT = 30
+INT_SEGMENT_GAP_RIGHT = 30
 
 # Общий сдвиг блока LAN/устройств внутри сегмента вниз (px)
 LAN_BAND_VERTICAL_OFFSET = 60
@@ -29,8 +41,17 @@ _LAN_MIN_BAR_LEN = 88  # не короче паттерна по умолчан�
 # Толщина полосы LAN ≈ размер шрифта подписи в шаблоне drawio (~9–10px)
 _LAN_BAR_THICKNESS_PX = 11
 
-# Узкий столбец слева от DMZ/WAN: не расширять ширину за шаблон (иначе наезжает на соседние зоны)
-NARROW_STRIP_ZONES = frozenset({'INET-EDGE', 'EXT-WAN-EDGE'})
+# При нехватке ширины контент не масштабируем — расширяем segment_size.w (все зоны).
+
+
+def _intrinsic_row_right_edge_px(spec: Dict[str, Any]) -> float:
+    """Правый край строки: после колонки «LAN + справа устройства» при стандартной позиции полосы."""
+    lw = float(spec['left_w'])
+    ph = float(spec['ph'])
+    rw = float(spec['right_w'])
+    x_lan = float(INT_SEGMENT_GAP_LEFT + (lw + SEGMENT_GAP if lw else 0))
+    x_right = x_lan + ph + (SEGMENT_GAP if rw else 0)
+    return float(x_right + rw)
 
 
 def location_on_page(location: Any, page_roots: List[str]) -> bool:
@@ -153,8 +174,112 @@ def linked_lan_oid_firewall_column(
     networks: Dict[str, Any],
     segment_oid: str,
 ) -> Optional[str]:
-    """Firewall справа от LAN: та же первая LAN в порядке network_connection для этого сегмента."""
+    """Первая LAN в порядке network_connection (для связей данных)."""
     return _first_lan_oid_for_segment_in_connection_order(comp, networks, segment_oid)
+
+
+def linked_lan_oid_firewall_row_for_layout(
+    comp: Dict[str, Any],
+    networks: Dict[str, Any],
+    segment_oid: str,
+) -> Optional[str]:
+    """
+    LAN, в правой колонке которой располагается FW (ровно один LAN у файрвола).
+    Если у FW несколько LAN, запись в right_by_lan не делают — объект ставят между LAN1 и LAN2.
+    """
+    all_lans = all_segment_lan_oids_ordered(comp, networks, segment_oid)
+    return all_lans[0] if all_lans else None
+
+
+def all_segment_lan_oids_ordered(
+    comp: Dict[str, Any],
+    networks: Dict[str, Any],
+    segment_oid: str,
+) -> List[str]:
+    """Все сети type=LAN из network_connection для текущего сегмента, в порядке списка."""
+    raw = comp.get('network_connection')
+    if raw is None:
+        return []
+    out: List[str] = []
+    conns = raw if isinstance(raw, list) else [raw]
+    for nid in conns:
+        if not nid:
+            continue
+        nd = networks.get(nid)
+        if not isinstance(nd, dict) or nd.get('type') != 'LAN':
+            continue
+        seg = nd.get('segment')
+        if seg == segment_oid or (isinstance(seg, list) and segment_oid in seg):
+            out.append(nid)
+    return out
+
+
+def primary_network_segment_oid(nd: Dict[str, Any]) -> Optional[str]:
+    """Первый OID сегмента для сети (учёт segment как str или list)."""
+    if not nd:
+        return None
+    sg = nd.get('segment')
+    if isinstance(sg, list):
+        return sg[0] if sg else None
+    return sg if sg else None
+
+
+def all_connection_lan_oids_ordered(
+    comp: Dict[str, Any],
+    networks: Dict[str, Any],
+) -> List[str]:
+    """Все сети type=LAN из network_connection в порядке списка (без фильтра по сегменту компонента)."""
+    raw = comp.get('network_connection')
+    if raw is None:
+        return []
+    out: List[str] = []
+    conns = raw if isinstance(raw, list) else [raw]
+    for nid in conns:
+        if not nid:
+            continue
+        nd = networks.get(nid)
+        if not isinstance(nd, dict) or nd.get('type') != 'LAN':
+            continue
+        out.append(nid)
+    return out
+
+
+def merge_lans_row_priority(
+    lans_sorted: List[str],
+    segment_oid: str,
+    components: Dict[str, Dict[str, Any]],
+    networks: Dict[str, Any],
+    specs: Dict[str, Dict[str, Any]],
+    page_roots: List[str],
+    fpsu_pat_local: Dict[str, Any],
+) -> List[str]:
+    """Поднимает связанные через multi-LAN FW сети в порядке network_connection; остальные — после них, по порядку lans_sorted."""
+    valid = frozenset(lans_sorted)
+    chains: List[List[str]] = []
+    for cdata in components.values():
+        if not isinstance(cdata, dict) or cdata.get('segment') != segment_oid:
+            continue
+        if not location_on_page(cdata.get('location'), page_roots):
+            continue
+        if classify_band_component(cdata, specs) != 'right':
+            continue
+        if cdata.get('type') != 'Межсетевой экран (файрвол)':
+            continue
+        if _match_any_field(cdata, fpsu_pat_local.get('any_field_regex') or {}):
+            continue
+        als = all_connection_lan_oids_ordered(cdata, networks)
+        if len(als) >= 2:
+            chains.append(als)
+
+    merged: List[str] = []
+    for ch in chains:
+        for oid in ch:
+            if oid in valid and oid not in merged:
+                merged.append(oid)
+    for oid in lans_sorted:
+        if oid not in merged:
+            merged.append(oid)
+    return merged
 
 
 def lan_bar_dimensions_for_network(nd: Dict[str, Any], lan_pat: Dict[str, Any]) -> Tuple[int, int]:
@@ -177,36 +302,37 @@ def _finalize_segment_vertical(
     out_positions: Dict[str, Dict[str, int]],
     oids: List[str],
     template_base_h: int,
-    gap: int,
+    gap_top: int,
+    gap_bottom: int,
 ) -> int:
     """
-    Верх не ниже gap; при необходимости увеличивает «внутреннюю» высоту над шаблоном;
-    центрирует блок по вертикали, если он помещается в развёрнутый прямоугольник.
-    Возвращает высоту содержимого с нижним полем (для segment_size.h).
+    Верх не ниже gap_top; низ с полем gap_bottom под нижнюю границу шаблона;
+    центрирует блок по вертикали между полями, если помещается в развёрнутый прямоугольник.
+    Возвращает высоту сегмента (нижняя граница содержимого + gap_bottom).
     """
     if not oids:
         return template_base_h
     ymin = min(out_positions[o]['y'] for o in oids)
     ymax = max(out_positions[o]['y'] + out_positions[o]['h'] for o in oids)
-    if ymin < gap:
-        d = gap - ymin
+    if ymin < gap_top:
+        d = gap_top - ymin
         for o in oids:
             out_positions[o]['y'] += int(d)
         ymax += int(d)
-        ymin = gap
+        ymin = gap_top
 
-    min_layout_h = ymax + gap
+    min_layout_h = ymax + gap_bottom
     layout_h = max(template_base_h, min_layout_h)
-    inner = layout_h - 2 * gap
+    inner = layout_h - gap_top - gap_bottom
     block_h = ymax - ymin
-    if block_h <= inner:
-        dy = gap + (inner - block_h) // 2 - ymin
+    if block_h <= inner and inner > 0:
+        dy = gap_top + (inner - block_h) // 2 - ymin
         di = int(dy)
         for o in oids:
             out_positions[o]['y'] += di
         ymax = max(out_positions[o]['y'] + out_positions[o]['h'] for o in oids)
 
-    layout_h = max(layout_h, ymax + gap)
+    layout_h = max(layout_h, ymax + gap_bottom)
     return layout_h
 
 
@@ -214,22 +340,217 @@ def _center_segment_horizontal_widen(
     out_positions: Dict[str, Dict[str, int]],
     oids: List[str],
     template_base_w: int,
-    gap: int,
+    gap_left: int,
+    gap_right: int,
 ) -> None:
     """
-    Центрирует блок по горизонтали; если шире шаблона — считаем целевую ширину span+2*gap.
+    Центрирует блок по горизонтали; если шире шаблона — целевая ширина span+gap_left+gap_right.
     """
-    if not oids or template_base_w <= 2 * gap:
+    if not oids or template_base_w <= gap_left + gap_right:
         return
     min_x = min(out_positions[o]['x'] for o in oids)
     max_r = max(out_positions[o]['x'] + out_positions[o]['w'] for o in oids)
     span = max_r - min_x
-    inner_tpl = max(1, template_base_w - 2 * gap)
-    base_w_eff = max(template_base_w, span + 2 * gap) if span > inner_tpl else template_base_w
-    inner = base_w_eff - 2 * gap
-    dx = gap + (inner - span) // 2 - min_x
+    inner_tpl = max(1, template_base_w - gap_left - gap_right)
+    base_w_eff = max(template_base_w, span + gap_left + gap_right) if span > inner_tpl else template_base_w
+    inner = base_w_eff - gap_left - gap_right
+    dx = gap_left + (inner - span) // 2 - min_x
     for o in oids:
         out_positions[o]['x'] += int(dx)
+
+
+def connection_lans_span_multiple_segments(lan_oids: List[str], networks: Dict[str, Any]) -> bool:
+    seen = set()
+    for lid in lan_oids:
+        nd = networks.get(lid)
+        if not isinstance(nd, dict):
+            continue
+        so = primary_network_segment_oid(nd)
+        if so is not None:
+            seen.add(so)
+    return len(seen) >= 2
+
+
+# Минимальный вертикальный шаг между пограничными FW, если по одному pri_row_lan они иначе были бы в одной строке (один цикл стека по первой LAN)
+CROSS_FW_STACK_GAP = max(14, SEGMENT_GAP + 4)
+
+
+def apply_cross_segment_firewall_positions(
+    positions: Dict[str, Dict[str, int]],
+    segment_origin: Dict[str, Dict[str, int]],
+    components: Dict[str, Dict[str, Any]],
+    networks: Dict[str, Any],
+    page_roots: List[str],
+    patterns_doc: Dict[str, Any],
+    segment_size: Optional[Dict[str, Dict[str, int]]] = None,
+) -> Set[str]:
+    """
+    После intrinsic и segment_origin: файрволы с LAN в разных сегментах.
+    Горизонтально — на одном периметре с «левым» интерфейсом: для всех FW с одним pri_row_lan (одна и та же крайняя полоска зоны)
+    X задаётся от правого края этой полоски (+ SEGMENT_GAP), а не середина зазора до каждой правой LAN иначе пары вида Inet→Prod и Inet→Test
+    уезжают в разный X как у NGFW-02.
+    Вертикально — полоска первой LAN в network_connection (центрирование по высоте полоски).
+    Несколько пограничных FW от одной и той же первой LAN (разные вторые LAN или дубль пары):
+    общий вертикальный стек по pri_row_lan с зазором CROSS_FW_STACK_GAP, чтобы не стояли в одной строке.
+    Возвращает OID файрволов, для которых обновлены координаты (для вывода поверх в draw.io).
+    """
+    firewall_pat = patterns_doc.get('firewall') or {}
+    fpsu_pat = patterns_doc.get('fpsu') or {}
+    specs = {
+        'router': patterns_doc.get('router') or {},
+        'firewall': firewall_pat,
+        'fpsu': fpsu_pat,
+        'vpn': patterns_doc.get('vpn') or {},
+        'switch': patterns_doc.get('switch') or {},
+    }
+
+    def _dims_fw(cmp: Dict[str, Any]) -> Tuple[int, int]:
+        typ = cmp.get('type') or ''
+        if typ != 'Межсетевой экран (файрвол)':
+            return 20, 40
+        if _match_any_field(cmp, fpsu_pat.get('any_field_regex') or {}):
+            return int(fpsu_pat.get('w', 30)), int(fpsu_pat.get('h', 30))
+        return int(firewall_pat.get('w', 20)), int(firewall_pat.get('h', 40))
+
+    def _global_lan_left_edge(lid: str) -> Optional[float]:
+        nd = networks.get(lid)
+        if not isinstance(nd, dict):
+            return None
+        seg = primary_network_segment_oid(nd)
+        if not seg or seg not in segment_origin or lid not in positions:
+            return None
+        ox = float(segment_origin[seg]['x'])
+        return ox + float(positions[lid]['x'])
+
+    def _global_lan_right_edge(lid: str) -> Optional[float]:
+        nd = networks.get(lid)
+        if not isinstance(nd, dict):
+            return None
+        seg = primary_network_segment_oid(nd)
+        if not seg or seg not in segment_origin or lid not in positions:
+            return None
+        ox = float(segment_origin[seg]['x'])
+        pp = positions[lid]
+        return ox + float(pp['x']) + float(pp['h'])
+
+    # (group_key) -> список записей для стека
+    pending: List[Dict[str, Any]] = []
+    repositioned: Set[str] = set()
+
+    for fw_oid, cdata in components.items():
+        if not isinstance(cdata, dict):
+            continue
+        if not location_on_page(cdata.get('location'), page_roots):
+            continue
+        if cdata.get('type') != 'Межсетевой экран (файрвол)':
+            continue
+        if _match_any_field(cdata, fpsu_pat.get('any_field_regex') or {}):
+            continue
+        if classify_band_component(cdata, specs) != 'right':
+            continue
+        als_all = all_connection_lan_oids_ordered(cdata, networks)
+        if len(als_all) < 2 or not connection_lans_span_multiple_segments(als_all, networks):
+            continue
+        # первая сеть в данных — строка выравнивания по Y (полоска первой LAN)
+        pri_row_lan = als_all[0]
+        la, lb = als_all[0], als_all[1]
+        if la not in positions or lb not in positions:
+            continue
+        el_a = _global_lan_left_edge(la)
+        el_b = _global_lan_left_edge(lb)
+        if el_a is None or el_b is None:
+            continue
+        # географически слева / справа
+        if el_a <= el_b:
+            left_lan, right_lan = la, lb
+        else:
+            left_lan, right_lan = lb, la
+
+        nd_row = networks.get(pri_row_lan)
+        if not isinstance(nd_row, dict):
+            continue
+        seg_row = primary_network_segment_oid(nd_row)
+        if not seg_row or seg_row not in segment_origin or pri_row_lan not in positions:
+            continue
+
+        sg_fw = cdata.get('segment')
+        if sg_fw not in segment_origin:
+            continue
+
+        x_r_left = _global_lan_right_edge(left_lan)
+        x_l_right = _global_lan_left_edge(right_lan)
+        if x_r_left is None or x_l_right is None:
+            continue
+
+        fw_w, fh = _dims_fw(cdata)
+
+        oy_s = float(segment_origin[seg_row]['y'])
+        ps = positions[pri_row_lan]
+        # У полоски LAN: w — вертикальная толщина (ряд по Y), h — горизонтальный размер по X между правым/левым краем
+        cy_top_global = oy_s + float(ps['y']) + (float(ps['w']) - float(fh)) / 2.0
+
+        pending.append({
+            'fw_oid': fw_oid,
+            'cdata': cdata,
+            'col': (left_lan, right_lan),
+            'pri_row_lan': pri_row_lan,
+            'cy_top_global': cy_top_global,
+            'fw_w': fw_w,
+            'fh': fh,
+            'sg_fw': sg_fw,
+        })
+
+    # Вертикальный стек по первой LAN: иначе пара FW (одинаковая «левая» LAN, разные правые) даёт одну Y в разных колонках
+    buckets: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    for p in pending:
+        buckets[p['pri_row_lan']].append(p)
+
+    for _pri, plist in buckets.items():
+        plist.sort(key=lambda z: (z['cy_top_global'], z['fw_oid']))
+        ll0 = plist[0]['col'][0]
+        same_geo_left = all(it['col'][0] == ll0 for it in plist)
+        x_ge_left_strip = _global_lan_right_edge(ll0)
+        prev_bottom: Optional[float] = None
+        for it in plist:
+            cy_top = float(it['cy_top_global'])
+            if prev_bottom is not None:
+                min_top = prev_bottom + float(CROSS_FW_STACK_GAP)
+                cy_top = max(cy_top, min_top)
+            fw_w_i, fh_i = it['fw_w'], it['fh']
+            if same_geo_left and x_ge_left_strip is not None:
+                # Левый край иконки сразу за правым краем общей «левой» полоски (периметр), не середина до правой LAN
+                cx = float(x_ge_left_strip) + float(SEGMENT_GAP)
+            else:
+                ll, rl = it['col']
+                x_r_left = _global_lan_right_edge(ll)
+                x_l_right = _global_lan_left_edge(rl)
+                if x_r_left is not None and x_l_right is not None and x_l_right > x_r_left + 1:
+                    cx = (x_r_left + x_l_right) / 2.0 - float(fw_w_i) / 2.0
+                else:
+                    cx = (x_r_left or 0) + float(SEGMENT_GAP)
+
+            prev_bottom = cy_top + float(fh_i)
+            sg_fw = it['sg_fw']
+            o_fw = segment_origin[sg_fw]
+            positions[it['fw_oid']] = {
+                'x': int(cx - float(o_fw['x'])),
+                'y': int(cy_top - float(o_fw['y'])),
+                'w': int(fw_w_i),
+                'h': int(fh_i),
+            }
+            repositioned.add(it['fw_oid'])
+
+    if segment_size:
+        for p in pending:
+            sg = p['sg_fw']
+            oid = p['fw_oid']
+            if sg not in segment_size or oid not in positions:
+                continue
+            pos = positions[oid]
+            need_h = int(pos['y']) + int(pos['h']) + int(INT_SEGMENT_GAP_BOTTOM)
+            segment_size[sg]['h'] = max(int(segment_size[sg].get('h', 0)), need_h)
+
+    return repositioned
 
 
 WIDE_CENTER_ZONES = frozenset({'INT-NET'})
@@ -259,9 +580,13 @@ def compute_intrinsic_band_layout(
         tuple(sorted(zones)),
         tuple(page_roots),
         SEGMENT_GAP,
+        INT_SEGMENT_GAP_TOP,
+        INT_SEGMENT_GAP_BOTTOM,
+        INT_SEGMENT_GAP_LEFT,
+        INT_SEGMENT_GAP_RIGHT,
         INET_EXT_VERTICAL_GAP,
         _LAN_BAR_THICKNESS_PX,
-        'v6-lan-dy-after-finalize',
+        'v21-border-fw-perimeter-x',
     )
     cached = get_intrinsic_cached(cache_key)
     if cached is not None:
@@ -322,11 +647,11 @@ def compute_intrinsic_band_layout(
     if not zone_segments:
         return _done()
 
-    is_office_yaml = os.path.basename(patterns_yaml_path).lower() == 'office.yaml'
+    use_uniform_lan_bars = patterns_yaml_uses_interior_layout(patterns_yaml_path)
 
-    office_global_pw: Optional[int] = None
-    office_global_ph: Optional[int] = None
-    if is_office_yaml:
+    uniform_lan_pw: Optional[int] = None
+    uniform_lan_ph: Optional[int] = None
+    if use_uniform_lan_bars:
         gpw, gph = 0, 0
         for _soid, _seg in zone_segments.items():
             _zone = _seg.get('zone') or ''
@@ -347,7 +672,7 @@ def compute_intrinsic_band_layout(
                 gpw = max(gpw, pw_i)
                 gph = max(gph, ph_i)
         if gpw > 0 and gph > 0:
-            office_global_pw, office_global_ph = gpw, gph
+            uniform_lan_pw, uniform_lan_ph = gpw, gph
 
     for seg_oid, seg in zone_segments.items():
         zone = seg.get('zone') or ''
@@ -366,9 +691,13 @@ def compute_intrinsic_band_layout(
             )
         ]
         lans_in_seg.sort(key=lambda x: (networks.get(x) or {}).get('title') or x)
+        lans_ordered = merge_lans_row_priority(
+            list(lans_in_seg), seg_oid, components, networks, specs, page_roots, fpsu_pat,
+        )
 
         left_by_lan: Dict[str, List[str]] = {}
         right_by_lan: Dict[str, List[str]] = {}
+        multi_fw_between: List[Tuple[str, str, str]] = []
 
         for cid, cdata in components.items():
             if not isinstance(cdata, dict):
@@ -381,7 +710,24 @@ def compute_intrinsic_band_layout(
             if side is None:
                 continue
             if side == 'right':
-                lan_oid = linked_lan_oid_firewall_column(cdata, networks, seg_oid)
+                als_here = all_segment_lan_oids_ordered(cdata, networks, seg_oid)
+                als_all = all_connection_lan_oids_ordered(cdata, networks)
+                not_fpsu = (
+                    (cdata.get('type') == 'Межсетевой экран (файрвол)')
+                    and not _match_any_field(cdata, fpsu_pat.get('any_field_regex') or {})
+                )
+                cross_seg_fw = (
+                    not_fpsu
+                    and len(als_all) >= 2
+                    and connection_lans_span_multiple_segments(als_all, networks)
+                )
+                interior_fw_multi = not_fpsu and len(als_here) >= 2 and not cross_seg_fw
+                if interior_fw_multi:
+                    multi_fw_between.append((cid, als_here[0], als_here[1]))
+                    continue
+                if cross_seg_fw:
+                    continue
+                lan_oid = linked_lan_oid_firewall_row_for_layout(cdata, networks, seg_oid)
             else:
                 lan_oid = linked_lan_oid(cdata, networks, seg_oid)
             if not lan_oid:
@@ -393,7 +739,31 @@ def compute_intrinsic_band_layout(
             else:
                 right_by_lan.setdefault(lan_oid, []).append(cid)
 
-        max_content_right = SEGMENT_GAP
+        # Несколько LAN у FW: 2-я и далее — полоска справа (якорь: 2-я → строка 1; 3-я+ → строка 2)
+        fw_strip_anchor_lan: Dict[str, str] = {}
+        for cid, cdata in components.items():
+            if not isinstance(cdata, dict):
+                continue
+            if cdata.get('segment') != seg_oid:
+                continue
+            if not location_on_page(cdata.get('location'), page_roots):
+                continue
+            if classify_band_component(cdata, specs) != 'right':
+                continue
+            if cdata.get('type') != 'Межсетевой экран (файрвол)':
+                continue
+            if _match_any_field(cdata, fpsu_pat.get('any_field_regex') or {}):
+                continue
+            als_all = all_connection_lan_oids_ordered(cdata, networks)
+            if len(als_all) < 2:
+                continue
+            sec0 = als_all[1]
+            for k, ex in enumerate(als_all[1:], start=1):
+                if ex not in lans_in_seg:
+                    continue
+                fw_strip_anchor_lan[ex] = als_all[0] if k == 1 else sec0
+
+        max_content_right = INT_SEGMENT_GAP_LEFT
         oids_this_seg: List[str] = []
 
         def dims_for(oid: str) -> Tuple[int, int]:
@@ -416,7 +786,7 @@ def compute_intrinsic_band_layout(
             continue
 
         row_specs: List[Dict[str, Any]] = []
-        for lan_oid in lans_in_seg:
+        for lan_oid in lans_ordered:
             nd = networks.get(lan_oid) or {}
             pw, ph = lan_bar_dimensions_for_network(nd, lan_pat)
             left_ids = left_by_lan.get(lan_oid, [])
@@ -450,18 +820,21 @@ def compute_intrinsic_band_layout(
                 'left_stack_h': left_stack_h,
                 'right_stack_h': right_stack_h,
                 'row_h': row_h,
+                'fw_strip_anchor_lan': fw_strip_anchor_lan.get(lan_oid),
             })
 
-        # Один формат полос LAN на всей странице office (глобальный max pw/ph по всем сегментам)
-        if is_office_yaml and row_specs and office_global_pw is not None and office_global_ph is not None:
-            u_pw, u_ph = office_global_pw, office_global_ph
+        # Один формат полос LAN на странице (office / dc: общий max pw/ph по сегментам)
+        if use_uniform_lan_bars and row_specs and uniform_lan_pw is not None and uniform_lan_ph is not None:
+            u_pw, u_ph = uniform_lan_pw, uniform_lan_ph
             for s in row_specs:
                 s['ph'] = u_ph
                 s['pw'] = u_pw
                 s['row_h'] = max(u_ph, s['left_stack_h'], s['right_stack_h'])
 
+        spec_by_lan: Dict[str, Dict[str, Any]] = {s['lan_oid']: s for s in row_specs}
+
         n_rows = len(row_specs)
-        inner_avail_h = max(1, base_h - 2 * SEGMENT_GAP)
+        inner_avail_h = max(1, base_h - INT_SEGMENT_GAP_TOP - INT_SEGMENT_GAP_BOTTOM)
         sum_row_h = sum(s['row_h'] for s in row_specs)
         gap_budget = inner_avail_h - sum_row_h
         if n_rows >= 1 and gap_budget >= 0:
@@ -469,10 +842,13 @@ def compute_intrinsic_band_layout(
         else:
             gap_uniform = float(SEGMENT_GAP)
 
-        cur_y = SEGMENT_GAP + gap_uniform
+        row_y_start: Dict[str, float] = {}
+
+        cur_y = INT_SEGMENT_GAP_TOP + gap_uniform
 
         for spec in row_specs:
             lan_oid = spec['lan_oid']
+            row_y_start[lan_oid] = cur_y
             pw = spec['pw']
             ph = spec['ph']
             left_w = spec['left_w']
@@ -483,7 +859,13 @@ def compute_intrinsic_band_layout(
             right_stack_h = spec['right_stack_h']
             row_h = spec['row_h']
 
-            x_lan = SEGMENT_GAP + (left_w + SEGMENT_GAP if left_w else 0)
+            x_lan_base = INT_SEGMENT_GAP_LEFT + (left_w + SEGMENT_GAP if left_w else 0)
+            anchor_row = spec.get('fw_strip_anchor_lan')
+            if anchor_row and anchor_row in spec_by_lan:
+                x_strip = _intrinsic_row_right_edge_px(spec_by_lan[anchor_row]) + SEGMENT_GAP
+                x_lan = max(x_lan_base, x_strip)
+            else:
+                x_lan = x_lan_base
             x_right = x_lan + ph + (SEGMENT_GAP if right_w else 0)
 
             y_lan = cur_y + (row_h - ph) / 2
@@ -499,7 +881,7 @@ def compute_intrinsic_band_layout(
             yy = y_left0
             for oid, (w, h) in left_boxes:
                 out_positions[oid] = {
-                    'x': int(SEGMENT_GAP + max(0, (left_w - w) / 2)),
+                    'x': int(INT_SEGMENT_GAP_LEFT + max(0, (left_w - w) / 2)),
                     'y': int(yy),
                     'w': int(w),
                     'h': int(h),
@@ -519,30 +901,53 @@ def compute_intrinsic_band_layout(
                 oids_this_seg.append(oid)
                 yr += h + SEGMENT_GAP
 
-            inner_right = x_right + right_w
-            max_content_right = max(max_content_right, inner_right)
+            row_right_edge = x_right + right_w
+            max_content_right = max(max_content_right, row_right_edge)
+
             cur_y += row_h + gap_uniform
 
-        content_width = max(0, max_content_right - SEGMENT_GAP)
-        inner_avail_w = max(1, base_w - 2 * SEGMENT_GAP)
+        # Multi-LAN файрвол: по X между полосками LAN1 и LAN2; по Y — в строке второй LAN (ряд со 2-й сетью)
+        for fw_oid, prim, sec in multi_fw_between:
+            if prim not in out_positions or sec not in out_positions:
+                continue
+            if prim not in row_y_start or sec not in row_y_start:
+                continue
+            ss = spec_by_lan.get(sec)
+            if ss is None:
+                continue
+            fw_w, fh = dims_for(fw_oid)
+            x_right_lan1 = float(out_positions[prim]['x']) + float(out_positions[prim]['h'])
+            x_left_lan2 = float(out_positions[sec]['x'])
+            if x_left_lan2 > x_right_lan1 + 1:
+                cx = (x_right_lan1 + x_left_lan2) / 2.0 - float(fw_w) / 2.0
+            else:
+                cx = x_right_lan1 + float(SEGMENT_GAP)
+            rh_sec = float(ss['row_h'])
+            cy = float(row_y_start[sec]) + (rh_sec - float(fh)) / 2.0
+            out_positions[fw_oid] = {
+                'x': int(cx),
+                'y': int(cy),
+                'w': int(fw_w),
+                'h': int(fh),
+            }
+            oids_this_seg.append(fw_oid)
+            max_content_right = max(max_content_right, float(cx + fw_w))
 
-        if zone in NARROW_STRIP_ZONES and content_width > inner_avail_w and oids_this_seg:
-            scale = inner_avail_w / float(content_width)
-            for oid in oids_this_seg:
-                p = out_positions[oid]
-                p['x'] = int(SEGMENT_GAP + (p['x'] - SEGMENT_GAP) * scale)
-                p['w'] = max(1, int(p['w'] * scale))
-            max_content_right = SEGMENT_GAP + inner_avail_w
+        # Нехватка места по ширине: расширяем сегмент (total_inner_w ниже), без уменьшения w/x scale
 
         total_inner_h = cur_y
         if oids_this_seg:
             total_inner_h = _finalize_segment_vertical(
-                out_positions, oids_this_seg, base_h, SEGMENT_GAP,
+                out_positions, oids_this_seg, base_h,
+                INT_SEGMENT_GAP_TOP, INT_SEGMENT_GAP_BOTTOM,
             )
 
         if zone in WIDE_CENTER_ZONES and oids_this_seg:
-            _center_segment_horizontal_widen(out_positions, oids_this_seg, base_w, SEGMENT_GAP)
-            max_content_right = SEGMENT_GAP + max(
+            _center_segment_horizontal_widen(
+                out_positions, oids_this_seg, base_w,
+                INT_SEGMENT_GAP_LEFT, INT_SEGMENT_GAP_RIGHT,
+            )
+            max_content_right = max(
                 out_positions[o]['x'] + out_positions[o]['w'] for o in oids_this_seg
             )
 
@@ -553,12 +958,9 @@ def compute_intrinsic_band_layout(
             ymax_off = max(
                 out_positions[o]['y'] + out_positions[o]['h'] for o in oids_this_seg
             )
-            total_inner_h = max(total_inner_h, ymax_off + SEGMENT_GAP)
+            total_inner_h = max(total_inner_h, ymax_off + INT_SEGMENT_GAP_BOTTOM)
 
-        if zone in NARROW_STRIP_ZONES:
-            total_inner_w = base_w
-        else:
-            total_inner_w = max(base_w, max_content_right + SEGMENT_GAP)
+        total_inner_w = max(base_w, max_content_right + INT_SEGMENT_GAP_RIGHT)
 
         out_segment_size[seg_oid] = {
             'w': total_inner_w,
