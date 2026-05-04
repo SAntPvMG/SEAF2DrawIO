@@ -136,7 +136,19 @@ def dmz_segments_layout(
             dmz_w_eff = max(dmz_w_eff, int(segment_size.get(oid, {}).get('w', dmz_dw)))
             dmz_h_eff = max(dmz_h_eff, effective_segment_height(oid, int(dmz_dh), wan_layout_cache))
 
-        int_net_x = dmz_x + dmz_w_eff + SEGMENT_GAP
+        _, _, wan_w_t, _wan_h_t = wan_edge_tpl
+        # Одна вертикальная колонка с DMZ: ширина INT-WAN-EDGE = ширине DMZ, чтобы правый край совпадал
+        # и горизонтальный зазор до INT-NET был ровно SEGMENT_GAP (как между DMZ и INT-NET).
+        if int_wan_oid:
+            segment_size.setdefault(int_wan_oid, {})['w'] = int(dmz_w_eff)
+            wan_w_eff = int(dmz_w_eff)
+        else:
+            wan_w_eff = int(wan_w_t)
+
+        int_net_x = max(
+            dmz_x + dmz_w_eff + SEGMENT_GAP,
+            dmz_x + int(wan_w_eff) + SEGMENT_GAP,
+        )
         int_net_y = access_top
 
         _, _, inw_net_t, inh_net_t = int_net_tpl

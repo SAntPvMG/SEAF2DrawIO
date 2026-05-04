@@ -5,6 +5,7 @@ import re
 import os
 import argparse
 from copy import deepcopy
+import textwrap
 from lib import seaf_drawio
 from lib.link_manager import remove_obsolete_links, draw_verify, advanced_analysis
 from auto_layout.edge_segments_layout import (
@@ -12,6 +13,8 @@ from auto_layout.edge_segments_layout import (
     resolve_page_location_roots,
 )
 from auto_layout.dmz_segments_layout import dmz_segments_layout as compute_dmz_layout
+from auto_layout.segment_intrinsic_layout import align_int_net_security_bottom_to_int_wan_edge
+from auto_layout.kb_layout import kb_layout
 import xml.etree.ElementTree as ET
 
 patterns_dir = 'data/patterns/'
@@ -200,6 +203,279 @@ def reorder_inet_ext_wan_edge_before_dmz_swimlane(diagram, page_name: str) -> No
         return
     for offset, e in enumerate(edge_objs):
         root.insert(dmz_idx + offset, e)
+
+
+_SEGMENT_PARENT_CELL_ID = '001'
+_SWIMLANE_GROUP_CELL_ID = '001'
+_LABEL_TO_SEGMENT_PAD = 5
+_LABEL_STENCIL_MARK = 'vsdxID=13090'
+
+# Оценка подписи ярлыка (Calibri в шаблоне dc_label/office_label: заголовок 16.93px, текст 11.29px, line-height 120%)
+_TITLE_FONT_PX = 16.93
+_BODY_FONT_PX = 11.29
+_LABEL_LINE_HEIGHT_MULT = 1.2
+_LABEL_PAD_X = 18
+_LABEL_PAD_Y = 14
+_LABEL_GAP_ABOVE_SEGMENTS = 10
+_LABEL_SHIFT_DOWN_PX = 30
+
+
+def _label_char_px(font_px: float) -> float:
+    return max(5.0, font_px * 0.52)
+
+
+def _label_chars_per_line(max_inner_px: float, font_px: float) -> int:
+    return max(10, int(max_inner_px / _label_char_px(font_px)))
+
+
+def _label_wrap_lines(text: str, max_inner_px: float, font_px: float) -> list[str]:
+    if not (text or '').strip():
+        return []
+    cpl = _label_chars_per_line(max_inner_px, font_px)
+    lines: list[str] = []
+    for para in text.replace('\r\n', '\n').replace('\r', '\n').split('\n'):
+        para = para.strip()
+        if not para:
+            lines.append('')
+            continue
+        wrapped = textwrap.wrap(para, width=cpl, break_long_words=True, replace_whitespace=False)
+        lines.extend(wrapped if wrapped else [''])
+    return lines
+
+
+def _location_label_text_box_px(attribs: dict, file_name: str, inner_max_px: float) -> tuple[float, float]:
+    """Приблизительная ширина/высота блока текста ярлыка (без растягивания на весь swimlane)."""
+    title = (attribs.get('title') or '').strip()
+    if file_name == 'dc':
+        body = (attribs.get('description') or '').strip()
+    else:
+        body = (attribs.get('address') or '').strip()
+
+    inner_max_px = max(60.0, float(inner_max_px))
+
+    title_lines = _label_wrap_lines(title, inner_max_px, _TITLE_FONT_PX) if title else []
+    body_lines = _label_wrap_lines(body, inner_max_px, _BODY_FONT_PX) if body else []
+
+    tw = 0.0
+    for ln in title_lines:
+        tw = max(tw, len(ln) * _label_char_px(_TITLE_FONT_PX))
+    for ln in body_lines:
+        tw = max(tw, len(ln) * _label_char_px(_BODY_FONT_PX))
+
+    line_h_title = _TITLE_FONT_PX * _LABEL_LINE_HEIGHT_MULT
+    line_h_body = _BODY_FONT_PX * _LABEL_LINE_HEIGHT_MULT
+    th = len(title_lines) * line_h_title + len(body_lines) * line_h_body
+    if title_lines and body_lines:
+        th += max(4.0, _BODY_FONT_PX * 0.35)
+
+    if not title_lines and not body_lines:
+        return float(_LABEL_PAD_X * 2), float(_LABEL_PAD_Y * 2)
+
+    w_px = tw + _LABEL_PAD_X * 2
+    h_px = th + _LABEL_PAD_Y * 2
+    return w_px, h_px
+
+
+def _mx_cell_geometry_bounds(mx_cell):
+    geom = mx_cell.find('mxGeometry')
+    if geom is None:
+        return None
+    if (geom.get('relative') or '').strip() == '1':
+        return None
+    try:
+        x = float(geom.get('x') or 0)
+        y = float(geom.get('y') or 0)
+        w = float(geom.get('width') or 0)
+        h = float(geom.get('height') or 0)
+    except (TypeError, ValueError):
+        return None
+    if w <= 0 or h <= 0:
+        return None
+    return x, y, x + w, y + h
+
+
+def _is_segment_zone_swimlane_mx_cell(mx_cell):
+    """Контейнер зоны под группой ЦОД/офиса: parent=001, container=1, не ярлык vsdxID=13090."""
+    if mx_cell.get('parent') != _SEGMENT_PARENT_CELL_ID:
+        return False
+    if mx_cell.get('vertex') != '1':
+        return False
+    if mx_cell.get('edge') == '1':
+        return False
+    style = mx_cell.get('style') or ''
+    if 'container=1' not in style:
+        return False
+    if _LABEL_STENCIL_MARK in style:
+        return False
+    return True
+
+
+def _translate_mx_geometry_by(mx_geom, ddx: float, ddy: float):
+    try:
+        x = float(mx_geom.get('x') or 0)
+        y = float(mx_geom.get('y') or 0)
+    except (TypeError, ValueError):
+        return
+    mx_geom.set('x', str(int(round(x - ddx))))
+    mx_geom.set('y', str(int(round(y - ddy))))
+
+
+def _find_swimlane_group_mx_cell(root):
+    for ch in root:
+        if ch.tag == 'mxCell' and ch.get('id') == _SWIMLANE_GROUP_CELL_ID:
+            return ch
+    return None
+
+
+def _location_label_ids_for_page(diagram, sd, conf, page_name, label_schema, diagram_ids_map):
+    """
+    OID ярлыка ЦОД/офиса на странице: пересечение с diagram_ids, иначе по title через main.yaml (ext_page),
+    иначе по object[@schema] на самой диаграмме.
+    """
+    location_keys = set(sd.get_object(conf['data_yaml_file'], label_schema).keys())
+    page_ids = set(diagram_ids_map.get(page_name) or [])
+    ids = location_keys & page_ids
+    if ids:
+        return ids
+    roots_main = resolve_page_location_roots(sd, conf, page_name, patterns_dir + 'main.yaml')
+    ids = location_keys & set(roots_main)
+    if ids:
+        return ids
+    diagram.go_to_diagram(diagram_name=page_name)
+    root = diagram.current_root
+    found = set()
+    for child in root:
+        if child.tag != 'object':
+            continue
+        if (child.get('schema') or '') != label_schema:
+            continue
+        oid = child.get('id')
+        if oid:
+            found.add(oid)
+    return found
+
+
+def resize_location_label_to_cover_segments(diagram, page_name, file_name, diagram_ids_map, conf, sd):
+    """
+    После раскладки сегментов:
+    — bbox по контейнерам зон (mxCell parent «001», style container=1), без ярлыка vsdxID=13090;
+    — сдвиг вершин с parent «001» (кроме ярлыка), подгонка mxCell id «001» под контент + отступ;
+    — ярлык ЦОД/офиса: размеры по оценке текста (title + description/address), без совпадения с bbox сегментов;
+      позиция над верхом зон; атрибут label (HTML) не меняется.
+    """
+    if file_name not in ('dc', 'office'):
+        return
+    patterns_doc = sd.read_yaml_file(patterns_dir + file_name + '.yaml')
+    label_pat = patterns_doc.get('dc_label') if file_name == 'dc' else patterns_doc.get('office_label')
+    if not isinstance(label_pat, dict) or not label_pat.get('schema'):
+        return
+    label_schema = label_pat['schema']
+
+    diagram.go_to_diagram(diagram_name=page_name)
+    root = diagram.current_root
+
+    label_ids = _location_label_ids_for_page(diagram, sd, conf, page_name, label_schema, diagram_ids_map)
+    if not label_ids:
+        return
+
+    pad = _LABEL_TO_SEGMENT_PAD
+    min_x = min_y = float('inf')
+    max_x = max_y = float('-inf')
+    seen = False
+
+    for top in root:
+        if top.tag != 'object':
+            continue
+        oid = top.get('id') or ''
+        if oid in label_ids:
+            continue
+        for cell in top.iter('mxCell'):
+            if not _is_segment_zone_swimlane_mx_cell(cell):
+                continue
+            bounds = _mx_cell_geometry_bounds(cell)
+            if bounds is None:
+                continue
+            lx, ly, rx, ry = bounds
+            min_x = min(min_x, lx)
+            min_y = min(min_y, ly)
+            max_x = max(max_x, rx)
+            max_y = max(max_y, ry)
+            seen = True
+
+    if not seen:
+        return
+
+    ddx = min_x - pad
+    ddy = min_y - pad
+    cw = max(max_x - min_x + 2 * pad, 1)
+    ch = max(max_y - min_y + 2 * pad, 1)
+
+    for top in root:
+        if top.tag == 'object' and (top.get('id') or '') in label_ids:
+            continue
+        for cell in top.iter('mxCell'):
+            if cell.get('parent') != _SEGMENT_PARENT_CELL_ID:
+                continue
+            if cell.get('vertex') != '1' or cell.get('edge') == '1':
+                continue
+            geom = cell.find('mxGeometry')
+            if geom is None:
+                continue
+            _translate_mx_geometry_by(geom, ddx, ddy)
+
+    for mx_ch in root:
+        if mx_ch.tag != 'mxCell':
+            continue
+        if mx_ch.get('parent') != _SEGMENT_PARENT_CELL_ID:
+            continue
+        if mx_ch.get('vertex') != '1' or mx_ch.get('edge') == '1':
+            continue
+        geom = mx_ch.find('mxGeometry')
+        if geom is None:
+            continue
+        _translate_mx_geometry_by(geom, ddx, ddy)
+
+    group_el = _find_swimlane_group_mx_cell(root)
+    if group_el is not None:
+        ggeom = group_el.find('mxGeometry')
+        if ggeom is not None:
+            try:
+                gx = float(ggeom.get('x') or 0)
+                gy = float(ggeom.get('y') or 0)
+            except (TypeError, ValueError):
+                gx, gy = 0.0, 0.0
+            ggeom.set('x', str(int(round(gx + ddx))))
+            ggeom.set('y', str(int(round(gy + ddy))))
+            ggeom.set('width', str(int(round(cw))))
+            ggeom.set('height', str(int(round(ch))))
+
+    max_label_outer_w = max(int(label_pat.get('w', 120)), int(cw) - 2 * pad)
+    inner_max = max(60.0, float(max_label_outer_w - _LABEL_PAD_X * 2))
+    min_lw = int(label_pat.get('w', 120))
+    min_lh = int(label_pat.get('h', 48))
+
+    for child in root:
+        if child.tag != 'object' or child.get('id') not in label_ids:
+            continue
+        tw_px, th_px = _location_label_text_box_px(dict(child.attrib), file_name, inner_max)
+        lw = max(min_lw, int(round(tw_px)))
+        lw = min(lw, max_label_outer_w)
+        lh = max(min_lh, int(round(th_px)))
+
+        lx = pad
+        ly = int(round(pad - lh - _LABEL_GAP_ABOVE_SEGMENTS + _LABEL_SHIFT_DOWN_PX))
+
+        for cell in child.iter('mxCell'):
+            if cell.get('parent') != _SEGMENT_PARENT_CELL_ID:
+                continue
+            geom = cell.find('mxGeometry')
+            if geom is None:
+                continue
+            geom.set('x', str(lx))
+            geom.set('y', str(ly))
+            geom.set('width', str(lw))
+            geom.set('height', str(lh))
+            break
 
 
 def get_parent_value(pattern, current_parent):
@@ -566,6 +842,14 @@ if __name__ == '__main__':
             wan_edge_layout_cache['segment_size'].update(_dmz_layout.get('segment_size', {}))
             wan_edge_layout_cache['segment_origin'].update(_dmz_layout.get('segment_origin', {}))
             wan_edge_layout_cache['cross_segment_firewall_oids'] = _dmz_layout.get('cross_segment_firewall_oids') or frozenset()
+            align_int_net_security_bottom_to_int_wan_edge(
+                d,
+                conf,
+                _roots,
+                _py,
+                wan_edge_layout_cache['segment_size'],
+                wan_edge_layout_cache.get('segment_origin'),
+            )
             print(f"\n> Формирую диаграмму страницы \033[32m{page_name}\033[0m ", end='')
             for k, object_pattern in d.read_yaml_file(patterns_dir + file_name + '.yaml').items():
                 print('.', end='')
@@ -613,6 +897,11 @@ if __name__ == '__main__':
             bring_cross_segment_firewalls_to_front(
                 diagram, page_name, wan_edge_layout_cache.get('cross_segment_firewall_oids') or frozenset(),
             )
+            resize_location_label_to_cover_segments(
+                diagram, page_name, file_name, diagram_ids, conf, d,
+            )
+            if file_name in ('dc', 'office'):
+                kb_layout(diagram, d, conf, page_name, diagram_ids, _py, _roots)
 
     print('\n')
     # Verifying drawn links & objects ...

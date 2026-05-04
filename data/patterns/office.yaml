@@ -99,7 +99,7 @@ segment_dmz:
   deep: 0
   algo: 'none'
 
-# SEGMENT_GAP=30: INT-WAN-EDGE слева от INT-NET (x=635), x = 635 - 30 - 440 = 165.
+# Зазоры между колонками сегментов — SEGMENT_GAP в auto_layout (interior-сетка).
 # Инвариант: нижний край «Внутренняя сеть офиса (ЛВС)» (INT-NET) и INT-SECURITY-NET не ниже низа INT-WAN-EDGE:
 #   y+h ≤ 830+290 = 1120 (= высота группы 001 на странице Office).
 

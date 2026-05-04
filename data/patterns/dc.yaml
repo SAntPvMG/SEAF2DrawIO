@@ -84,8 +84,7 @@ eco_services:
   algo: 'X-'
 
 # ----------------------------------- Сегменты безопасности -----------------------------------------------------------
-# SEGMENT_GAP — горизонтальный зазор между правым краем INT-WAN-EDGE и левым краем INT-NET (x=635):
-#   x(INT-WAN-EDGE) = 635 - SEGMENT_GAP - w(INT-WAN-EDGE). При SEGMENT_GAP=30 и w=440 → x=165.
+# Горизонтальные зазоры между колонками сегментов (DMZ / INT-WAN / INT-NET / …) задаются в коде: SEGMENT_GAP (auto_layout).
 # Инвариант нижних границ (ось Y вниз): нижний край INT-NET и INT-SECURITY-NET не ниже нижнего края INT-WAN-EDGE,
 # т.е. y+h ≤ y(INT-WAN-EDGE)+h(INT-WAN-EDGE). При y=0 для обоих: h(INT-NET|SECURITY) ≤ 1080+310 = 1390 (= высота группы 001).
 

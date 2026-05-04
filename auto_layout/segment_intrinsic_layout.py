@@ -21,7 +21,7 @@ from auto_layout.layout_cache import (
 )
 
 # Зазор между соседними сегментами на странице (сетка office/dmz), не поля внутри сегмента
-SEGMENT_GAP = 10
+SEGMENT_GAP = 5
 
 # Внутренние поля контента внутри прямоугольника зоны network_segments (px)
 INT_SEGMENT_GAP_TOP = 60
@@ -554,6 +554,125 @@ def apply_cross_segment_firewall_positions(
 
 
 WIDE_CENTER_ZONES = frozenset({'INT-NET'})
+
+# Если нижний край INT-NET / INT-SECURITY выше низа INT-WAN-EDGE (сегмент «короче» по вертикали) —
+# расширяем h до совпадения с низом WAN. Если intrinsic уже опустил низ ниже WAN — не трогаем.
+_ALIGN_BOTTOM_REFERENCE_ZONE = 'INT-WAN-EDGE'
+_ALIGN_BOTTOM_ADJUST_ZONES = frozenset({'INT-NET', 'INT-SECURITY-NET'})
+
+
+def _effective_segment_y_and_height(
+    seg_oid: str,
+    zone: str,
+    patterns_doc: Dict[str, Any],
+    segment_size: Dict[str, Dict[str, int]],
+    segment_origin: Dict[str, Dict[str, int]],
+) -> Optional[Tuple[int, int]]:
+    """Как в add_object: y из segment_origin при наличии, иначе из паттерна; h из segment_size при наличии, иначе шаблон."""
+    rect = segment_rect_for_zone(patterns_doc, zone)
+    if not rect:
+        return None
+    _sx, sy, _sw, sh_tpl = rect
+    org = segment_origin.get(seg_oid) or {}
+    y_eff = int(org['y']) if 'y' in org else int(sy)
+    sz = segment_size.get(seg_oid) or {}
+    h_eff = int(sz['h']) if 'h' in sz else int(sh_tpl)
+    return y_eff, h_eff
+
+
+def align_int_net_security_bottom_to_int_wan_edge(
+    sd: Any,
+    conf: Dict[str, Any],
+    page_roots: List[str],
+    patterns_yaml_path: str,
+    segment_size: Dict[str, Dict[str, int]],
+    segment_origin: Optional[Dict[str, Dict[str, int]]] = None,
+) -> None:
+    """
+    После intrinsic + dmz: если низ INT-NET / INT-SECURITY выше низа INT-WAN-EDGE (ось Y вниз),
+    увеличиваем h, чтобы совпасть с низом WAN. Если текущий низ уже не ниже WAN — высоту не уменьшаем.
+
+    Учитывает segment_origin и segment_size так же, как отрисовка (иначе эталон WAN считается неверно).
+    """
+    segment_origin = segment_origin or {}
+    if not page_roots or not patterns_yaml_path:
+        return
+    pat_abs = os.path.abspath(os.path.expanduser(patterns_yaml_path))
+    if not os.path.isfile(pat_abs):
+        return
+
+    patterns_doc = sd.read_yaml_file(pat_abs) or {}
+    if not segment_rect_for_zone(patterns_doc, _ALIGN_BOTTOM_REFERENCE_ZONE):
+        return
+
+    try:
+        merged = sd.read_and_merge_yaml(conf.get('data_yaml_file'))
+        segments = merged.get('seaf.company.ta.services.network_segments') or {}
+    except Exception:
+        return
+
+    def loc_norm(loc: Any) -> Optional[Tuple[Any, ...]]:
+        if loc is None:
+            return None
+        if isinstance(loc, list):
+            return tuple(sorted(loc))
+        return (loc,)
+
+    wan_bottom_by_loc: Dict[Tuple[Any, ...], int] = {}
+    for seg_oid, seg in segments.items():
+        if not isinstance(seg, dict):
+            continue
+        if seg.get('zone') != _ALIGN_BOTTOM_REFERENCE_ZONE:
+            continue
+        if not location_on_page(seg.get('location'), page_roots):
+            continue
+        lk = loc_norm(seg.get('location'))
+        if lk is None:
+            continue
+        yh = _effective_segment_y_and_height(
+            seg_oid, _ALIGN_BOTTOM_REFERENCE_ZONE, patterns_doc, segment_size, segment_origin,
+        )
+        if yh is None:
+            continue
+        wy_wan, eff_hw = yh
+        bot = wy_wan + eff_hw
+        wan_bottom_by_loc[lk] = max(wan_bottom_by_loc.get(lk, 0), bot)
+
+    if not wan_bottom_by_loc:
+        return
+
+    for seg_oid, seg in segments.items():
+        if not isinstance(seg, dict):
+            continue
+        zone = seg.get('zone') or ''
+        if zone not in _ALIGN_BOTTOM_ADJUST_ZONES:
+            continue
+        if not location_on_page(seg.get('location'), page_roots):
+            continue
+        lk = loc_norm(seg.get('location'))
+        if lk is None or lk not in wan_bottom_by_loc:
+            continue
+        wan_bot = wan_bottom_by_loc[lk]
+        rect = segment_rect_for_zone(patterns_doc, zone)
+        if not rect:
+            continue
+        _sx, sy_tpl, sw, sh_tpl = rect
+        org = segment_origin.get(seg_oid) or {}
+        sy = int(org['y']) if 'y' in org else int(sy_tpl)
+        sz = segment_size.get(seg_oid)
+        eff_h = int(sz['h']) if sz and 'h' in sz else int(sh_tpl)
+        bot = sy + eff_h
+        if bot >= wan_bot:
+            continue
+        target_h = int(wan_bot - sy)
+        if target_h < 1:
+            continue
+        if sz is None:
+            segment_size[seg_oid] = {'w': int(sw), 'h': target_h}
+        else:
+            if 'w' not in sz:
+                sz['w'] = int(sw)
+            sz['h'] = target_h
 
 
 def compute_intrinsic_band_layout(
