@@ -1,7 +1,7 @@
 """
 Раскладка сервисов КБ (seaf.company.ta.services.kbs, слой «101»): справа от первого OID
-network_connection в зоне страницы; от верха якоря +30 px; при нескольких КБ на один якорь —
-ряды по 4, интервал 20 px.
+network_connection в зоне страницы; по вертикали −80 px от верха якоря (выше верхней границы);
+при нескольких КБ на один якорь — ряды по 4, интервал 20 px.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ import xml.etree.ElementTree as ET
 KB_LAYER_PARENT = '101'
 KB_SCHEMA = 'seaf.company.ta.services.kbs'
 _GAP_RIGHT = 15
-_ANCHOR_TOP_OFFSET_PX = 30
+_ANCHOR_TOP_OFFSET_PX = -80
 _KB_GAP_PX = 20
 _KB_PER_ROW = 4
 
@@ -194,8 +194,8 @@ def kb_layout(
 ) -> None:
     """
     КБ (слой 101) справа от первого подходящего network_connection на странице (зона ЦОД dc01/dc02).
-    От верхней границы якорной сети +30 px по вертикали; несколько КБ на один якорь — до 4 в ряд,
-    интервал между ними 20 px (между рядами тоже 20 px относительно высоты ряда).
+    По вертикали смещение −80 px от верхней границы якорной сети; несколько КБ на один якорь —
+    до 4 в ряд, интервал 20 px (между рядами тоже 20 px относительно высоты ряда).
     """
     if not patterns_yaml_path.endswith(('office.yaml', 'dc.yaml')):
         return
