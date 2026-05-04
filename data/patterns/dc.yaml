@@ -84,6 +84,10 @@ eco_services:
   algo: 'X-'
 
 # ----------------------------------- Сегменты безопасности -----------------------------------------------------------
+# SEGMENT_GAP — горизонтальный зазор между правым краем INT-WAN-EDGE и левым краем INT-NET (x=635):
+#   x(INT-WAN-EDGE) = 635 - SEGMENT_GAP - w(INT-WAN-EDGE). При SEGMENT_GAP=30 и w=440 → x=165.
+# Инвариант нижних границ (ось Y вниз): нижний край INT-NET и INT-SECURITY-NET не ниже нижнего края INT-WAN-EDGE,
+# т.е. y+h ≤ y(INT-WAN-EDGE)+h(INT-WAN-EDGE). При y=0 для обоих: h(INT-NET|SECURITY) ≤ 1080+310 = 1390 (= высота группы 001).
 
 segment_dmz:
   xml : >
@@ -113,7 +117,7 @@ segment_int_wan-edge:
     schema: 'seaf.company.ta.services.network_segments'
     parent_id: 'location'
     type: "zone:INT-WAN-EDGE"
-    x: 195
+    x: 165
     y: 1080
     w: 440
     h: 310
@@ -134,6 +138,7 @@ segment_int_net:
   x: 635
   y: 0
   w: 750
+  # h не больше низа INT-WAN-EDGE (1080+310) − y; при изменении WAN или группы 001 пересчитать
   h: 1390
   offset: 0
   deep: 0
@@ -152,6 +157,7 @@ segment_int_security_net:
   x: 1385
   y: 0
   w: 436
+  # см. segment_int_net — общий низ с INT-WAN-EDGE
   h: 1390
   offset: 0
   deep: 0

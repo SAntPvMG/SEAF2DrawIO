@@ -99,6 +99,10 @@ segment_dmz:
   deep: 0
   algo: 'none'
 
+# SEGMENT_GAP=30: INT-WAN-EDGE слева от INT-NET (x=635), x = 635 - 30 - 440 = 165.
+# Инвариант: нижний край «Внутренняя сеть офиса (ЛВС)» (INT-NET) и INT-SECURITY-NET не ниже низа INT-WAN-EDGE:
+#   y+h ≤ 830+290 = 1120 (= высота группы 001 на странице Office).
+
 segment_inet_edge:
   xml : >
     <object label="{title}" id="{{id}}">
@@ -127,7 +131,7 @@ segment_int_wan-edge:
     schema: 'seaf.company.ta.services.network_segments'
     parent_id: 'location'
     type: "zone:INT-WAN-EDGE"
-    x: 195
+    x: 165
     y: 830
     w: 440
     h: 290
@@ -166,6 +170,7 @@ segment_int_net:
   x: 635
   y: 0
   w: 750
+  # h ≤ низ INT-WAN-EDGE (830+290) − y; совпадает с height группы 001 (1120)
   h: 1120
   offset: 0
   deep: 0
@@ -184,6 +189,7 @@ segment_int_security_net:
   x: 1085
   y: 0
   w: 300
+  # см. segment_int_net — общий низ с INT-WAN-EDGE
   h: 1120
   offset: 0
   deep: 0
