@@ -234,6 +234,8 @@ YAML данные + data/patterns/*.yaml
 | `docs/lan-overlay-segment-algorithm.md` | Целевой пост-проход dc/office: КБ, ТА, User Devices, LAN, сегменты |
 | `docs/plan-lan-overlay-segment-work.md` | План работ по внедрению этого пост-прохода |
 | `docs/seaf2drawio-implementation-passes.md` | Полный алгоритм по проходам A–J и модулям |
+| `docs/intrinsic-lan-horizontal-bands.md` | История: горизонтальная полоса LAN при count > deep (**устаревает** под вертикальные колонки) |
+| `docs/lan-vertical-columns-layout-spec.md` | Спецификация: вертикальные колонки LAN (`deep+3`, `offset×2`) |
 
 ---
 

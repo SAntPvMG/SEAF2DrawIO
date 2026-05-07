@@ -1,9 +1,16 @@
 """
 Общая раскладка LAN / router / fpsu / vpn / switch: полосы LAN и колонки устройств.
-При нескольких LAN у одного файрвола: LAN со 2-й связи и далее — отдельные строки, полоски «справа».
+Полоски LAN слева направо — порядок записей в объединённом YAML networks (не по алфавиту title).
+При нескольких LAN у одного файрвола: со 2-й связи и далее — отдельные строки, полоски «справа»;
+цепочки таких сетей поднимаются вперёд (merge_lans_row_priority).
 Сам файрвол — по горизонтали между полосками LAN1 и LAN2, по вертикали в строке 1-й сети в network_connection
 (центрирование по полоске первой LAN). Несколько FW в одном зазоре между теми же LAN — отдельные ряды без наложения.
 Одна LAN у FW — без изменений.
+
+Если LAN в сегменте больше паттерна lan.deep (dc/office.yaml): вертикальные колонки по (deep + 3) полосок,
+верх всех колонок на одном уровне; между колонками горизонтальный зазор lan.offset * 2 после правого края колонки;
+между полосками LAN по вертикали в колонке — LAN_COLUMN_VERTICAL_GAP_PX (40 px).
+
 Используется для WAN-edge и DMZ (и других наборов зон по OID из данных).
 """
 from __future__ import annotations
@@ -13,15 +20,30 @@ import re
 from collections import defaultdict
 from typing import Any, AbstractSet, Dict, List, Optional, Set, Tuple
 
+from auto_layout.kb_layout import (
+    _dc_slug_from_location_root,
+    _network_oid_matches_dc_zone,
+    _parse_network_connection,
+)
 from auto_layout.layout_pattern_modes import patterns_yaml_uses_interior_layout
 from auto_layout.layout_cache import (
     data_sources_fingerprint,
     get_intrinsic_cached,
     set_intrinsic_cached,
 )
+from auto_layout.services_ta_layout import (
+    TA_SCHEMAS,
+    _ANCHOR_TOP_OFFSET_PX as TA_ANCHOR_TOP_OFFSET_PX,
+    _GAP_RIGHT as TA_GAP_RIGHT,
+    _GRID_GAP_PX as TA_GRID_GAP_PX,
+    _PER_ROW as TA_PER_ROW,
+)
 
 # Зазор между соседними сегментами на странице (сетка office/dmz), не поля внутри сегмента
 SEGMENT_GAP = 5
+
+# Вертикальный зазор между полосками LAN в колоночном режиме (len(LAN) > lan.deep)
+LAN_COLUMN_VERTICAL_GAP_PX = 40
 
 # Внутренние поля контента внутри прямоугольника зоны network_segments (px)
 INT_SEGMENT_GAP_TOP = 60
@@ -51,7 +73,11 @@ def _intrinsic_row_right_edge_px(spec: Dict[str, Any]) -> float:
     rw = float(spec['right_w'])
     x_lan = float(INT_SEGMENT_GAP_LEFT + (lw + SEGMENT_GAP if lw else 0))
     x_right = x_lan + ph + (SEGMENT_GAP if rw else 0)
-    return float(x_right + rw)
+    edge = float(x_right + rw)
+    tw = int(spec.get('ta_bbox_w') or 0)
+    if tw > 0:
+        edge = max(edge, float(x_right + rw + TA_GAP_RIGHT + tw))
+    return edge
 
 
 def location_on_page(location: Any, page_roots: List[str]) -> bool:
@@ -61,6 +87,86 @@ def location_on_page(location: Any, page_roots: List[str]) -> bool:
         return False
     candidates = location if isinstance(location, list) else [location]
     return any(c in page_roots for c in candidates)
+
+
+def _network_oids_on_page_for_intrinsic(networks: Dict[str, Any], page_roots: List[str]) -> Set[str]:
+    out: Set[str] = set()
+    for nid, nd in networks.items():
+        if isinstance(nd, dict) and location_on_page(nd.get('location'), page_roots):
+            out.add(str(nid))
+    return out
+
+
+def _pick_anchor_network_like_kb(nc_list: List[str], on_page: Set[str], location_root: Optional[str]) -> Optional[str]:
+    slug = _dc_slug_from_location_root(location_root)
+    for nid in nc_list:
+        if nid not in on_page:
+            continue
+        if not _network_oid_matches_dc_zone(nid, slug):
+            continue
+        return nid
+    return None
+
+
+def _ta_service_counts_by_anchor_lan(
+    merged: Dict[str, Any],
+    networks: Dict[str, Any],
+    lans_in_seg: List[str],
+    page_roots: List[str],
+) -> Dict[str, int]:
+    """
+    Сколько сервисов ТА (слой 102, см. services_TA_layout) привязывается к каждой LAN как к якорю.
+    """
+    on_page = _network_oids_on_page_for_intrinsic(networks, page_roots)
+    loc_root = page_roots[0] if len(page_roots) == 1 else None
+    counts: Dict[str, int] = defaultdict(int)
+    lan_set = set(lans_in_seg)
+    for schema in TA_SCHEMAS:
+        chunk = merged.get(schema)
+        if not isinstance(chunk, dict):
+            continue
+        for row in chunk.values():
+            if not isinstance(row, dict):
+                continue
+            if not location_on_page(row.get('location'), page_roots):
+                continue
+            nc_list = _parse_network_connection(row.get('network_connection'))
+            anchor = _pick_anchor_network_like_kb(nc_list, on_page, loc_root)
+            if anchor and anchor in lan_set:
+                counts[anchor] += 1
+    return dict(counts)
+
+
+def _max_ta_icon_dims_from_patterns(patterns_doc: Dict[str, Any]) -> Tuple[int, int]:
+    mw, mh = 40, 40
+    for pat in patterns_doc.values():
+        if not isinstance(pat, dict):
+            continue
+        sch = pat.get('schema')
+        if sch not in TA_SCHEMAS:
+            continue
+        if pat.get('parent_id') != 'network_connection':
+            continue
+        try:
+            mw = max(mw, int(pat.get('w', mw)))
+            mh = max(mh, int(pat.get('h', mh)))
+        except (TypeError, ValueError):
+            pass
+    return mw, mh
+
+
+def _bbox_ta_services_grid_px(n: int, mw: int, mh: int) -> Tuple[int, int]:
+    """Оценка ширины/высоты сетки как в services_TA_layout (TA_PER_ROW × ряды)."""
+    if n <= 0:
+        return 0, 0
+    rows = (n + TA_PER_ROW - 1) // TA_PER_ROW
+    bbox_w = 0
+    for r in range(rows):
+        k = min(TA_PER_ROW, n - r * TA_PER_ROW)
+        rw = int(k * mw + max(0, k - 1) * TA_GRID_GAP_PX)
+        bbox_w = max(bbox_w, rw)
+    bbox_h = int(rows * mh + max(0, rows - 1) * TA_GRID_GAP_PX)
+    return bbox_w, bbox_h
 
 
 def segment_rect_for_zone(patterns_doc: Dict[str, Any], zone: str) -> Optional[Tuple[int, int, int, int]]:
@@ -253,7 +359,8 @@ def merge_lans_row_priority(
     page_roots: List[str],
     fpsu_pat_local: Dict[str, Any],
 ) -> List[str]:
-    """Поднимает связанные через multi-LAN FW сети в порядке network_connection; остальные — после них, по порядку lans_sorted."""
+    """Поднимает связанные через multi-LAN FW сети в порядке network_connection; остальные — после них,
+    в порядке списка lans_sorted (для intrinsic — порядок ключей networks в данных YAML)."""
     valid = frozenset(lans_sorted)
     chains: List[List[str]] = []
     for cdata in components.values():
@@ -540,15 +647,18 @@ def apply_cross_segment_firewall_positions(
             }
             repositioned.add(it['fw_oid'])
 
-    if segment_size:
+    if segment_size and pending:
         for p in pending:
-            sg = p['sg_fw']
             oid = p['fw_oid']
-            if sg not in segment_size or oid not in positions:
+            if oid not in positions:
                 continue
+            sg = p['sg_fw']
+            if not sg:
+                continue
+            sz = segment_size.setdefault(sg, {})
             pos = positions[oid]
             need_h = int(pos['y']) + int(pos['h']) + int(INT_SEGMENT_GAP_BOTTOM)
-            segment_size[sg]['h'] = max(int(segment_size[sg].get('h', 0)), need_h)
+            sz['h'] = max(int(sz.get('h', 0)), need_h)
 
     return repositioned
 
@@ -705,7 +815,8 @@ def compute_intrinsic_band_layout(
         INT_SEGMENT_GAP_RIGHT,
         INET_EXT_VERTICAL_GAP,
         _LAN_BAR_THICKNESS_PX,
-        'v21-border-fw-perimeter-x',
+        LAN_COLUMN_VERTICAL_GAP_PX,
+        'v28-lan-col-vgap40',
     )
     cached = get_intrinsic_cached(cache_key)
     if cached is not None:
@@ -800,6 +911,7 @@ def compute_intrinsic_band_layout(
             continue
         _sx, _sy, base_w, base_h = rect
 
+        # Порядок полосок слева направо — как в объединённом файле данных (ключи networks по порядку YAML).
         lans_in_seg = [
             nid for nid, nd in networks.items()
             if isinstance(nd, dict)
@@ -809,7 +921,6 @@ def compute_intrinsic_band_layout(
                 or (isinstance(nd.get('segment'), list) and seg_oid in nd.get('segment', []))
             )
         ]
-        lans_in_seg.sort(key=lambda x: (networks.get(x) or {}).get('title') or x)
         lans_ordered = merge_lans_row_priority(
             list(lans_in_seg), seg_oid, components, networks, specs, page_roots, fpsu_pat,
         )
@@ -942,88 +1053,222 @@ def compute_intrinsic_band_layout(
                 'fw_strip_anchor_lan': fw_strip_anchor_lan.get(lan_oid),
             })
 
+        ta_counts = _ta_service_counts_by_anchor_lan(merged, networks, lans_ordered, page_roots)
+        ta_mw, ta_mh = _max_ta_icon_dims_from_patterns(patterns_doc)
+        for spec in row_specs:
+            tn = ta_counts.get(spec['lan_oid'], 0)
+            tbw, tbh = _bbox_ta_services_grid_px(tn, ta_mw, ta_mh)
+            spec['ta_bbox_w'] = tbw
+            spec['ta_bbox_h'] = tbh
+            spec['ta_row_h_floor'] = int(TA_ANCHOR_TOP_OFFSET_PX + tbh) if tn > 0 else 0
+            if spec['ta_row_h_floor']:
+                spec['row_h'] = max(int(spec['row_h']), spec['ta_row_h_floor'])
+
         # Один формат полос LAN на странице (office / dc: общий max pw/ph по сегментам)
         if use_uniform_lan_bars and row_specs and uniform_lan_pw is not None and uniform_lan_ph is not None:
             u_pw, u_ph = uniform_lan_pw, uniform_lan_ph
             for s in row_specs:
                 s['ph'] = u_ph
                 s['pw'] = u_pw
-                s['row_h'] = max(u_ph, s['left_stack_h'], s['right_stack_h'])
+                s['row_h'] = max(u_ph, s['left_stack_h'], s['right_stack_h'], int(s.get('ta_row_h_floor', 0)))
 
         spec_by_lan: Dict[str, Dict[str, Any]] = {s['lan_oid']: s for s in row_specs}
 
-        n_rows = len(row_specs)
+        try:
+            lan_deep_thr = int(lan_pat.get('deep', 4) or 4)
+        except (TypeError, ValueError):
+            lan_deep_thr = 4
+        try:
+            lan_off_px = int(lan_pat.get('offset', 100) or 100)
+        except (TypeError, ValueError):
+            lan_off_px = 100
+        max_lans_group = max(lan_deep_thr + 3, 1)
+        column_horizontal_gap = float(lan_off_px * 2)
+        use_lan_vertical_columns = len(row_specs) > lan_deep_thr
+
         inner_avail_h = max(1, base_h - INT_SEGMENT_GAP_TOP - INT_SEGMENT_GAP_BOTTOM)
-        sum_row_h = sum(s['row_h'] for s in row_specs)
-        gap_budget = inner_avail_h - sum_row_h
-        if n_rows >= 1 and gap_budget >= 0:
-            gap_uniform = gap_budget / float(n_rows + 1)
-        else:
-            gap_uniform = float(SEGMENT_GAP)
 
         row_y_start: Dict[str, float] = {}
+        horizontal_band_h: Optional[float] = None
 
-        cur_y = INT_SEGMENT_GAP_TOP + gap_uniform
+        if use_lan_vertical_columns:
+            chunks = [
+                row_specs[i : i + max_lans_group]
+                for i in range(0, len(row_specs), max_lans_group)
+            ]
+            col_heights: List[float] = []
+            for chunk in chunks:
+                ch = sum(float(s['row_h']) for s in chunk)
+                if len(chunk) > 1:
+                    ch += LAN_COLUMN_VERTICAL_GAP_PX * (len(chunk) - 1)
+                col_heights.append(ch)
+            max_stack_h = max(col_heights) if col_heights else 0.0
 
-        for spec in row_specs:
-            lan_oid = spec['lan_oid']
-            row_y_start[lan_oid] = cur_y
-            pw = spec['pw']
-            ph = spec['ph']
-            left_w = spec['left_w']
-            right_w = spec['right_w']
-            left_boxes = spec['left_boxes']
-            right_boxes = spec['right_boxes']
-            left_stack_h = spec['left_stack_h']
-            right_stack_h = spec['right_stack_h']
-            row_h = spec['row_h']
-
-            x_lan_base = INT_SEGMENT_GAP_LEFT + (left_w + SEGMENT_GAP if left_w else 0)
-            anchor_row = spec.get('fw_strip_anchor_lan')
-            if anchor_row and anchor_row in spec_by_lan:
-                x_strip = _intrinsic_row_right_edge_px(spec_by_lan[anchor_row]) + SEGMENT_GAP
-                x_lan = max(x_lan_base, x_strip)
+            gap_budget = inner_avail_h - max_stack_h
+            if gap_budget >= 0:
+                gap_top = gap_budget / 2.0
             else:
-                x_lan = x_lan_base
-            x_right = x_lan + ph + (SEGMENT_GAP if right_w else 0)
+                gap_top = float(SEGMENT_GAP)
 
-            y_lan = cur_y + (row_h - ph) / 2
-            out_positions[lan_oid] = {
-                'x': int(x_lan),
-                'y': int(y_lan),
-                'w': int(pw),
-                'h': int(ph),
-            }
-            oids_this_seg.append(lan_oid)
+            cur_y_top = float(INT_SEGMENT_GAP_TOP) + gap_top
+            temp_lan_right_edge: Dict[str, float] = {}
+            col_right_max = float(INT_SEGMENT_GAP_LEFT)
 
-            y_left0 = cur_y + (row_h - left_stack_h) / 2
-            yy = y_left0
-            for oid, (w, h) in left_boxes:
-                out_positions[oid] = {
-                    'x': int(INT_SEGMENT_GAP_LEFT + max(0, (left_w - w) / 2)),
-                    'y': int(yy),
-                    'w': int(w),
-                    'h': int(h),
+            for col_idx, chunk in enumerate(chunks):
+                if col_idx > 0:
+                    x_column_left = col_right_max + column_horizontal_gap
+                else:
+                    x_column_left = float(INT_SEGMENT_GAP_LEFT)
+
+                cur_y_row = cur_y_top
+                col_right_max_for_chunk = x_column_left
+
+                for spec in chunk:
+                    lan_oid = spec['lan_oid']
+                    pw = spec['pw']
+                    ph = spec['ph']
+                    left_w = spec['left_w']
+                    right_w = spec['right_w']
+                    left_boxes = spec['left_boxes']
+                    right_boxes = spec['right_boxes']
+                    left_stack_h = spec['left_stack_h']
+                    right_stack_h = spec['right_stack_h']
+                    row_h = spec['row_h']
+
+                    x_lan_base = x_column_left + (left_w + SEGMENT_GAP if left_w else 0)
+                    anchor_row = spec.get('fw_strip_anchor_lan')
+                    if anchor_row and anchor_row in temp_lan_right_edge:
+                        x_strip = temp_lan_right_edge[anchor_row] + SEGMENT_GAP
+                        x_lan = max(x_lan_base, x_strip)
+                    elif anchor_row and anchor_row in spec_by_lan:
+                        x_strip = _intrinsic_row_right_edge_px(spec_by_lan[anchor_row]) + SEGMENT_GAP
+                        x_lan = max(x_lan_base, x_strip)
+                    else:
+                        x_lan = x_lan_base
+                    x_right = x_lan + ph + (SEGMENT_GAP if right_w else 0)
+
+                    row_y_start[lan_oid] = cur_y_row
+                    y_lan = cur_y_row + (row_h - ph) / 2.0
+                    out_positions[lan_oid] = {
+                        'x': int(x_lan),
+                        'y': int(y_lan),
+                        'w': int(pw),
+                        'h': int(ph),
+                    }
+                    oids_this_seg.append(lan_oid)
+
+                    y_left0 = cur_y_row + (row_h - left_stack_h) / 2.0
+                    yy = y_left0
+                    for oid, (w, h) in left_boxes:
+                        out_positions[oid] = {
+                            'x': int(x_column_left + max(0, (left_w - w) / 2)),
+                            'y': int(yy),
+                            'w': int(w),
+                            'h': int(h),
+                        }
+                        oids_this_seg.append(oid)
+                        yy += h + SEGMENT_GAP
+
+                    y_right0 = cur_y_row + (row_h - right_stack_h) / 2.0
+                    yr = y_right0
+                    for oid, (w, h) in right_boxes:
+                        out_positions[oid] = {
+                            'x': int(x_right + max(0, (right_w - w) / 2)),
+                            'y': int(yr),
+                            'w': int(w),
+                            'h': int(h),
+                        }
+                        oids_this_seg.append(oid)
+                        yr += h + SEGMENT_GAP
+
+                    row_right_edge = x_right + right_w
+                    tw = int(spec.get('ta_bbox_w') or 0)
+                    if tw > 0:
+                        row_right_edge = x_right + right_w + TA_GAP_RIGHT + tw
+                    max_content_right = max(max_content_right, row_right_edge)
+                    col_right_max_for_chunk = max(col_right_max_for_chunk, row_right_edge)
+                    temp_lan_right_edge[lan_oid] = float(x_lan) + float(ph)
+
+                    cur_y_row += row_h + LAN_COLUMN_VERTICAL_GAP_PX
+
+                col_right_max = col_right_max_for_chunk
+
+            cur_y = cur_y_top + max_stack_h + gap_top
+        else:
+            n_rows = len(row_specs)
+            sum_row_h = sum(s['row_h'] for s in row_specs)
+            gap_budget = inner_avail_h - sum_row_h
+            if n_rows >= 1 and gap_budget >= 0:
+                gap_uniform = gap_budget / float(n_rows + 1)
+            else:
+                gap_uniform = float(SEGMENT_GAP)
+
+            cur_y_f = float(INT_SEGMENT_GAP_TOP) + gap_uniform
+
+            for spec in row_specs:
+                lan_oid = spec['lan_oid']
+                row_y_start[lan_oid] = cur_y_f
+                pw = spec['pw']
+                ph = spec['ph']
+                left_w = spec['left_w']
+                right_w = spec['right_w']
+                left_boxes = spec['left_boxes']
+                right_boxes = spec['right_boxes']
+                left_stack_h = spec['left_stack_h']
+                right_stack_h = spec['right_stack_h']
+                row_h = spec['row_h']
+
+                x_lan_base = INT_SEGMENT_GAP_LEFT + (left_w + SEGMENT_GAP if left_w else 0)
+                anchor_row = spec.get('fw_strip_anchor_lan')
+                if anchor_row and anchor_row in spec_by_lan:
+                    x_strip = _intrinsic_row_right_edge_px(spec_by_lan[anchor_row]) + SEGMENT_GAP
+                    x_lan = max(x_lan_base, x_strip)
+                else:
+                    x_lan = x_lan_base
+                x_right = x_lan + ph + (SEGMENT_GAP if right_w else 0)
+
+                y_lan = cur_y_f + (row_h - ph) / 2.0
+                out_positions[lan_oid] = {
+                    'x': int(x_lan),
+                    'y': int(y_lan),
+                    'w': int(pw),
+                    'h': int(ph),
                 }
-                oids_this_seg.append(oid)
-                yy += h + SEGMENT_GAP
+                oids_this_seg.append(lan_oid)
 
-            y_right0 = cur_y + (row_h - right_stack_h) / 2
-            yr = y_right0
-            for oid, (w, h) in right_boxes:
-                out_positions[oid] = {
-                    'x': int(x_right + max(0, (right_w - w) / 2)),
-                    'y': int(yr),
-                    'w': int(w),
-                    'h': int(h),
-                }
-                oids_this_seg.append(oid)
-                yr += h + SEGMENT_GAP
+                y_left0 = cur_y_f + (row_h - left_stack_h) / 2.0
+                yy = y_left0
+                for oid, (w, h) in left_boxes:
+                    out_positions[oid] = {
+                        'x': int(INT_SEGMENT_GAP_LEFT + max(0, (left_w - w) / 2)),
+                        'y': int(yy),
+                        'w': int(w),
+                        'h': int(h),
+                    }
+                    oids_this_seg.append(oid)
+                    yy += h + SEGMENT_GAP
 
-            row_right_edge = x_right + right_w
-            max_content_right = max(max_content_right, row_right_edge)
+                y_right0 = cur_y_f + (row_h - right_stack_h) / 2.0
+                yr = y_right0
+                for oid, (w, h) in right_boxes:
+                    out_positions[oid] = {
+                        'x': int(x_right + max(0, (right_w - w) / 2)),
+                        'y': int(yr),
+                        'w': int(w),
+                        'h': int(h),
+                    }
+                    oids_this_seg.append(oid)
+                    yr += h + SEGMENT_GAP
 
-            cur_y += row_h + gap_uniform
+                row_right_edge = x_right + right_w
+                tw = int(spec.get('ta_bbox_w') or 0)
+                if tw > 0:
+                    row_right_edge = x_right + right_w + TA_GAP_RIGHT + tw
+                max_content_right = max(max_content_right, row_right_edge)
+
+                cur_y_f += row_h + gap_uniform
+
+            cur_y = cur_y_f
 
         # Multi-LAN файрвол: по X между полосками LAN1 и LAN2; по Y — в строке второй LAN (ряд со 2-й сетью)
         for fw_oid, prim, sec in multi_fw_between:
@@ -1041,7 +1286,7 @@ def compute_intrinsic_band_layout(
                 cx = (x_right_lan1 + x_left_lan2) / 2.0 - float(fw_w) / 2.0
             else:
                 cx = x_right_lan1 + float(SEGMENT_GAP)
-            rh_sec = float(ss['row_h'])
+            rh_sec = float(horizontal_band_h if horizontal_band_h is not None else ss['row_h'])
             cy = float(row_y_start[sec]) + (rh_sec - float(fh)) / 2.0
             out_positions[fw_oid] = {
                 'x': int(cx),

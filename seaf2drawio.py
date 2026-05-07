@@ -15,6 +15,10 @@ from auto_layout.edge_segments_layout import (
 from auto_layout.dmz_segments_layout import dmz_segments_layout as compute_dmz_layout
 from auto_layout.segment_intrinsic_layout import align_int_net_security_bottom_to_int_wan_edge
 from auto_layout.kb_layout import kb_layout
+from auto_layout.lan_group_kant_layout import place_lan_group_kant_cells
+from auto_layout.segment_lan_overflow_expand_shift import (
+    expand_segments_for_lan_overflow_and_shift_neighbors,
+)
 from auto_layout.services_ta_layout import services_TA_layout
 import xml.etree.ElementTree as ET
 
@@ -1252,6 +1256,16 @@ if __name__ == '__main__':
             if file_name in ('dc', 'office'):
                 kb_layout(diagram, d, conf, page_name, diagram_ids, _py, _roots)
                 services_TA_layout(diagram, d, conf, page_name, diagram_ids, _py, _roots)
+                expand_segments_for_lan_overflow_and_shift_neighbors(
+                    diagram, d, conf, page_name, diagram_ids, _py, _roots,
+                )
+                # Повторный bbox группы 001 и mxCell ярлыка — после изменения geometry сегментов.
+                resize_location_label_to_cover_segments(
+                    diagram, page_name, file_name, diagram_ids, conf, d,
+                )
+                place_lan_group_kant_cells(
+                    diagram, d, conf, page_name, diagram_ids, _py, _roots,
+                )
 
     print('\n')
     # Verifying drawn links & objects ...
