@@ -19,6 +19,19 @@ class SeafDrawio:
         :param default_config: Словарь с конфигурацией по умолчанию.
         """
         self.default_config = default_config
+        # Один прогон — одно чтение с диска на путь / набор исходников merge (см. read_yaml_file / read_and_merge_yaml).
+        self._yaml_file_cache = {}
+        self._merged_yaml_cache = {}
+
+    @staticmethod
+    def _normalize_read_path(path):
+        if path is None:
+            return ''
+        return os.path.normpath(os.path.abspath(os.path.expanduser(str(path).strip())))
+
+    def _merge_sources_cache_key(self, files):
+        resolved = self.expand_data_yaml_sources(files)
+        return tuple(self._normalize_read_path(p) for p in resolved)
 
     def load_config(self, config_file):
         """
@@ -116,8 +129,7 @@ class SeafDrawio:
         print(f"Предупреждение: data_yaml_file ожидает строку или список, получено {type(sources)}")
         return []
 
-    @staticmethod
-    def read_and_merge_yaml(files, **kwargs):
+    def read_and_merge_yaml(self, files, **kwargs):
         """
         Читает и объединяет один или несколько YAML-файлов по ключам.
 
@@ -125,9 +137,14 @@ class SeafDrawio:
             или список таких путей (list)
         :return: dict - объединённый YAML-документ
         """
-        files = SeafDrawio.expand_data_yaml_sources(files)
+        cache_key = self._merge_sources_cache_key(files)
+        if cache_key in self._merged_yaml_cache:
+            return self._merged_yaml_cache[cache_key]
+
+        files = list(cache_key)
         if not files:
             print("Предупреждение: нет YAML-файлов для слияния.")
+            self._merged_yaml_cache[cache_key] = {}
             return {}
 
         # Настройка слияния: работает с dict и списками
@@ -160,22 +177,26 @@ class SeafDrawio:
                 print(f"I/O ошибка({e.errno}): {e.strerror} : {filename}")
                 sys.exit(1)
 
+        self._merged_yaml_cache[cache_key] = merged_data
         return merged_data
 
-    @staticmethod
-    def read_yaml_file(file, **kwargs):
+    def read_yaml_file(self, path, **kwargs):
+        key = self._normalize_read_path(path)
+        if key in self._yaml_file_cache:
+            return self._yaml_file_cache[key]
         try:
-            with open(file, 'r', encoding='utf-8') as file:
+            with open(path, 'r', encoding='utf-8') as fp:
                 try:
-                    docs = yaml.safe_load_all(file)
+                    docs = yaml.safe_load_all(fp)
                     for doc in docs:
+                        self._yaml_file_cache[key] = doc
                         return doc
 
                 except yaml.YAMLError as e:
                     print("YAML error: {0}".format(e))
 
         except IOError as e:
-            print("I/O error({0}): {1} : {2}".format(e.errno, e.strerror, file))
+            print("I/O error({0}): {1} : {2}".format(e.errno, e.strerror, path))
             sys.exit(1)
 
     @staticmethod

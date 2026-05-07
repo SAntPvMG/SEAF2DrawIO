@@ -1,0 +1,384 @@
+# ---------------------------------------------------------------------------
+# Diagram details — уровень детализации страниц Kubernetes:
+#   minimal — компактная схема (как Minimal K8S_Р41 v02): swimlane кластера,
+#             namespace, агрегированные «pod» по deployment, HPA; без нод.
+#   middle  — макет как Middle K8S_Р41 v02: заголовок кластера (stack swimlane),
+#             блок Shared Infrastructure, namespace (stack), deployments с образом/CPU/RAM,
+#             HPA в ряд, master/worker ноды; без полного «full»-контейнера 1180×820.
+#   full    — крупный swimlane кластера, namespace, ноды, deployment, HPA (как раньше).
+# ---------------------------------------------------------------------------
+'Diagram details': full
+
+# ---------------------------------------------------------------------------
+# On one page — все кластеры на одной странице DrawIO:
+#   yes — одна страница, кластеры укладываются вертикально (Y_stack).
+#   no  — по странице на кластер (как раньше).
+# On one page title — заголовок единственной страницы (только при yes).
+# ---------------------------------------------------------------------------
+'On one page': yes
+# 'On one page title': 'Kubernetes (все кластеры)'
+
+# Страница minimal (холст как в Minimal K8S_Р41 v02.drawio)
+k8s_pages_minimal:
+  diagram_modes: [minimal]
+  ext_page: >
+    <diagram id="{id}" name="{name}">
+      <mxGraphModel dx="902" dy="697" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+        <root>
+          <mxCell id="0"/>
+          <mxCell id="1" parent="0"/>
+          <mxCell id="001" value="Kubernetes" style="group;strokeColor=default;rounded=0;strokeWidth=1;perimeterSpacing=1;fontColor=none;noLabel=1;" parent="0" vertex="1">
+            <mxGeometry x="20" y="20" width="800" height="1100" as="geometry"/>
+          </mxCell>
+        </root>
+      </mxGraphModel>
+    </diagram>
+  schema: 'seaf.company.ta.services.k8s'
+
+k8s_pages_middle:
+  diagram_modes: [middle]
+  ext_page: >
+    <diagram id="{id}" name="{name}">
+      <mxGraphModel dx="2040" dy="1258" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="2970" math="0" shadow="0">
+        <root>
+          <mxCell id="0"/>
+          <mxCell id="1" parent="0"/>
+          <mxCell id="001" value="Kubernetes" style="group;strokeColor=default;rounded=0;strokeWidth=1;perimeterSpacing=1;fontColor=none;noLabel=1;" parent="0" vertex="1">
+            <mxGeometry x="40" y="40" width="2320" height="2860" as="geometry"/>
+          </mxCell>
+        </root>
+      </mxGraphModel>
+    </diagram>
+  schema: 'seaf.company.ta.services.k8s'
+
+k8s_pages_full:
+  diagram_modes: [full]
+  ext_page: >
+    <diagram id="{id}" name="{name}">
+      <mxGraphModel dx="2066" dy="1272" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1600" math="0" shadow="1">
+        <root>
+          <mxCell id="0"/>
+          <mxCell id="1" parent="0"/>
+          <mxCell id="001" value="Kubernetes" style="group;strokeColor=default;rounded=0;strokeWidth=1;perimeterSpacing=1;fontColor=none;noLabel=1;" parent="0" vertex="1">
+            <mxGeometry x="40" y="40" width="2200" height="1500" as="geometry"/>
+          </mxCell>
+        </root>
+      </mxGraphModel>
+    </diagram>
+  schema: 'seaf.company.ta.services.k8s'
+
+# --- minimal (компоновка как Minimal K8S_Р41 v02) --------------------------------
+
+k8s_cluster_minimal:
+  diagram_modes: [minimal]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;{external_id}&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;text-align:left&quot;&gt;Kubernetes Cluster&lt;/span&gt;&lt;br/&gt;v{_k8s_ver} | CNI: {_cni_product} | Mesh: {service_mesh}&lt;br/&gt;{_k8s_minimal_row2}&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.services.k8s">
+      <mxCell style="swimlane;html=1;startSize={_k8s_minimal_start};container=0;collapsible=0;childLayout=stackLayout;horizontal=1;align=center;spacingTop=-4;fillColor={_k8s_minimal_fill};strokeColor={_k8s_minimal_stroke};whiteSpace=wrap;fontSize={_k8s_minimal_fs};movable=1;resizable=1;" vertex="1" parent="001">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.services.k8s'
+  x: 120
+  y: 40
+  w: 480
+  h: 240
+  offset: 0
+  deep: 1
+  algo: 'none'
+
+k8s_namespace_minimal:
+  diagram_modes: [minimal]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;{title}&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:8px&quot;&gt;{_ns_labels_line}&lt;/font&gt;&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.components.k8s_namespaces">
+      <mxCell style="swimlane;html=1;startSize=40;container=0;collapsible=0;childLayout=stackLayout;horizontal=1;align=left;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize={_k8s_ns_fs};" vertex="1" parent="{parent_id}">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.components.k8s_namespaces'
+  parent_id: 'cluster'
+  x: 30
+  y: 70
+  w: 430
+  h: 150
+  offset: 20
+  deep: 1
+  algo: 'none'
+
+k8s_deployment_minimal_pod:
+  diagram_modes: [minimal]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;font style=&quot;font-size:8px&quot;&gt;{_pod_line}&lt;br/&gt;{_worker_line}&lt;/font&gt;&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.services.k8s_deployments">
+      <mxCell style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=8;container=0;shadow=0;" vertex="1" parent="{parent_id}">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.services.k8s_deployments'
+  parent_id: 'namespace'
+  x: 25
+  y: 50
+  w: 115
+  h: 32
+  offset: 14
+  deep: 3
+  algo: 'X+'
+
+k8s_hpa_minimal:
+  diagram_modes: [minimal]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:8px&quot;&gt;HPA: {_hpa_target_short}&lt;br/&gt;min: {min} | max: {max}&lt;/font&gt;&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.components.k8s_hpa">
+      <mxCell style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=8;container=0;" vertex="1" parent="{parent_id}">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.components.k8s_hpa'
+  parent_id: 'namespace'
+  sort: null
+  x: 40
+  y: 100
+  w: 88
+  h: 38
+  offset: 8
+  deep: 3
+  algo: 'X+'
+
+# --- middle (как Middle K8S_Р41 v02.drawio) ------------------------------------
+
+k8s_cluster_middle:
+  diagram_modes: [middle]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;{external_id}&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;text-align:left&quot;&gt;Kubernetes Cluster&lt;/span&gt;&lt;br/&gt;v{_k8s_ver} | CNI: {_cni_product} | Mesh: {service_mesh}&lt;br/&gt;{_k8s_minimal_row2}&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.services.k8s">
+      <mxCell style="swimlane;html=1;startSize=70;container=0;collapsible=0;childLayout=stackLayout;horizontal=1;align=center;spacingTop=-4;fillColor={_k8s_minimal_fill};strokeColor={_k8s_minimal_stroke};whiteSpace=wrap;fontSize=12;movable=1;resizable=1;" vertex="1" parent="001">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.services.k8s'
+  x: 50
+  y: 45
+  w: 720
+  h: 680
+  offset: 0
+  deep: 1
+  algo: 'none'
+
+k8s_shared_infra_middle:
+  diagram_modes: [middle]
+  node_id_suffix: '__shared_infra'
+  xml: >
+    <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;🔗 Shared Infrastructure&lt;/b&gt;&lt;br/&gt;🗄️ Registries: {_mid_registries}&lt;br/&gt;📊 Monitoring: {_mid_monitoring}&lt;br/&gt;🌐 Networks: {_mid_networks}&lt;br/&gt;🔐 Service Mesh: {_mid_mesh}&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.services.k8s">
+      <mxCell style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;dashed=1;fontSize=10;container=0;" vertex="1" parent="{parent_id}">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.services.k8s'
+  parent_id: 'cluster'
+  x: 28
+  y: 608
+  w: 664
+  h: 62
+  offset: 0
+  deep: 1
+  algo: 'none'
+
+k8s_namespace_middle:
+  diagram_modes: [middle]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;Namespace: {_mid_ns_key}&lt;/b&gt;&lt;br/&gt;{_mid_ns_description}&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.components.k8s_namespaces">
+      <mxCell style="swimlane;html=1;startSize=30;container=0;collapsible=0;childLayout=stackLayout;horizontal=1;align=left;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="{parent_id}">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.components.k8s_namespaces'
+  parent_id: 'cluster'
+  x: 35
+  y: 88
+  w: 570
+  h: 285
+  offset: 22
+  deep: 1
+  algo: 'none'
+
+k8s_deployment_middle:
+  diagram_modes: [middle]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;{_mid_dep_short}&lt;/b&gt;&lt;br/&gt;🐳 {_mid_dep_image}&lt;br/&gt;⚙️ CPU: {_mid_dep_cpu} | RAM: {_mid_dep_ram}&lt;br/&gt;🏷️ {_mid_dep_label0}&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.services.k8s_deployments">
+      <mxCell style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;shadow=1;container=0;" vertex="1" parent="{parent_id}">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.services.k8s_deployments'
+  parent_id: 'namespace'
+  x: 28
+  y: 48
+  w: 155
+  h: 68
+  offset: 12
+  deep: 3
+  algo: 'X+'
+
+k8s_hpa_middle:
+  diagram_modes: [middle]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:9px&quot;&gt;HPA: {_hpa_target_short}&lt;br/&gt;min: {min} | max: {max}&lt;/font&gt;&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.components.k8s_hpa">
+      <mxCell style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;container=0;" vertex="1" parent="{parent_id}">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.components.k8s_hpa'
+  parent_id: 'namespace'
+  sort: null
+  x: 32
+  y: 205
+  w: 100
+  h: 44
+  offset: 12
+  deep: 3
+  algo: 'X+'
+
+k8s_node_master_middle:
+  diagram_modes: [middle]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:center&quot;&gt;&lt;b&gt;🔷 {title}&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:8px&quot;&gt;{_mid_node_arch} | {cpu} vCPU | {ram} GB&lt;br/&gt;📍 {_mid_node_zone_short} | v{_mid_node_ver}&lt;/font&gt;&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.components.k8s_nodes">
+      <mxCell style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9;container=0;" vertex="1" parent="{parent_id}">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.components.k8s_nodes'
+  parent_id: 'cluster'
+  type: 'labels:node-role.kubernetes.io/master=true'
+  x: 32
+  y: 388
+  w: 165
+  h: 52
+  offset: 10
+  deep: 4
+  algo: 'X+'
+
+k8s_node_worker_middle:
+  diagram_modes: [middle]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:center&quot;&gt;&lt;b&gt;⬛ {title}&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:8px&quot;&gt;{_mid_node_arch} | {cpu} vCPU | {ram} GB{_mid_node_accel_line}&lt;br/&gt;📍 {_mid_node_zone_short} | v{_mid_node_ver}&lt;/font&gt;&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.components.k8s_nodes">
+      <mxCell style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=9;container=0;" vertex="1" parent="{parent_id}">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.components.k8s_nodes'
+  parent_id: 'cluster'
+  type: 'labels:node-role.kubernetes.io/worker=true'
+  x: 115
+  y: 452
+  w: 165
+  h: 54
+  offset: 10
+  deep: 4
+  algo: 'X+'
+
+# --- full ----------------------------------------------------------------------
+
+k8s_cluster:
+  diagram_modes: [full]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;{title}&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:9px&quot;&gt;Mesh: {service_mesh} · Autoscaler: {cluster_autoscaler}&lt;/font&gt;&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.services.k8s">
+      <mxCell style="swimlane;html=1;startSize=40;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;container=1;fontStyle=1" vertex="1" parent="001">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.services.k8s'
+  x: 60
+  y: 50
+  w: 1180
+  h: 820
+  offset: 0
+  deep: 1
+  algo: 'none'
+
+k8s_namespace:
+  diagram_modes: [full]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;{title}&lt;/b&gt;&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.components.k8s_namespaces">
+      <mxCell style="swimlane;html=1;startSize=32;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;container=1" vertex="1" parent="{parent_id}">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.components.k8s_namespaces'
+  parent_id: 'cluster'
+  x: 40
+  y: 55
+  w: 520
+  h: 340
+  offset: 24
+  deep: 2
+  algo: 'X+'
+
+k8s_node_master:
+  diagram_modes: [full]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:center&quot;&gt;&lt;b&gt;{title}&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:8px&quot;&gt;master · {cpu} vCPU · {ram} GB · {version}&lt;/font&gt;&lt;br/&gt;&lt;font style=&quot;font-size:8px&quot;&gt;{zone}&lt;/font&gt;&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.components.k8s_nodes">
+      <mxCell style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9;container=0" vertex="1" parent="{parent_id}">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.components.k8s_nodes'
+  parent_id: 'cluster'
+  type: 'labels:node-role.kubernetes.io/master=true'
+  x: 40
+  y: 420
+  w: 150
+  h: 58
+  offset: 12
+  deep: 4
+  algo: 'X+'
+
+k8s_node_worker:
+  diagram_modes: [full]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:center&quot;&gt;&lt;b&gt;{title}&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:8px&quot;&gt;worker · {cpu} vCPU · {ram} GB · {version}&lt;/font&gt;&lt;br/&gt;&lt;font style=&quot;font-size:8px&quot;&gt;{zone}&lt;/font&gt;&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.components.k8s_nodes">
+      <mxCell style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=9;container=0" vertex="1" parent="{parent_id}">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.components.k8s_nodes'
+  parent_id: 'cluster'
+  type: 'labels:node-role.kubernetes.io/worker=true'
+  x: 40
+  y: 495
+  w: 150
+  h: 58
+  offset: 12
+  deep: 4
+  algo: 'X+'
+
+k8s_deployment:
+  diagram_modes: [full]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;{title}&lt;/b&gt;&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.services.k8s_deployments">
+      <mxCell style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;shadow=1;container=0" vertex="1" parent="{parent_id}">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.services.k8s_deployments'
+  parent_id: 'namespace'
+  x: 35
+  y: 55
+  w: 200
+  h: 56
+  offset: 14
+  deep: 2
+  algo: 'Y+'
+
+k8s_hpa:
+  diagram_modes: [full]
+  xml: >
+    <object label="&lt;div style=&quot;text-align:center&quot;&gt;&lt;b&gt;HPA&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:8px&quot;&gt;min {min} · max {max}&lt;/font&gt;&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.components.k8s_hpa">
+      <mxCell style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;container=0" vertex="1" parent="{parent_id}">
+        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
+      </mxCell>
+    </object>
+  schema: 'seaf.company.ta.components.k8s_hpa'
+  parent_id: 'target'
+  x: 50
+  y: 130
+  w: 100
+  h: 52
+  offset: 18
+  deep: 2
+  algo: 'X+'

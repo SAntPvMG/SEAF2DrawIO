@@ -216,7 +216,13 @@ YAML данные + data/patterns/*.yaml
 
 ---
 
-## 14. Связанные файлы в репозитории
+## 14. Детализация проходов реализации
+
+Пошаговое описание проходов A–J (старт, intrinsic, dmz, паттерны, `add_object`, постобработка страницы, финиш) и привязка к файлам: **[seaf2drawio-implementation-passes.md](seaf2drawio-implementation-passes.md)**.
+
+---
+
+## 15. Связанные файлы в репозитории
 
 | Путь | Смысл |
 |------|--------|
@@ -225,6 +231,9 @@ YAML данные + data/patterns/*.yaml
 | `data/base.drawio` | Базовый XML Draw.io |
 | `auto_layout/*.py` | Раскладка сегментов |
 | `AGENTS.md` | Краткие правила проекта и команды запуска |
+| `docs/lan-overlay-segment-algorithm.md` | Целевой пост-проход dc/office: КБ, ТА, User Devices, LAN, сегменты |
+| `docs/plan-lan-overlay-segment-work.md` | План работ по внедрению этого пост-прохода |
+| `docs/seaf2drawio-implementation-passes.md` | Полный алгоритм по проходам A–J и модулям |
 
 ---
 

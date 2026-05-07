@@ -24,7 +24,7 @@ diagram = drawio_diagram()
 node_xml_default = diagram.drawio_node_object_xml
 # Ключ схемы в объединённых YAML (см. data/example/dc_region.yaml)
 root_object = 'seaf.company.ta.services.dc_regions'
-diagram_pages = {'main': ['Main Schema'], 'office': [], 'dc': []}
+diagram_pages = {'main': ['Main Schema'], 'office': [], 'dc': [], 'k8s': []}
 diagram_ids = {'Main Schema': []}
 conf = {}
 pending_missing_links = set()
@@ -34,7 +34,17 @@ expected_data = {}
 pattern_specs = {}
 wan_edge_layout_cache = {'positions': {}, 'segment_size': {}, 'segment_origin': {}}
 
-# Переменные по умолчанию
+# Режим детализации K8s (data/patterns/k8s.yaml → «Diagram details»)
+_k8s_diagram_details = 'full'
+_k8s_hpa_by_target = {}
+_k8s_clusters_with_hpa = set()
+_k8s_worker_count_by_cluster = {}
+_k8s_deployment_namespace = {}
+# Одна страница для всех кластеров (data/patterns/k8s.yaml → «On one page»)
+_k8s_on_one_page = False
+_k8s_unified_page_title = 'Kubernetes (все кластеры)'
+
+_K8S_YAML_META_KEYS = frozenset({'Diagram details', 'On one page', 'On one page title'})
 DEFAULT_CONFIG = {
     "seaf2drawio": {
         "data_yaml_file": "data/example/test_seaf_ta_P41_v0.9.yaml",
@@ -94,6 +104,11 @@ def position_offset(pattern):
             if return_ready(pattern):
                 pattern['x'] = pattern['x'] + pattern['w'] + pattern['offset']
                 pattern['y'] = pattern['y'] - (pattern['h'] + pattern['offset']) * pattern['deep']
+            pattern['y'] = pattern['y'] + pattern['h'] + pattern['offset']
+
+        # Только вниз по Y (без смены колонки X). Для Y+ при deep=1 сдвиг по Y взаимно гасится —
+        # несколько корневых кластеров оказывались в одной строке; Y_stack — вертикальная стопка.
+        case 'Y_stack':
             pattern['y'] = pattern['y'] + pattern['h'] + pattern['offset']
 
         case 'Y-':
@@ -581,18 +596,315 @@ def _is_segment_auto_size_from_layout(pattern):
     )
 
 
-def add_pages(pattern):
+def _normalize_k8s_yes_no(raw) -> bool:
+    return str(raw or 'no').strip().lower() in ('yes', 'true', '1', 'да')
+
+
+def _expand_k8s_ext_page_for_one_page(ext_xml: str, n_clusters: int) -> str:
+    """Увеличивает высоту холста под несколько кластеров (вертикальная укладка)."""
+    if n_clusters <= 1:
+        return ext_xml
+    if 'pageHeight="2970"' in ext_xml:
+        slot = 780
+        nh = min(20000, 420 + n_clusters * slot)
+        ext_xml = ext_xml.replace('pageHeight="2970"', f'pageHeight="{nh}"')
+        ext_xml = ext_xml.replace('height="2860"', f'height="{nh - 120}"')
+    elif 'pageWidth="2400"' in ext_xml:
+        slot = 880
+        nh = min(12000, 320 + n_clusters * slot)
+        ext_xml = ext_xml.replace('pageHeight="1600"', f'pageHeight="{nh}"')
+        ext_xml = ext_xml.replace('height="1500"', f'height="{nh - 140}"')
+    elif 'pageWidth="827"' in ext_xml:
+        slot = 300
+        nh = min(4000, 100 + n_clusters * slot)
+        ext_xml = ext_xml.replace('pageHeight="1169"', f'pageHeight="{nh}"')
+        ext_xml = ext_xml.replace('height="1100"', f'height="{nh - 40}"')
+    return ext_xml
+
+
+def _patch_k8s_items_for_one_page(items):
+    """На одной странице корневые кластеры — вертикальная стопка (см. algo Y_stack)."""
+    if not _k8s_on_one_page:
+        return items
+    out = []
+    for k, v in items:
+        if k in ('k8s_cluster', 'k8s_cluster_minimal', 'k8s_cluster_middle'):
+            v = deepcopy(v)
+            v['algo'] = 'Y_stack'
+            v['offset'] = max(int(v.get('offset') or 0), 24)
+        out.append((k, v))
+    return out
+
+
+def _normalize_k8s_diagram_detail(raw) -> str:
+    v = str(raw or 'full').strip().lower()
+    return v if v in ('minimal', 'middle', 'full') else 'full'
+
+
+def _k8s_pattern_applies(pattern_key, pattern, detail: str) -> bool:
+    dm = pattern.get('diagram_modes')
+    if dm is not None:
+        allowed = {_normalize_k8s_diagram_detail(x) for x in dm if x is not None}
+        return detail in allowed
+    if pattern.get('ext_page') and not pattern.get('xml'):
+        return detail != 'minimal'
+    return detail != 'minimal'
+
+
+def _init_k8s_runtime_context():
+    """Читает k8s.yaml, выставляет глобали; возвращает (detail, items | None).
+    items=None, если в данных нет seaf.company.ta.services.k8s — страницы K8s не создаются.
+    """
+    global _k8s_diagram_details, _k8s_hpa_by_target, _k8s_clusters_with_hpa
+    global _k8s_worker_count_by_cluster, _k8s_deployment_namespace
+    global _k8s_on_one_page, _k8s_unified_page_title
+    raw = d.read_yaml_file(patterns_dir + 'k8s.yaml') or {}
+    detail = _normalize_k8s_diagram_detail(raw.get('Diagram details', 'full'))
+    _k8s_on_one_page = _normalize_k8s_yes_no(raw.get('On one page', 'no'))
+    _k8s_unified_page_title = str(raw.get('On one page title', 'Kubernetes (все кластеры)')).strip() \
+        or 'Kubernetes (все кластеры)'
+    items = [(k, v) for k, v in raw.items()
+             if k not in _K8S_YAML_META_KEYS and isinstance(v, dict)]
+    _k8s_diagram_details = detail
+    merged = d.read_and_merge_yaml(conf['data_yaml_file'])
+    k8s_clusters = merged.get('seaf.company.ta.services.k8s') or {}
+    if not k8s_clusters:
+        _k8s_hpa_by_target = {}
+        _k8s_clusters_with_hpa = set()
+        _k8s_worker_count_by_cluster = {}
+        _k8s_deployment_namespace = {}
+        return detail, None
+    hpas = merged.get('seaf.company.ta.components.k8s_hpa') or {}
+    _k8s_hpa_by_target = {}
+    _k8s_clusters_with_hpa = set()
+    for row in hpas.values():
+        if not isinstance(row, dict):
+            continue
+        t = row.get('target')
+        if t:
+            _k8s_hpa_by_target[str(t)] = row
+        c = row.get('cluster')
+        if c:
+            _k8s_clusters_with_hpa.add(str(c))
+    nodes = merged.get('seaf.company.ta.components.k8s_nodes') or {}
+    _k8s_worker_count_by_cluster = {}
+    for nrow in nodes.values():
+        if not isinstance(nrow, dict):
+            continue
+        c = nrow.get('cluster')
+        if not c:
+            continue
+        for lab in (nrow.get('labels') or []):
+            if 'worker=true' in str(lab):
+                cs = str(c)
+                _k8s_worker_count_by_cluster[cs] = _k8s_worker_count_by_cluster.get(cs, 0) + 1
+                break
+    deps = merged.get('seaf.company.ta.services.k8s_deployments') or {}
+    _k8s_deployment_namespace = {}
+    for did, drow in deps.items():
+        if isinstance(drow, dict) and drow.get('namespace'):
+            _k8s_deployment_namespace[str(did)] = str(drow['namespace'])
+    items = _patch_k8s_items_for_one_page(items)
+    return detail, items
+
+
+def _infer_k8s_version_line(data: dict) -> str:
+    for s in (data.get('softwares') or []):
+        m = re.search(r'k8s[_\s]*(\d+)[_.](\d+)', str(s), re.I)
+        if m:
+            return f"{m.group(1)}.{m.group(2)}"
+    return '—'
+
+
+def _short_seaf_tokens(values, max_items: int = 4, per_token_len: int = 24, *, last_segments: int = 1) -> str:
+    """Короткие подписи из списка SEAF-id (последний сегмент или несколько с конца)."""
+    if not values:
+        return '—'
+    if not isinstance(values, list):
+        values = [values]
+    out = []
+    for x in values[:max_items]:
+        if x in (None, ''):
+            continue
+        parts = str(x).split('.')
+        if last_segments > 1 and len(parts) >= last_segments:
+            s = '.'.join(parts[-last_segments:]).replace('_', ' ')
+        else:
+            s = parts[-1].replace('_', ' ')
+        if len(s) > per_token_len:
+            s = s[: per_token_len - 1] + '…'
+        out.append(s)
+    return ', '.join(out) if out else '—'
+
+
+def _k8s_xml_escape(s) -> str:
+    """Безопасная подстановка в DrawIO label (XML-атрибут / разметка)."""
+    t = '' if s is None else str(s)
+    return (
+        t.replace('&', '&amp;')
+        .replace('<', '&lt;')
+        .replace('>', '&gt;')
+        .replace('"', '&quot;')
+    )
+
+
+def _enrich_k8s_middle_row(shape_schema: str, key_id: str, data: dict) -> None:
+    """Поля разметки для Diagram details: middle (как Middle K8S_Р41 v02)."""
+    if not isinstance(data, dict):
+        return
+    kid = str(key_id)
+    if shape_schema == 'seaf.company.ta.services.k8s':
+        data.setdefault('cluster', kid)
+        _enrich_k8s_minimal_row(shape_schema, key_id, data)
+        regs = (data.get('registries') or [])
+        mon = (data.get('monitoring') or [])
+        nets = (data.get('network_connection') or []) + (data.get('management_networks') or [])
+        mesh = data.get('service_mesh') or '—'
+        data['_mid_registries'] = _k8s_xml_escape(_short_seaf_tokens(regs, 5))
+        data['_mid_monitoring'] = _k8s_xml_escape(_short_seaf_tokens(mon, 5))
+        data['_mid_networks'] = _k8s_xml_escape(_short_seaf_tokens(nets, 4, last_segments=2))
+        data['_mid_mesh'] = _k8s_xml_escape(str(mesh) if mesh not in (None, '') else '—')
+    elif shape_schema == 'seaf.company.ta.components.k8s_namespaces':
+        _enrich_k8s_minimal_row(shape_schema, key_id, data)
+        desc = data.get('description') or ''
+        if len(desc) > 120:
+            desc = desc[: 119] + '…'
+        data['_mid_ns_description'] = _k8s_xml_escape(desc) or '—'
+        data['_mid_ns_key'] = _k8s_xml_escape(kid.split('.')[-1].replace('_', '.'))
+    elif shape_schema == 'seaf.company.ta.services.k8s_deployments':
+        containers = data.get('containers') or []
+        c0 = containers[0] if containers else {}
+        image = str(c0.get('image') or '—')
+        if len(image) > 42:
+            image = image[: 41] + '…'
+        lim = (c0.get('resources') or {}).get('limits') or {}
+        cpu = lim.get('cpu', '—')
+        ram = lim.get('ram', lim.get('memory', '—'))
+        labels = data.get('labels') or []
+        label0 = str(labels[0]) if isinstance(labels, list) and labels else '—'
+        dep_short = kid.split('.')[-1].replace('_', '-')
+        data['_mid_dep_short'] = _k8s_xml_escape(dep_short)
+        data['_mid_dep_image'] = _k8s_xml_escape(image)
+        data['_mid_dep_cpu'] = _k8s_xml_escape(cpu)
+        data['_mid_dep_ram'] = _k8s_xml_escape(ram)
+        data['_mid_dep_label0'] = _k8s_xml_escape(label0)
+        apps = data.get('app_components') or []
+        app0 = str(apps[0]).split('.')[-1] if isinstance(apps, list) and apps else dep_short
+        data['_mid_app_short'] = _k8s_xml_escape(app0.replace('_', '.'))
+    elif shape_schema == 'seaf.company.ta.components.k8s_hpa':
+        _enrich_k8s_minimal_row(shape_schema, key_id, data)
+    elif shape_schema == 'seaf.company.ta.components.k8s_nodes':
+        arch = str(data.get('architecture') or 'amd64')
+        ver = str(data.get('version') or '—')
+        zone = str(data.get('zone') or '—')
+        zshort = zone.split('.')[-1] if zone else '—'
+        labels = data.get('labels') or []
+        lab_text = ' '.join(str(x) for x in labels) if isinstance(labels, list) else ''
+        acc = None
+        for lb in (labels if isinstance(labels, list) else []):
+            s = str(lb).lower()
+            if 'accelerator=' in s or 'nvidia' in s or 'gpu' in s:
+                acc = str(lb).split('=')[-1] if '=' in str(lb) else str(lb)
+                break
+        data['_mid_node_arch'] = arch
+        data['_mid_node_ver'] = ver
+        data['_mid_node_zone_short'] = zshort
+        data['_mid_node_accel_line'] = ''
+        if acc:
+            data['_mid_node_accel_line'] = f'&lt;br/&gt;accelerator={acc}'
+        is_worker = 'worker=true' in lab_text
+        data['_mid_node_is_gpu_worker'] = bool(
+            is_worker and ('nvidia' in lab_text.lower() or 'accelerator=' in lab_text.lower() or 'gpu' in lab_text.lower()))
+
+
+def _enrich_k8s_minimal_row(shape_schema: str, key_id: str, data: dict) -> None:
+    if not isinstance(data, dict):
+        return
+    kid = str(key_id)
+    if shape_schema == 'seaf.company.ta.services.k8s':
+        data['_k8s_ver'] = _infer_k8s_version_line(data)
+        data['_cni_product'] = (data.get('cni') or {}).get('product', '—')
+        data['_autoscaler_on'] = 'ON' if data.get('cluster_autoscaler') else 'OFF'
+        st = data.get('stand')
+        if isinstance(st, list) and st:
+            data['_stand_short'] = str(st[0]).split('.')[-1]
+        else:
+            data['_stand_short'] = '—'
+        data['_hpa_yes'] = 'YES' if kid in _k8s_clusters_with_hpa else 'NO'
+        if data.get('service_mesh') in (None, ''):
+            data['service_mesh'] = '—'
+        lk = kid.lower()
+        is_llm = 'llm' in lk
+        data['_k8s_minimal_fill'] = '#e2f0d9' if is_llm else '#dae8fc'
+        data['_k8s_minimal_stroke'] = '#548235' if is_llm else '#6c8ebf'
+        data['_k8s_minimal_fs'] = '11' if is_llm else '9'
+        data['_k8s_minimal_start'] = '60' if is_llm else '50'
+        au = data['_autoscaler_on']
+        if is_llm:
+            data['_k8s_minimal_row2'] = (
+                f"Autoscaler: {au} | GPU Nodes | Stand: {data['_stand_short']}")
+        else:
+            data['_k8s_minimal_row2'] = (
+                f"Autoscaler: {au} | HPA: {data['_hpa_yes']} | Stand: {data['_stand_short']}")
+    elif shape_schema == 'seaf.company.ta.services.k8s_deployments':
+        hpa = _k8s_hpa_by_target.get(kid, {})
+        pods = hpa.get('min', 2)
+        try:
+            pods = int(pods)
+        except (TypeError, ValueError):
+            pods = 2
+        containers = data.get('containers') or []
+        c0 = containers[0] if containers else {}
+        pname = (c0.get('name') or kid.split('.')[-1]).replace('_', '-')
+        data['_pod_line'] = f"{pname}-pod (×{pods})"
+        cl = str(data.get('cluster') or '')
+        wn = _k8s_worker_count_by_cluster.get(cl, 1)
+        data['_worker_line'] = f"worker (×{wn})"
+    elif shape_schema == 'seaf.company.ta.components.k8s_hpa':
+        tgt = str(data.get('target') or '')
+        data['_hpa_target_short'] = tgt.split('.')[-1] if tgt else '—'
+        ns = _k8s_deployment_namespace.get(tgt, '')
+        if ns:
+            data['namespace'] = ns
+    elif shape_schema == 'seaf.company.ta.components.k8s_namespaces':
+        lk = str(data.get('cluster') or '').lower()
+        data['_k8s_ns_fs'] = '11' if 'llm' in lk else '9'
+        labels = data.get('labels') or []
+        if isinstance(labels, list) and labels:
+            data['_ns_labels_line'] = ' | '.join(str(x) for x in labels[:3])
+        else:
+            data['_ns_labels_line'] = ''
+
+
+def add_pages(pattern, pages_bucket_key: str, restore_page=None):
 
     if pattern.get('ext_page'):
         page_data = d.get_object(conf['data_yaml_file'], pattern['schema'])
         diagram_xml_default = diagram.drawio_diagram_xml
+
+        if pages_bucket_key == 'k8s' and _k8s_on_one_page:
+            ext_xml = _expand_k8s_ext_page_for_one_page(
+                pattern['ext_page'], max(1, len(page_data)))
+            diagram.drawio_diagram_xml = ext_xml
+            try:
+                diagram.add_diagram('k8s_unified_page', _k8s_unified_page_title)
+                diagram_pages[pages_bucket_key].append(_k8s_unified_page_title)
+                for key_id in list(page_data.keys()):
+                    d.append_to_dict(diagram_ids, _k8s_unified_page_title, key_id)
+            except ET.ParseError:
+                print(f'WARNING ! Не используйте XML зарезервированные символы <>&\'\" в поле title для объектов dc/office')
+                pass
+            diagram.drawio_diagram_xml = diagram_xml_default
+            if restore_page is not None:
+                diagram.go_to_diagram(restore_page)
+            return
 
         for key_id in list( page_data.keys() ):
 
             diagram.drawio_diagram_xml = pattern['ext_page']
             try:
                 diagram.add_diagram(key_id + '_page', page_data[key_id]['title'])
-                diagram_pages[k].append(page_data[key_id]['title'])
+                diagram_pages[pages_bucket_key].append(page_data[key_id]['title'])
                 d.append_to_dict(diagram_ids, page_data[key_id]['title'], key_id)
             except ET.ParseError:
                 print(f'WARNING ! Не используйте XML зарезервированные символы <>&\'\" в поле title для объектов dc/office')
@@ -600,9 +912,15 @@ def add_pages(pattern):
 
 
         diagram.drawio_diagram_xml = diagram_xml_default
-        diagram.go_to_diagram(page_name)
+        if restore_page is not None:
+            diagram.go_to_diagram(restore_page)
 
 def add_object(pattern, data, key_id):
+
+    if file_name == 'k8s' and _k8s_diagram_details == 'minimal':
+        _enrich_k8s_minimal_row(pattern.get('schema') or '', key_id, data)
+    elif file_name == 'k8s' and _k8s_diagram_details == 'middle':
+        _enrich_k8s_middle_row(pattern.get('schema') or '', key_id, data)
 
     pattern_count, current_parent = 0, ''
     for xml_pattern in d.get_xml_pattern(pattern['xml'], key_id):
@@ -654,12 +972,16 @@ def add_object(pattern, data, key_id):
 
 
         try:
+            if pattern.get('node_id_suffix'):
+                _draw_id = f'{key_id}{pattern["node_id_suffix"]}'
+            else:
+                _draw_id = key_id
             fmt_extra = {
                 'Group_ID': f'{key_id}_0',
                 'parent_id': current_parent,
                 'parent_type': default_pattern['parent'],
                 'description': data.get('description', ''),
-                'id': key_id,
+                'id': _draw_id,
             }
             # Родитель-сегмент для шаблонов с parent="{segment}" и согласованного вложения в контейнер
             if pattern.get('parent_id') == 'segment' and current_parent:
@@ -713,9 +1035,12 @@ def add_object(pattern, data, key_id):
                 if 'y' in seg_origin:
                     pattern['y'] = seg_origin['y']
 
-            # Если не содержит конструкции <object></object>, то изменять ID добавляя порядковый номер
+            draw_node_id = (
+                f"{key_id}_{pattern_count}" if not d.contains_object_tag(xml_pattern, 'object')
+                else (f"{key_id}{pattern['node_id_suffix']}" if pattern.get('node_id_suffix') else key_id)
+            )
             diagram.add_node(
-                id=f"{key_id}_{pattern_count}" if not d.contains_object_tag(xml_pattern, 'object') else key_id,
+                id=draw_node_id,
                 label=data['title'],
                 x_pos=pattern['x'],
                 y_pos=pattern['y'],
@@ -828,6 +1153,19 @@ if __name__ == '__main__':
     
     diagram_ids['Main Schema'] = list(d.get_object(conf['data_yaml_file'], root_object).keys())
     for file_name, pages in diagram_pages.items():
+        k8s_pattern_items = None
+        k8s_detail_level = 'full'
+        if file_name == 'k8s':
+            k8s_detail_level, k8s_pattern_items = _init_k8s_runtime_context()
+            if k8s_pattern_items is None:
+                continue
+            if not pages:
+                for _pk, _op in k8s_pattern_items:
+                    if _op.get('ext_page') and not _op.get('xml') \
+                            and _k8s_pattern_applies(_pk, _op, k8s_detail_level):
+                        add_pages(_op, 'k8s', None)
+                        break
+                pages = diagram_pages['k8s']
 
         for page_name in pages:
 
@@ -852,19 +1190,28 @@ if __name__ == '__main__':
                 wan_edge_layout_cache.get('segment_origin'),
             )
             print(f"\n> Формирую диаграмму страницы \033[32m{page_name}\033[0m ", end='')
-            for k, object_pattern in d.read_yaml_file(patterns_dir + file_name + '.yaml').items():
+            _pattern_iter = (
+                k8s_pattern_items if file_name == 'k8s'
+                else d.read_yaml_file(patterns_dir + file_name + '.yaml').items()
+            )
+            for k, object_pattern in _pattern_iter:
+                if file_name == 'k8s' and not _k8s_pattern_applies(k, object_pattern, k8s_detail_level):
+                    continue
+                if object_pattern.get('ext_page') and not object_pattern.get('xml'):
+                    continue
                 print('.', end='')
                 try:
                     object_data = d.get_object(
                         conf['data_yaml_file'],
                         object_pattern['schema'],
                         type=object_pattern.get('type'),
-                        sort=object_pattern['parent_id'] if object_pattern.get('parent_id') else None,
+                        sort=(object_pattern['sort'] if 'sort' in object_pattern else
+                              (object_pattern['parent_id'] if object_pattern.get('parent_id') else None)),
                         require_fields=object_pattern.get('require_fields'),
                         exclude_fields=object_pattern.get('exclude_fields'),
                     )
 
-                    add_pages(object_pattern)
+                    add_pages(object_pattern, k if k in diagram_pages else file_name, page_name)
                     object_pattern.update({
                                 'count': 0,               # Счетчик объектов
                                 'last_parent': '',        # Триггер для отслеживания изменения родительского объекта
@@ -878,7 +1225,8 @@ if __name__ == '__main__':
                     collect_ids()
 
                     for i in list(object_data.keys()):
-                        if i in diagram.nodes_ids[diagram.current_diagram_id]:
+                        if (i in diagram.nodes_ids[diagram.current_diagram_id]
+                                and not object_pattern.get('node_id_suffix')):
                             diagram.update_node(id=i, data=object_data[i])
                             d.append_to_dict(diagram_ids, page_name, i)
                         else:
