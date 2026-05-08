@@ -22,8 +22,8 @@ region:
   schema : 'seaf.company.ta.services.dc_regions'
   x : 390
   y : 30
-  h : 740
-  w : 900
+  h : 630
+  w : 760
   offset: 10
   algo: 'Y+'
   deep: 3
@@ -37,10 +37,10 @@ az:
     </object>
   schema : 'seaf.company.ta.services.dc_azs'
   parent_id: 'region'
-  x : 450
+  x : 390
   y : 30
-  h: 340
-  w : 380
+  h: 300
+  w : 360
   offset: 10
   algo: 'Y+'
   deep: 3
@@ -234,7 +234,7 @@ isp:
 network_links:
   xml: >
     <object id="{id}" label="{label}">
-        <mxCell style="{style}" edge="1" parent="100" source="{source_id}" target="{target_id}">
+        <mxCell style="{style}" edge="1" parent="100" source="{source}" target="{target}">
             <mxGeometry relative="1" as="geometry"/>
         </mxCell>
     </object>

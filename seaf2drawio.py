@@ -4,6 +4,7 @@ import json
 import re
 import os
 import argparse
+from typing import List, Optional, Tuple
 from copy import deepcopy
 import textwrap
 from lib import seaf_drawio
@@ -13,8 +14,16 @@ from auto_layout.edge_segments_layout import (
     resolve_page_location_roots,
 )
 from auto_layout.dmz_segments_layout import dmz_segments_layout as compute_dmz_layout
-from auto_layout.segment_intrinsic_layout import align_int_net_security_bottom_to_int_wan_edge
-from auto_layout.kb_layout import kb_layout
+from auto_layout.segment_intrinsic_layout import (
+    align_int_net_security_bottom_to_int_wan_edge,
+    location_on_page,
+)
+from auto_layout.kb_layout import (
+    kb_layout,
+    _absolute_bbox_vertex_cell,
+    _absolute_xy_of_mx_cell_top_left,
+    _resolve_mx_cell_parent,
+)
 from auto_layout.lan_group_kant_layout import place_lan_group_kant_cells
 from auto_layout.segment_lan_overflow_expand_shift import (
     expand_segments_for_lan_overflow_and_shift_neighbors,
@@ -227,6 +236,9 @@ def reorder_inet_ext_wan_edge_before_dmz_swimlane(diagram, page_name: str) -> No
 
 _SEGMENT_PARENT_CELL_ID = '001'
 _SWIMLANE_GROUP_CELL_ID = '001'
+_SEGMENTS_SCHEMA = 'seaf.company.ta.services.network_segments'
+_LABEL_ANCHOR_INET_EXT_ZONES = frozenset({'INET-EDGE', 'EXT-WAN-EDGE'})
+_LABEL_ANCHOR_INT_NET_ZONE = 'INT-NET'
 _LABEL_TO_SEGMENT_PAD = 5
 _LABEL_STENCIL_MARK = 'vsdxID=13090'
 
@@ -296,38 +308,149 @@ def _location_label_text_box_px(attribs: dict, file_name: str, inner_max_px: flo
     return w_px, h_px
 
 
-def _mx_cell_geometry_bounds(mx_cell):
-    geom = mx_cell.find('mxGeometry')
-    if geom is None:
+def _mx_cell_parent_chain_contains(root: ET.Element, mx_cell: ET.Element, ancestor_id: str) -> bool:
+    """True, если по цепочке parent((mxGraph)) есть mxCell с id == ancestor_id."""
+    pid = mx_cell.get('parent')
+    steps = 0
+    while pid and pid != '0' and steps < 600:
+        steps += 1
+        if pid == ancestor_id:
+            return True
+        cur = _resolve_mx_cell_parent(root, pid)
+        if cur is None or cur.tag != 'mxCell':
+            break
+        pid = cur.get('parent')
+    return False
+
+
+def _swimlane_interior_bbox_union(root: ET.Element) -> Optional[Tuple[float, float, float, float]]:
+    """
+    Объединение абсолютных bbox всех вершин под группой страницы (parent→…→001),
+    кроме самой ячейки 001 и ярлыка локации (vsdxID=13090).
+    Учитывает вложенное содержимое зон (lan_kant__, иконки и т.д.), если оно ниже/шире прямоугольника зоны.
+    """
+    min_x = min_y = float('inf')
+    max_x = max_y = float('-inf')
+    seen = False
+    for cell in root.iter('mxCell'):
+        if cell.get('vertex') != '1' or cell.get('edge') == '1':
+            continue
+        cid = cell.get('id') or ''
+        if cid == _SEGMENT_PARENT_CELL_ID:
+            continue
+        style = cell.get('style') or ''
+        if _LABEL_STENCIL_MARK in style:
+            continue
+        if not _mx_cell_parent_chain_contains(root, cell, _SEGMENT_PARENT_CELL_ID):
+            continue
+        bb = _absolute_bbox_vertex_cell(root, cell)
+        if bb is None:
+            continue
+        lx, ly, rx, ry = bb
+        min_x = min(min_x, lx)
+        min_y = min(min_y, ly)
+        max_x = max(max_x, rx)
+        max_y = max(max_y, ry)
+        seen = True
+    if not seen:
         return None
-    if (geom.get('relative') or '').strip() == '1':
+    return min_x, min_y, max_x, max_y
+
+
+def _segment_swimlane_mx_under_page_group(root: ET.Element, oid: str) -> Optional[ET.Element]:
+    """Прямой потомок страницы parent=001 — прямоугольник зоны; не внутренний декор объекта."""
+    obj = root.find(f".//object[@id='{oid}']")
+    if obj is None:
         return None
+    fallback: Optional[ET.Element] = None
+    for mx in obj.iter('mxCell'):
+        if mx.get('vertex') != '1' or mx.get('edge') == '1':
+            continue
+        if mx.get('parent') == _SEGMENT_PARENT_CELL_ID:
+            return mx
+        if fallback is None:
+            fallback = mx
+    return fallback
+
+
+def _page_roots_for_segment_anchor(
+    sd,
+    conf,
+    page_name: str,
+    diagram_ids_map,
+    file_name: str,
+) -> List[str]:
+    """Как в основном цикле генерации: сначала diagram_ids страницы, иначе OID по title из ext_page."""
+    roots = diagram_ids_map.get(page_name)
+    if isinstance(roots, list) and roots:
+        return roots
+    return resolve_page_location_roots(sd, conf, page_name, _patterns_yaml_path_for_page(file_name))
+
+
+def _patterns_yaml_path_for_page(file_name: str) -> str:
+    return os.path.join(patterns_dir, file_name + '.yaml')
+
+
+def _wan_inet_ext_min_abs_left_x(
+    root: ET.Element,
+    sd,
+    conf,
+    page_name: str,
+    diagram_ids_map,
+    file_name: str,
+) -> Optional[float]:
+    page_ids = set(diagram_ids_map.get(page_name) or [])
     try:
-        x = float(geom.get('x') or 0)
-        y = float(geom.get('y') or 0)
-        w = float(geom.get('width') or 0)
-        h = float(geom.get('height') or 0)
-    except (TypeError, ValueError):
+        segs = sd.get_object(conf['data_yaml_file'], _SEGMENTS_SCHEMA)
+    except KeyError:
         return None
-    if w <= 0 or h <= 0:
-        return None
-    return x, y, x + w, y + h
+    roots = _page_roots_for_segment_anchor(sd, conf, page_name, diagram_ids_map, file_name)
+    min_ax: Optional[float] = None
+    for oid, row in segs.items():
+        if not isinstance(row, dict) or oid not in page_ids:
+            continue
+        if str(row.get('zone') or '') not in _LABEL_ANCHOR_INET_EXT_ZONES:
+            continue
+        if not location_on_page(row.get('location'), roots):
+            continue
+        mx = _segment_swimlane_mx_under_page_group(root, oid)
+        if mx is None:
+            continue
+        ax, _ = _absolute_xy_of_mx_cell_top_left(root, mx)
+        if min_ax is None or ax < min_ax:
+            min_ax = ax
+    return min_ax
 
 
-def _is_segment_zone_swimlane_mx_cell(mx_cell):
-    """Контейнер зоны под группой ЦОД/офиса: parent=001, container=1, не ярлык vsdxID=13090."""
-    if mx_cell.get('parent') != _SEGMENT_PARENT_CELL_ID:
-        return False
-    if mx_cell.get('vertex') != '1':
-        return False
-    if mx_cell.get('edge') == '1':
-        return False
-    style = mx_cell.get('style') or ''
-    if 'container=1' not in style:
-        return False
-    if _LABEL_STENCIL_MARK in style:
-        return False
-    return True
+def _int_net_min_abs_top_y(
+    root: ET.Element,
+    sd,
+    conf,
+    page_name: str,
+    diagram_ids_map,
+    file_name: str,
+) -> Optional[float]:
+    page_ids = set(diagram_ids_map.get(page_name) or [])
+    try:
+        segs = sd.get_object(conf['data_yaml_file'], _SEGMENTS_SCHEMA)
+    except KeyError:
+        return None
+    roots = _page_roots_for_segment_anchor(sd, conf, page_name, diagram_ids_map, file_name)
+    min_ay: Optional[float] = None
+    for oid, row in segs.items():
+        if not isinstance(row, dict) or oid not in page_ids:
+            continue
+        if str(row.get('zone') or '') != _LABEL_ANCHOR_INT_NET_ZONE:
+            continue
+        if not location_on_page(row.get('location'), roots):
+            continue
+        mx = _segment_swimlane_mx_under_page_group(root, oid)
+        if mx is None:
+            continue
+        _, ay = _absolute_xy_of_mx_cell_top_left(root, mx)
+        if min_ay is None or ay < min_ay:
+            min_ay = ay
+    return min_ay
 
 
 def _translate_mx_geometry_by(mx_geom, ddx: float, ddy: float):
@@ -378,10 +501,13 @@ def _location_label_ids_for_page(diagram, sd, conf, page_name, label_schema, dia
 def resize_location_label_to_cover_segments(diagram, page_name, file_name, diagram_ids_map, conf, sd):
     """
     После раскладки сегментов:
-    — bbox по контейнерам зон (mxCell parent «001», style container=1), без ярлыка vsdxID=13090;
+    — bbox по всем вершинам под группой «001» (цепочка parent→…→001), кроме самой «001» и ярлыка vsdxID=13090;
+      учитываются рамки lan_kant и прочее содержимое, выступающее за прямоугольник зоны;
     — сдвиг вершин с parent «001» (кроме ярлыка), подгонка mxCell id «001» под контент + отступ;
-    — ярлык ЦОД/офиса: размеры по оценке текста (title + description/address), без совпадения с bbox сегментов;
-      позиция над верхом зон; атрибут label (HTML) не меняется.
+    — ярлык ЦОД/офиса (dc_label/office_label): lw/lh по тексту; левый верхний угол в координатах родителя «001»:
+      абсцисса = левый край сегментов INET-EDGE и EXT-WAN-EDGE (минимум из них), ордината = верх INT-NET;
+      при отсутствии якорного сегмента — прежний запасной вариант (pad и формула по lh).
+      Атрибут label (HTML) не меняется.
     """
     if file_name not in ('dc', 'office'):
         return
@@ -399,31 +525,12 @@ def resize_location_label_to_cover_segments(diagram, page_name, file_name, diagr
         return
 
     pad = _LABEL_TO_SEGMENT_PAD
-    min_x = min_y = float('inf')
-    max_x = max_y = float('-inf')
-    seen = False
 
-    for top in root:
-        if top.tag != 'object':
-            continue
-        oid = top.get('id') or ''
-        if oid in label_ids:
-            continue
-        for cell in top.iter('mxCell'):
-            if not _is_segment_zone_swimlane_mx_cell(cell):
-                continue
-            bounds = _mx_cell_geometry_bounds(cell)
-            if bounds is None:
-                continue
-            lx, ly, rx, ry = bounds
-            min_x = min(min_x, lx)
-            min_y = min(min_y, ly)
-            max_x = max(max_x, rx)
-            max_y = max(max_y, ry)
-            seen = True
-
-    if not seen:
+    union_bb = _swimlane_interior_bbox_union(root)
+    if union_bb is None:
         return
+
+    min_x, min_y, max_x, max_y = union_bb
 
     ddx = min_x - pad
     ddy = min_y - pad
@@ -469,6 +576,13 @@ def resize_location_label_to_cover_segments(diagram, page_name, file_name, diagr
             ggeom.set('width', str(int(round(cw))))
             ggeom.set('height', str(int(round(ch))))
 
+    g_abs_x, g_abs_y = 0.0, 0.0
+    if group_el is not None:
+        g_abs_x, g_abs_y = _absolute_xy_of_mx_cell_top_left(root, group_el)
+
+    wan_left_abs = _wan_inet_ext_min_abs_left_x(root, sd, conf, page_name, diagram_ids_map, file_name)
+    int_net_top_abs = _int_net_min_abs_top_y(root, sd, conf, page_name, diagram_ids_map, file_name)
+
     max_label_outer_w = max(int(label_pat.get('w', 120)), int(cw) - 2 * pad)
     inner_max = max(60.0, float(max_label_outer_w - _LABEL_PAD_X * 2))
     min_lw = int(label_pat.get('w', 120))
@@ -482,12 +596,29 @@ def resize_location_label_to_cover_segments(diagram, page_name, file_name, diagr
         lw = min(lw, max_label_outer_w)
         lh = max(min_lh, int(round(th_px)))
 
-        lx = pad
-        ly = int(round(pad - lh - _LABEL_GAP_ABOVE_SEGMENTS + _LABEL_SHIFT_DOWN_PX))
+        if wan_left_abs is not None:
+            lx = int(round(wan_left_abs - g_abs_x))
+        else:
+            lx = pad
+        if int_net_top_abs is not None:
+            ly = int(round(int_net_top_abs - g_abs_y))
+        else:
+            ly = int(round(pad - lh - _LABEL_GAP_ABOVE_SEGMENTS + _LABEL_SHIFT_DOWN_PX))
 
+        stencil_targets: List[ET.Element] = []
+        parent001_fallback: List[ET.Element] = []
         for cell in child.iter('mxCell'):
             if cell.get('parent') != _SEGMENT_PARENT_CELL_ID:
                 continue
+            if cell.get('vertex') != '1' or cell.get('edge') == '1':
+                continue
+            style = cell.get('style') or ''
+            if _LABEL_STENCIL_MARK in style:
+                stencil_targets.append(cell)
+            else:
+                parent001_fallback.append(cell)
+
+        for cell in stencil_targets if stencil_targets else parent001_fallback:
             geom = cell.find('mxGeometry')
             if geom is None:
                 continue
@@ -495,7 +626,27 @@ def resize_location_label_to_cover_segments(diagram, page_name, file_name, diagr
             geom.set('y', str(ly))
             geom.set('width', str(lw))
             geom.set('height', str(lh))
-            break
+
+
+def refresh_location_label_mxcells_after_swimlane_geometry(
+    diagram,
+    page_name: str,
+    file_name: str,
+    diagram_ids_map,
+    conf,
+    sd,
+):
+    """
+    Пересчёт mxGeometry группы «001» и ярлыка локации (dc_label / office_label).
+
+    Вызывать после любого изменения width/height сегментов с parent «001»
+    (в частности expand_segments_for_lan_overflow_and_shift_neighbors), а также после
+    добавления рамок lan_kant__: ширина ярлыка зависит от актуальной ширины swimlane (cw),
+    lw/lh от текста; lx/ly привязаны к INET/EXT-WAN (слева) и верху INT-NET — см. resize_location_label_to_cover_segments.
+    """
+    resize_location_label_to_cover_segments(
+        diagram, page_name, file_name, diagram_ids_map, conf, sd,
+    )
 
 
 def get_parent_value(pattern, current_parent):
@@ -1250,7 +1401,7 @@ if __name__ == '__main__':
             bring_cross_segment_firewalls_to_front(
                 diagram, page_name, wan_edge_layout_cache.get('cross_segment_firewall_oids') or frozenset(),
             )
-            resize_location_label_to_cover_segments(
+            refresh_location_label_mxcells_after_swimlane_geometry(
                 diagram, page_name, file_name, diagram_ids, conf, d,
             )
             if file_name in ('dc', 'office'):
@@ -1259,12 +1410,16 @@ if __name__ == '__main__':
                 expand_segments_for_lan_overflow_and_shift_neighbors(
                     diagram, d, conf, page_name, diagram_ids, _py, _roots,
                 )
-                # Повторный bbox группы 001 и mxCell ярлыка — после изменения geometry сегментов.
-                resize_location_label_to_cover_segments(
+                # Сегменты: возможны geom width/height — пересчёт dc_label/office_label и группы 001.
+                refresh_location_label_mxcells_after_swimlane_geometry(
                     diagram, page_name, file_name, diagram_ids, conf, d,
                 )
                 place_lan_group_kant_cells(
                     diagram, d, conf, page_name, diagram_ids, _py, _roots,
+                )
+                # После lan_kant bbox может вырасти — снова подогнать ярлык под cw и текст.
+                refresh_location_label_mxcells_after_swimlane_geometry(
+                    diagram, page_name, file_name, diagram_ids, conf, d,
                 )
 
     print('\n')

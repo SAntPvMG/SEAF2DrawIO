@@ -127,11 +127,15 @@
 |-----|----------|-----|
 | I1 | Порядок рёбер INET / EXT-WAN относительно DMZ | `reorder_inet_ext_wan_edge_before_dmz_swimlane` |
 | I2 | Пересегментные файрволы поверх остальных | `bring_cross_segment_firewalls_to_front` |
-| I3 | Подгонка подписи локации над зонами | `resize_location_label_to_cover_segments` |
+| I3 | Подгонка подписи локации над зонами (первый раз) | `refresh_location_label_mxcells_after_swimlane_geometry` → `resize_location_label_to_cover_segments` |
 | I4 | Раскладка КБ (слой 101), только `dc`/`office` | `auto_layout.kb_layout.kb_layout` |
 | I5 | Раскладка сервисов ТА (слой 102), только `dc`/`office` | `auto_layout.services_ta_layout.services_TA_layout` |
+| I6 | Расширение сегментов при переполнении LAN и сдвиг соседей | `expand_segments_for_lan_overflow_and_shift_neighbors` |
+| I7 | Подпись локации после изменения геометрии сегментов | снова `refresh_location_label_mxcells_after_swimlane_geometry` |
+| I8 | Рамки групп LAN (`lan_kant`) | `place_lan_group_kant_cells` |
+| I9 | Подпись локации после возможного роста bbox | третий вызов `refresh_location_label_mxcells_after_swimlane_geometry` |
 
-**Целевое расширение** (пока не подключено в `seaf2drawio.py`, см. план работ): `user_devices_layout` → `lan_vertical_fit_network_connection_overlays` → `lan_spread_overlapping_lans` → `lan_segment_align_expand_fit` — порядок и смысл в [lan-overlay-segment-algorithm.md](lan-overlay-segment-algorithm.md).
+**Дополнительно по плану** (см. [plan-lan-overlay-segment-work.md](plan-lan-overlay-segment-work.md)): возможное подключение `user_devices_layout` и шагов из [lan-overlay-segment-algorithm.md](lan-overlay-segment-algorithm.md).
 
 ---
 
@@ -153,7 +157,7 @@ C: корни страницы
   → E: dmz_segments_layout (+ segment_origin, cross_segment FW)
   → F: align_int_net_security_bottom_to_int_wan_edge
 G: паттерны → get_object → add_pages → add_object / update_node → add_links
-I: порядок рёбер → firewalls вперёд → метка локации → kb_layout → services_TA_layout [dc/office]
+I: порядок рёбер → firewalls вперёд → метка локации → kb_layout → services_TA_layout → LAN overflow → метка → lan_kant → метка [dc/office]
 ```
 
 Для **Main Schema** проходы D–F дают пустой кэш; опора на `compute_main_schema_segment_dimensions` и `position_offset` там, где intrinsic не задаёт координаты.

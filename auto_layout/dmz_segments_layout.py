@@ -1,5 +1,11 @@
 """
 Раскладка DMZ и абсолютные координаты сетки зон (office.yaml и dc.yaml — одна и та же модель).
+
+Без DMZ: INET-EDGE, EXT-WAN-EDGE и INT-WAN-EDGE — одна колонка слева от INT-NET; общий левый край;
+ширина всех трёх контейнеров выравнивается до max(INET, EXT, INT-WAN).
+
+С DMZ: INET и EXT слева от DMZ, их ширины = max(INET, EXT); INT-WAN-EDGE под DMZ, та же ширина и тот же X,
+что DMZ; INT-NET правее колонки DMZ с SEGMENT_GAP.
 """
 from __future__ import annotations
 
@@ -181,15 +187,24 @@ def dmz_segments_layout(
     int_sec_tpl = segment_rect_for_zone(patterns_doc, 'INT-SECURITY-NET')
     wan_edge_tpl = segment_rect_for_zone(patterns_doc, 'INT-WAN-EDGE')
 
-    if not dmz_rect:
+    interior_grid_possible = bool(
+        is_interior and inet_rect and ext_tpl and int_net_tpl and wan_edge_tpl
+    )
+
+    if dmz_rect:
+        dmz_dx, dmz_dy, dmz_dw, dmz_dh = dmz_rect
+    elif interior_grid_possible:
+        ix_ph, iy_ph, _, _ = inet_rect
+        _, _, wwan_ph, hwan_ph = wan_edge_tpl
+        dmz_dx, dmz_dy = int(ix_ph), int(iy_ph)
+        dmz_dw, dmz_dh = int(wwan_ph), int(hwan_ph)
+    else:
         return {
             'positions': positions,
             'segment_size': segment_size,
             'segment_origin': segment_origin,
             'cross_segment_firewall_oids': frozenset(),
         }
-
-    dmz_dx, dmz_dy, dmz_dw, dmz_dh = dmz_rect
 
     dmz_oids_on_page = [
         oid for oid, seg in segments.items()
@@ -199,7 +214,7 @@ def dmz_segments_layout(
     ]
 
     # ---------- interior (office.yaml / dc.yaml): полная сетка зон ----------
-    # INT-SECURITY-NET в шаблоне не обязателен: иначе при его отсутствии не применялись pull_shift и segment_origin.
+    # INT-SECURITY-NET в шаблоне не обязателен: иначе при его отсутствии не применялись segment_origin.
     if is_interior and inet_rect and ext_tpl and int_net_tpl and wan_edge_tpl:
         ix, iy, iw_t, ih_t = inet_rect
         inet_oids = _all_oids_zone_on_page(segments, page_roots, 'INET-EDGE')
@@ -212,6 +227,12 @@ def dmz_segments_layout(
         has_dmz_data = bool(dmz_oids_on_page)
 
         def _refresh_interior_grid() -> None:
+            def _seg_w_grid(seg_oid: str, template_w: int) -> int:
+                szloc = segment_size.get(seg_oid)
+                if szloc and 'w' in szloc:
+                    return int(szloc['w'])
+                return effective_segment_width(seg_oid, template_w, wan_layout_cache)
+
             inh_loc = (
                 max(
                     (effective_segment_height(o, ih_t, wan_layout_cache) for o in inet_oids),
@@ -222,7 +243,7 @@ def dmz_segments_layout(
             )
             inw_loc = (
                 max(
-                    (effective_segment_width(o, iw_t, wan_layout_cache) for o in inet_oids),
+                    (_seg_w_grid(o, iw_t) for o in inet_oids),
                     default=iw_t,
                 )
                 if inet_oids
@@ -239,21 +260,14 @@ def dmz_segments_layout(
             )
             exw_loc = (
                 max(
-                    (effective_segment_width(o, ew_t, wan_layout_cache) for o in ext_oids),
+                    (_seg_w_grid(o, ew_t) for o in ext_oids),
                     default=ew_t,
                 )
                 if ext_oids
                 else ew_t
             )
 
-            left_col_w_loc = max(inw_loc, exw_loc)
-
-            if int_wan_oids:
-                wan_w_natural_loc = max(
-                    int(segment_size.get(o, {}).get('w', wan_w_t)) for o in int_wan_oids
-                )
-            else:
-                wan_w_natural_loc = int(wan_w_t)
+            inet_ext_aligned_w = max(inw_loc, exw_loc)
 
             dmz_w_tpl_loc = int(dmz_dw)
             dmz_h_eff_loc = int(dmz_dh)
@@ -264,48 +278,50 @@ def dmz_segments_layout(
                     effective_segment_height(oid, int(dmz_dh), wan_layout_cache),
                 )
 
-            if not has_dmz_data:
-                pull_shift_loc = max(0, dmz_w_tpl_loc - wan_w_natural_loc)
-                ix_eff_loc = ix + pull_shift_loc
-                dmz_w_eff_loc = wan_w_natural_loc
-                if int_wan_oids:
-                    for _iw in int_wan_oids:
-                        sz = segment_size.setdefault(_iw, {})
-                        need_w = int(sz.get('w', wan_w_t))
-                        sz['w'] = max(int(left_col_w_loc), need_w)
-                    wan_w_eff_loc = max(int(segment_size[o]['w']) for o in int_wan_oids)
-                else:
-                    wan_w_eff_loc = int(wan_w_t)
-                dmz_h_for_wan_loc = 0
-            else:
-                ix_eff_loc = ix
-                dmz_w_eff_loc = dmz_w_tpl_loc
-                if int_wan_oids:
-                    for _iw in int_wan_oids:
-                        sz = segment_size.setdefault(_iw, {})
-                        need_w = int(sz.get('w', wan_w_t))
-                        sz['w'] = max(int(dmz_w_eff_loc), need_w)
-                    wan_w_eff_loc = max(int(segment_size[o]['w']) for o in int_wan_oids)
-                else:
-                    wan_w_eff_loc = int(wan_w_t)
-                dmz_h_for_wan_loc = dmz_h_eff_loc
+            wan_stack_left_x = int(ix)
 
-            col_right_loc = ix_eff_loc + left_col_w_loc
+            wan_natural_max = (
+                max(effective_segment_width(o, wan_w_t, wan_layout_cache) for o in int_wan_oids)
+                if int_wan_oids
+                else 0
+            )
 
-            dmz_x_loc = col_right_loc + SEGMENT_GAP
+            dmz_w_eff_loc = int(dmz_w_tpl_loc)
             access_top_loc = int(dmz_dy)
             dmz_y_loc = access_top_loc
 
             if has_dmz_data:
-                int_net_x_loc = dmz_x_loc + max(int(dmz_w_eff_loc), int(wan_w_eff_loc)) + SEGMENT_GAP
+                # INET/EXT — левая колонка, общая ширина max(INET, EXT).
+                for oid in inet_oids:
+                    segment_size.setdefault(oid, {})['w'] = inet_ext_aligned_w
+                for oid in ext_oids:
+                    segment_size.setdefault(oid, {})['w'] = inet_ext_aligned_w
+
+                dmz_x_loc = wan_stack_left_x + inet_ext_aligned_w + SEGMENT_GAP
+                # INT-WAN под DMZ: выравнивание по ширине с DMZ.
+                for oid in int_wan_oids:
+                    segment_size.setdefault(oid, {})['w'] = dmz_w_eff_loc
+
+                int_net_x_loc = dmz_x_loc + dmz_w_eff_loc + SEGMENT_GAP
+                int_wan_x_loc = dmz_x_loc
+                int_wan_y_loc = dmz_y_loc + dmz_h_eff_loc + SEGMENT_GAP
             else:
-                wan_stack_right = col_right_loc
-                if int_wan_oids:
-                    wan_stack_right = max(
-                        wan_stack_right,
-                        ix_eff_loc + max(int(segment_size[o]['w']) for o in int_wan_oids),
-                    )
-                int_net_x_loc = wan_stack_right + SEGMENT_GAP
+                # Одна колонка из трёх WAN-сегментов; ширина единая = max из всех.
+                uniform_w = max(inet_ext_aligned_w, wan_natural_max)
+                for oid in inet_oids:
+                    segment_size.setdefault(oid, {})['w'] = uniform_w
+                for oid in ext_oids:
+                    segment_size.setdefault(oid, {})['w'] = uniform_w
+                for oid in int_wan_oids:
+                    segment_size.setdefault(oid, {})['w'] = uniform_w
+
+                dmz_x_loc = wan_stack_left_x + uniform_w + SEGMENT_GAP
+                int_net_x_loc = wan_stack_left_x + uniform_w + SEGMENT_GAP
+
+                int_wan_x_loc = wan_stack_left_x
+                ext_h_loc = int(exh_loc)
+                int_wan_y_loc = int(iy + inh_loc + INET_EXT_VERTICAL_GAP + ext_h_loc + SEGMENT_GAP)
+
             int_net_y_loc = access_top_loc
 
             _, _, inw_net_t, inh_net_t = int_net_tpl
@@ -317,28 +333,20 @@ def dmz_segments_layout(
 
             int_sec_x_loc = int_net_x_loc + int_net_w_eff_loc + SEGMENT_GAP
 
-            int_wan_x_loc = dmz_x_loc
-            if not has_dmz_data:
-                int_wan_x_loc = ix_eff_loc
-                ext_h_loc = int(exh_loc)
-                int_wan_y_loc = int(iy + inh_loc + INET_EXT_VERTICAL_GAP + ext_h_loc + SEGMENT_GAP)
-            else:
-                int_wan_y_loc = dmz_y_loc + dmz_h_for_wan_loc + SEGMENT_GAP
-
-            ox_inet, oy_inet = int(ix_eff_loc), int(iy)
+            ox_inet, oy_inet = wan_stack_left_x, int(iy)
             for oid in inet_oids:
-                iw_o = effective_segment_width(oid, iw_t, wan_layout_cache)
+                iw_o = int(segment_size.setdefault(oid, {}).get('w', iw_t))
                 ih_o = effective_segment_height(oid, ih_t, wan_layout_cache)
                 segment_origin[oid] = {'x': ox_inet, 'y': oy_inet}
-                positions[oid] = {'x': ox_inet, 'y': oy_inet, 'w': int(iw_o), 'h': int(ih_o)}
+                positions[oid] = {'x': ox_inet, 'y': oy_inet, 'w': iw_o, 'h': int(ih_o)}
 
             oy_ext = int(iy + inh_loc + INET_EXT_VERTICAL_GAP)
-            ox_ext = int(ix_eff_loc)
+            ox_ext = wan_stack_left_x
             for oid in ext_oids:
-                ew_o = effective_segment_width(oid, ew_t, wan_layout_cache)
+                ew_o = int(segment_size.setdefault(oid, {}).get('w', ew_t))
                 eh_o = effective_segment_height(oid, eh_t, wan_layout_cache)
                 segment_origin[oid] = {'x': ox_ext, 'y': oy_ext}
-                positions[oid] = {'x': ox_ext, 'y': oy_ext, 'w': int(ew_o), 'h': int(eh_o)}
+                positions[oid] = {'x': ox_ext, 'y': oy_ext, 'w': ew_o, 'h': int(eh_o)}
 
             for oid in dmz_oids_on_page:
                 segment_origin[oid] = {'x': int(dmz_x_loc), 'y': int(dmz_y_loc)}
@@ -347,7 +355,7 @@ def dmz_segments_layout(
             if int_sec_oid and int_sec_tpl:
                 segment_origin[int_sec_oid] = {'x': int(int_sec_x_loc), 'y': int(access_top_loc)}
             for oid in int_wan_oids:
-                ww_o = int(segment_size.get(oid, {}).get('w', wan_w_t))
+                ww_o = int(segment_size.setdefault(oid, {}).get('w', wan_w_t))
                 wh_o = int(segment_size.get(oid, {}).get('h', wan_h_t))
                 segment_origin[oid] = {'x': int(int_wan_x_loc), 'y': int(int_wan_y_loc)}
                 positions[oid] = {'x': int(int_wan_x_loc), 'y': int(int_wan_y_loc), 'w': ww_o, 'h': wh_o}
@@ -373,6 +381,15 @@ def dmz_segments_layout(
                     positions, segment_origin, components, networks, page_roots, patterns_doc, segment_size,
                 ),
             )
+
+        # Последний expand может изменить ширину DMZ без следующего прохода цикла —
+        # финальный refresh синхронизирует INT-WAN (под DMZ, ширина = DMZ) и INT-NET по X.
+        _refresh_interior_grid()
+        xf_acc |= frozenset(
+            apply_cross_segment_firewall_positions(
+                positions, segment_origin, components, networks, page_roots, patterns_doc, segment_size,
+            ),
+        )
 
         return {
             'positions': positions,

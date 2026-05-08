@@ -220,6 +220,8 @@ YAML данные + data/patterns/*.yaml
 
 Пошаговое описание проходов A–J (старт, intrinsic, dmz, паттерны, `add_object`, постобработка страницы, финиш) и привязка к файлам: **[seaf2drawio-implementation-passes.md](seaf2drawio-implementation-passes.md)**.
 
+Сводка «уровней» (проходы / кэш раскладки / группы Draw.IO) и таблица переменных конфигурации и модуля: **[application-algorithm-levels-variables.md](application-algorithm-levels-variables.md)**.
+
 ---
 
 ## 15. Связанные файлы в репозитории
@@ -233,7 +235,7 @@ YAML данные + data/patterns/*.yaml
 | `AGENTS.md` | Краткие правила проекта и команды запуска |
 | `docs/lan-overlay-segment-algorithm.md` | Целевой пост-проход dc/office: КБ, ТА, User Devices, LAN, сегменты |
 | `docs/plan-lan-overlay-segment-work.md` | План работ по внедрению этого пост-прохода |
-| `docs/seaf2drawio-implementation-passes.md` | Полный алгоритм по проходам A–J и модулям |
+| `docs/application-algorithm-levels-variables.md` | Алгоритм, типы уровней (проходы / кэш / группы), переменные конфига и модуля |
 | `docs/intrinsic-lan-horizontal-bands.md` | История: горизонтальная полоса LAN при count > deep (**устаревает** под вертикальные колонки) |
 | `docs/lan-vertical-columns-layout-spec.md` | Спецификация: вертикальные колонки LAN (`deep+3`, `offset×2`) |
 

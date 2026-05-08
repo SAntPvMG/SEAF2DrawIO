@@ -1,8 +1,8 @@
-office_label:
+﻿office_label:
   xml : > 
     <object label="&lt;div style=&quot;font-size: 1px&quot;&gt;&lt;font style=&quot;font-size:16.93px;font-family:Calibri;color:#000000;direction:ltr;letter-spacing:0px;line-height:120%;opacity:1&quot;&gt;&lt;b&gt;{{label}}&lt;br/&gt;&lt;/b&gt;&lt;/font&gt;&lt;font style=&quot;font-size:11.29px;font-family:Calibri;color:#000000;direction:ltr;letter-spacing:0px;line-height:120%;opacity:1&quot;&gt;{address}&lt;br/&gt;&lt;/font&gt;&lt;font style=&quot;font-size:8.47px;font-family:Calibri;color:#000000;direction:ltr;letter-spacing:0px;line-height:120%;opacity:1&quot;&gt;&lt;b&gt;
     &lt;/b&gt;&lt;/font&gt;&lt;font style=&quot;font-size:16.93px;font-family:Calibri;color:#000000;direction:ltr;letter-spacing:0px;line-height:120%;opacity:1&quot;&gt;&lt;b&gt;&lt;br/&gt;&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;" id="{{id}}">
-      <mxCell style="verticalAlign=middle;align=center;vsdxID=13090;fillColor=#ffffff;gradientColor=none;shape=stencil(vZTbDsIgDIafhssRBObh2sN7EGUbEcfSoc63l6VbdLiZmJjd9fBB+ZtSIrZ1oSpNOKs9uLO+m5MviNgRzk1ZaDA+WETsidhmDnQO7lqe0K9US7bWxd3aGxo8t2DtEc4evYv+AVlryjd28zdWwTHkoGfpZok0dLiUlEsMNcML+gvTlKarjkhUY+oEnFfeuBLzHW0V5DoJ5ZLMqnyQqu9aVx/hUTFx8fA8Kb7pWctIj6ArPtAT9YfNJWW07oTof5C/d2aq1TM0Z2rERrUsGGXpx9gu47Ed/QazzOy3DxiM10bIjLW4UN7z8QYJIdw+Yv8E);strokeColor=#000000;strokeWidth=0;labelBackgroundColor=none;rounded=0;html=1;whiteSpace=wrap;" vertex="1" parent="001">
+      <mxCell id="{{id}}" style="verticalAlign=middle;align=center;vsdxID=13090;fillColor=#ffffff;gradientColor=none;shape=stencil(vZTbDsIgDIafhssRBObh2sN7EGUbEcfSoc63l6VbdLiZmJjd9fBB+ZtSIrZ1oSpNOKs9uLO+m5MviNgRzk1ZaDA+WETsidhmDnQO7lqe0K9US7bWxd3aGxo8t2DtEc4evYv+AVlryjd28zdWwTHkoGfpZok0dLiUlEsMNcML+gvTlKarjkhUY+oEnFfeuBLzHW0V5DoJ5ZLMqnyQqu9aVx/hUTFx8fA8Kb7pWctIj6ArPtAT9YfNJWW07oTof5C/d2aq1TM0Z2rERrUsGGXpx9gu47Ed/QazzOy3DxiM10bIjLW4UN7z8QYJIdw+Yv8E);strokeColor=#000000;strokeWidth=0;labelBackgroundColor=none;rounded=0;html=1;whiteSpace=wrap;" vertex="1" parent="001">
         <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"  />
       </mxCell>
     </object>
@@ -84,7 +84,7 @@ eco_services:
 segment_dmz:
   xml : >
     <object label="{title}" id="{{id}}">
-        <mxCell style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;fillColor=#DDD7E6;verticalAlign=top;fontStyle=1;strokeColor=none;container=1;recursiveResize=0;" parent="001" vertex="1">
+        <mxCell style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;fillColor=#DDD7E6;verticalAlign=top;fontStyle=1;strokeColor=none;" parent="001" vertex="1">
           <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
         </mxCell>
     </object>
@@ -99,14 +99,10 @@ segment_dmz:
   deep: 0
   algo: 'none'
 
-# Зазоры между колонками сегментов — SEGMENT_GAP в auto_layout (interior-сетка).
-# Инвариант: нижний край «Внутренняя сеть офиса (ЛВС)» (INT-NET) и INT-SECURITY-NET не ниже низа INT-WAN-EDGE:
-#   y+h ≤ 830+290 = 1120 (= высота группы 001 на странице Office).
-
 segment_inet_edge:
   xml : >
     <object label="{title}" id="{{id}}">
-        <mxCell style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fillColor=#BFBFBF;horizontal=1;labelPosition=center;verticalLabelPosition=middle;align=center;verticalAlign=top;fontColor=#FFFFFF;fontStyle=1;strokeColor=none;container=1;recursiveResize=0;" vertex="1" parent="001">
+        <mxCell style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fillColor=#BFBFBF;horizontal=1;labelPosition=center;verticalLabelPosition=middle;align=center;verticalAlign=top;fontColor=#FFFFFF;fontStyle=1;strokeColor=none;" vertex="1" parent="001">
             <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
         </mxCell>
     </object>
@@ -116,7 +112,7 @@ segment_inet_edge:
   x: 0
   y: 210
   w: 195
-  h: 297
+  h: 550
   offset: 0
   deep: 0
   algo: 'none'
@@ -124,14 +120,14 @@ segment_inet_edge:
 segment_int_wan-edge:
     xml: >
       <object label="{title}" id="{{id}}">
-          <mxCell style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#FFFFFF;fillColor=#BFBFBF;verticalAlign=top;strokeColor=none;container=1;recursiveResize=0;" vertex="1" parent="001">
+          <mxCell style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#FFFFFF;fillColor=#BFBFBF;verticalAlign=top;strokeColor=none;" vertex="1" parent="001">
             <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
           </mxCell>
       </object>
     schema: 'seaf.company.ta.services.network_segments'
     parent_id: 'location'
     type: "zone:INT-WAN-EDGE"
-    x: 165
+    x: 0
     y: 830
     w: 440
     h: 290
@@ -142,7 +138,7 @@ segment_int_wan-edge:
 segment_ext_wan_edge:
   xml : >
     <object label="{title}" id="{{id}}">
-      <mxCell style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fillColor=#BFBFBF;verticalAlign=top;fontColor=#FFFFFF;fontStyle=1;strokeColor=none;container=1;recursiveResize=0;" vertex="1" parent="001">
+      <mxCell style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fillColor=#BFBFBF;verticalAlign=top;fontColor=#FFFFFF;fontStyle=1;strokeColor=none;" vertex="1" parent="001">
           <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
       </mxCell>
     </object>
@@ -160,7 +156,7 @@ segment_ext_wan_edge:
 segment_int_net:
   xml : >
     <object label="{title}" id="{{id}}">
-      <mxCell style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;fillColor=#FFCE9F;fontStyle=1;verticalAlign=top;strokeColor=none;container=1;recursiveResize=0;" vertex="1" parent="001">
+      <mxCell style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;fillColor=#FFCE9F;fontStyle=1;verticalAlign=top;strokeColor=none;" vertex="1" parent="001">
           <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
       </mxCell>
     </object>
@@ -170,7 +166,6 @@ segment_int_net:
   x: 635
   y: 0
   w: 750
-  # h ≤ низ INT-WAN-EDGE (830+290) − y; совпадает с height группы 001 (1120)
   h: 1120
   offset: 0
   deep: 0
@@ -179,7 +174,7 @@ segment_int_net:
 segment_int_security_net:
   xml : >
     <object label="{title}" id="{{id}}">
-      <mxCell style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;fillColor=#B7DEE8;fontStyle=1;verticalAlign=top;strokeColor=none;container=1;recursiveResize=0;" vertex="1" parent="001">
+      <mxCell style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=12;fontColor=#000000;fillColor=#B7DEE8;fontStyle=1;verticalAlign=top;strokeColor=none;" vertex="1" parent="001">
           <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
       </mxCell>
     </object>
@@ -189,7 +184,6 @@ segment_int_security_net:
   x: 1085
   y: 0
   w: 300
-  # см. segment_int_net — общий низ с INT-WAN-EDGE
   h: 1120
   offset: 0
   deep: 0
@@ -243,8 +237,6 @@ wan_edge_internet_strip:
   schema: 'seaf.company.ta.services.networks'
   parent_id: 'segment'
   type: "type:WAN"
-  exclude_fields:
-    - provider
   id_regex: '^$'
   deep: 2
   offset: 80
@@ -264,8 +256,6 @@ wan_edge_transport_strip:
   schema: 'seaf.company.ta.services.networks'
   parent_id: 'segment'
   type: "type:WAN"
-  exclude_fields:
-    - provider
   id_regex: '^$'
   deep: 4
   offset: 90
@@ -297,7 +287,7 @@ wan_edge:
 
 isp:
   xml : >
-    <mxCell id="{{id}}" value="" style="group;noLabel=1;" parent="{parent_id}" vertex="1">
+    <mxCell id="{{id}}" value="" style="group;noLabel=1;" parent="{segment}" vertex="1">
         <mxGeometry  x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />            
     </mxCell>
     <mxCell id="{{id}}" value="&lt;div style=&quot;font-size: 9px;&quot;&gt;&lt;font style=&quot;font-size: 9px; font-family: Calibri; color: rgb(255, 255, 255); direction: ltr; letter-spacing: 0px; line-height: 120%; opacity: 1;&quot;&gt;ISP&lt;br style=&quot;font-size: 9px;&quot;&gt;&lt;/font&gt;&lt;font style=&quot;font-size: 9px; font-family: Calibri; color: rgb(255, 255, 255); direction: ltr; letter-spacing: 0px; line-height: 120%; opacity: 1;&quot;&gt;{title}&lt;/font&gt;&lt;font style=&quot;font-size: 9px; font-family: Calibri; color: rgb(255, 255, 255); direction: ltr; letter-spacing: 0px; line-height: 120%; opacity: 1;&quot;&gt;&lt;br style=&quot;font-size: 9px;&quot;&gt;&lt;/font&gt;&lt;/div&gt;" style="verticalAlign=middle;align=center;vsdxID=5657;fillColor=#612621;gradientColor=none;shape=stencil(nZBLDsIwEENPM1sUMoILlHIBThCRQEaEpErD9/SkNUhVFyy6G9vPGsnETe9N50irvuR0cQ+xxRPvSGuJ3mUp9SJuiZtTyu6c0y1a6M5UUqvRcRad9UBrZfLxIG8Hb7viDWz0ruk+/HsiVYhe376C3gMNEifoL1wE/0EXgrP39RgXwVYSAgad5vMFq4X1uf0A);strokeColor=#6a5628;spacingTop=-2;spacingBottom=-2;spacingLeft=-2;spacingRight=-2;labelBackgroundColor=none;rounded=1;html=1;whiteSpace=wrap;horizontal=1;fontSize=9;" vertex="1" parent="{Group_ID}">
@@ -374,11 +364,11 @@ lan:
   parent_id: 'segment'
   type: "type:LAN"
   deep: 4
-  offset: 100
+  offset: 70
   x: -10
-  y: 140
+  y: 60
   w: 20
-  h: 200
+  h: 140
   algo: 'Y+'
 
 # ------------------------------------ Сетевые устройства ------------------------------------------------------------
@@ -386,7 +376,7 @@ lan:
 router:
   xml : >
     <object label="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(237, 237, 237)); line-height: 140%; font-size: 9px; &quot;&gt;&amp;nbsp;{{label}}&amp;nbsp;&lt;/font&gt;" id="{{id}}">
-          <mxCell style="shape=mxgraph.cisco.routers.router;sketch=0;html=1;pointerEvents=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;labelBackgroundColor=default;fontSize=12;fontColor=#FFFFFF;" parent="{parent_id}" vertex="1">
+          <mxCell style="shape=mxgraph.cisco.routers.router;sketch=0;html=1;pointerEvents=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;labelBackgroundColor=default;fontSize=12;fontColor=#FFFFFF;" parent="{segment}" vertex="1">
             <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
           </mxCell>
     </object>
@@ -409,7 +399,7 @@ router:
 wireless_controller:
   xml : >
     <object label="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(237, 237, 237)); line-height: 140%; font-size: 9px; &quot;&gt;&amp;nbsp;{{label}}&amp;nbsp;&lt;/font&gt;" id="{{id}}">
-          <mxCell style="shape=mxgraph.cisco.wireless.wlan_controller;sketch=0;html=1;pointerEvents=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;labelBackgroundColor=none;fontSize=9;fontColor=default;fontStyle=1;" parent="{parent_id}" vertex="1">
+          <mxCell style="shape=mxgraph.cisco.wireless.wlan_controller;sketch=0;html=1;pointerEvents=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;labelBackgroundColor=none;fontSize=9;fontColor=default;fontStyle=1;" parent="{segment}" vertex="1">
             <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
           </mxCell>
     </object>
@@ -427,7 +417,7 @@ wireless_controller:
 firewall:
   xml : >
     <object label="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(237, 237, 237)); line-height: 140%; font-size: 9px; &quot;&gt;&amp;nbsp;{{label}}&amp;nbsp;&lt;/font&gt;" id="{{id}}">
-      <mxCell style="shape=mxgraph.cisco.security.firewall;html=1;pointerEvents=1;dashed=0;fillColor=#FF0000;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;flipH=1;" parent="{parent_id}" vertex="1">
+      <mxCell style="shape=mxgraph.cisco.security.firewall;html=1;pointerEvents=1;dashed=0;fillColor=#FF0000;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;flipH=1;" parent="{segment}" vertex="1">
         <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
       </mxCell>
     </object>
@@ -450,7 +440,7 @@ firewall:
 fpsu:
   xml : >
     <object label="&lt;font style=&quot;font-size: 8px;&quot;&gt;{{label}}&lt;/font&gt;" id="{{id}}">
-      <mxCell style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=#232F3E;fillColor=#FF3333;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.vpn_gateway;" vertex="1" parent="{parent_id}">
+      <mxCell style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=#232F3E;fillColor=#FF3333;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.vpn_gateway;" vertex="1" parent="{segment}">
         <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
       </mxCell>
     </object>
@@ -473,7 +463,7 @@ fpsu:
 switch:
   xml : >
     <object label="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(237, 237, 237)); line-height: 140%; font-size: 9px; &quot;&gt;&amp;nbsp;{{label}}&amp;nbsp;&lt;/font&gt;" id="{{id}}">
-          <mxCell style="shape=mxgraph.cisco.switches.workgroup_switch;sketch=0;html=1;pointerEvents=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;labelBackgroundColor=default;fontSize=12;fontColor=#FFFFFF;" parent="{parent_id}" vertex="1">
+          <mxCell style="shape=mxgraph.cisco.switches.workgroup_switch;sketch=0;html=1;pointerEvents=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;labelBackgroundColor=default;fontSize=12;fontColor=#FFFFFF;" parent="{segment}" vertex="1">
             <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
           </mxCell>
     </object>
@@ -491,7 +481,7 @@ switch:
 vpn:
   xml : >
     <object label="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(237, 237, 237)); line-height: 140%; font-size: 9px; &quot;&gt;&amp;nbsp;{{label}}&amp;nbsp;&lt;/font&gt;" id="{{id}}">
-          <mxCell style="shape=mxgraph.cisco.hubs_and_gateways.vpn_gateway;sketch=0;html=1;pointerEvents=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;labelBackgroundColor=default;fontSize=12;fontColor=#FFFFFF;" parent="{parent_id}" vertex="1">
+          <mxCell style="shape=mxgraph.cisco.hubs_and_gateways.vpn_gateway;sketch=0;html=1;pointerEvents=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;labelBackgroundColor=default;fontSize=12;fontColor=#FFFFFF;" parent="{segment}" vertex="1">
             <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
           </mxCell>
     </object>
@@ -514,7 +504,7 @@ vpn:
 nat:
   xml : >
     <object label="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(237, 237, 237)); line-height: 140%; font-size: 9px; &quot;&gt;&amp;nbsp;{{label}}&amp;nbsp;&lt;/font&gt;" id="{{id}}">
-          <mxCell style="shape=mxgraph.cisco.security.guard;sketch=0;html=1;pointerEvents=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;labelBackgroundColor=default;fontSize=12;fontColor=#FFFFFF;" parent="{parent_id}" vertex="1">
+          <mxCell style="shape=mxgraph.cisco.security.guard;sketch=0;html=1;pointerEvents=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;labelBackgroundColor=default;fontSize=12;fontColor=#FFFFFF;" parent="{segment}" vertex="1">
             <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry" />
           </mxCell>
     </object>

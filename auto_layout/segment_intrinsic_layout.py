@@ -40,7 +40,7 @@ from auto_layout.services_ta_layout import (
 )
 
 # Зазор между соседними сегментами на странице (сетка office/dmz), не поля внутри сегмента
-SEGMENT_GAP = 5
+SEGMENT_GAP = 10
 
 # Вертикальный зазор между полосками LAN в колоночном режиме (len(LAN) > lan.deep)
 LAN_COLUMN_VERTICAL_GAP_PX = 40
