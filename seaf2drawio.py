@@ -1373,15 +1373,24 @@ if __name__ == '__main__':
                     continue
                 print('.', end='')
                 try:
+                    schema_key = object_pattern['schema']
                     object_data = d.get_object(
                         conf['data_yaml_file'],
-                        object_pattern['schema'],
+                        schema_key,
                         type=object_pattern.get('type'),
                         sort=(object_pattern['sort'] if 'sort' in object_pattern else
                               (object_pattern['parent_id'] if object_pattern.get('parent_id') else None)),
                         require_fields=object_pattern.get('require_fields'),
                         exclude_fields=object_pattern.get('exclude_fields'),
                     )
+
+                    if d.schema_section_defined(conf['data_yaml_file'], schema_key) and not object_data:
+                        print(
+                            f'\n WARNING : Секция «{schema_key}» есть в данных, но объектов нет — '
+                            f'блок «{k}» на «{page_name}» пропущен.',
+                            end='',
+                        )
+                        continue
 
                     add_pages(object_pattern, k if k in diagram_pages else file_name, page_name)
                     object_pattern.update({

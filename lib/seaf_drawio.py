@@ -414,6 +414,14 @@ class SeafDrawio:
         except KeyError as e:
             return {}
 
+    def schema_section_defined(self, file, key) -> bool:
+        """True, если в объединённых данных есть секция схемы (в т.ч. пустой {{}})."""
+        try:
+            block = self.read_and_merge_yaml(file)[key]
+        except KeyError:
+            return False
+        return isinstance(block, dict)
+
 
     @staticmethod
     def create_validator(pattern):
