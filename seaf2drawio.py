@@ -684,6 +684,27 @@ def _network_segment_refs_match(ndata, segment_oid):
     return seg == segment_oid
 
 
+def _object_ids_for_pattern(object_data: dict, object_pattern: dict, pattern_name: str = '') -> list:
+    """
+    OID объектов для отрисовки по паттерну.
+    id_regex в YAML (например '^$' у wan_edge_*_strip) ограничивает набор — иначе strip
+    перехватывал бы ISP до блока isp, и update_node не менял shape.
+    """
+    ids = list(object_data.keys())
+    rx = object_pattern.get('id_regex')
+    if not rx:
+        return ids
+    try:
+        cre = re.compile(str(rx))
+    except re.error:
+        print(
+            f'\n WARNING : id_regex «{rx}» некорректен — блок «{pattern_name}» без фильтра OID.',
+            end='',
+        )
+        return ids
+    return [oid for oid in ids if cre.search(str(oid))]
+
+
 def compute_main_schema_segment_dimensions(segment_oid, segment_pattern):
     """
     Размеры контейнера segment_internet / segment_transport_wan на Main Schema:
@@ -1405,9 +1426,11 @@ if __name__ == '__main__':
                     # Collect expected IDs and data per schema (for verification)
                     collect_ids()
 
-                    for i in list(object_data.keys()):
+                    pattern_object_ids = _object_ids_for_pattern(object_data, object_pattern, k)
+                    for i in pattern_object_ids:
                         if (i in diagram.nodes_ids[diagram.current_diagram_id]
-                                and not object_pattern.get('node_id_suffix')):
+                                and not object_pattern.get('node_id_suffix')
+                                and not object_pattern.get('require_fields')):
                             diagram.update_node(id=i, data=object_data[i])
                             d.append_to_dict(diagram_ids, page_name, i)
                         else:

@@ -238,6 +238,8 @@ wan_edge_internet_strip:
   parent_id: 'segment'
   type: "type:WAN"
   id_regex: '^$'
+  exclude_fields:
+    - provider
   deep: 2
   offset: 80
   x: 510
@@ -257,6 +259,8 @@ wan_edge_transport_strip:
   parent_id: 'segment'
   type: "type:WAN"
   id_regex: '^$'
+  exclude_fields:
+    - provider
   deep: 4
   offset: 90
   x: 510
