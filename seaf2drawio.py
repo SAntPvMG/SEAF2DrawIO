@@ -892,8 +892,8 @@ def _short_seaf_tokens(values, max_items: int = 4, per_token_len: int = 24, *, l
     return ', '.join(out) if out else '—'
 
 
-def _k8s_xml_escape(s) -> str:
-    """Безопасная подстановка в DrawIO label (XML-атрибут / разметка)."""
+def _xml_escape_drawio_text(s) -> str:
+    """Безопасная подстановка в DrawIO label (XML-атрибут / HTML-разметка)."""
     t = '' if s is None else str(s)
     return (
         t.replace('&', '&amp;')
@@ -901,6 +901,21 @@ def _k8s_xml_escape(s) -> str:
         .replace('>', '&gt;')
         .replace('"', '&quot;')
     )
+
+
+_k8s_xml_escape = _xml_escape_drawio_text
+
+_DRAWIO_XML_TEXT_FIELDS = frozenset({'title', 'description', 'address', 'label', 'url'})
+
+
+def _escape_data_for_drawio_xml(data: dict) -> None:
+    """Экранирует строковые поля data перед format_map / add_node (один раз на объект)."""
+    if not isinstance(data, dict):
+        return
+    for key in _DRAWIO_XML_TEXT_FIELDS:
+        val = data.get(key)
+        if isinstance(val, str):
+            data[key] = _xml_escape_drawio_text(val)
 
 
 def _enrich_k8s_middle_row(shape_schema: str, key_id: str, data: dict) -> None:
@@ -1055,12 +1070,13 @@ def add_pages(pattern, pages_bucket_key: str, restore_page=None):
             return
 
         for key_id in list( page_data.keys() ):
+            page_title = _xml_escape_drawio_text(page_data[key_id].get('title', ''))
 
             diagram.drawio_diagram_xml = pattern['ext_page']
             try:
-                diagram.add_diagram(key_id + '_page', page_data[key_id]['title'])
-                diagram_pages[pages_bucket_key].append(page_data[key_id]['title'])
-                d.append_to_dict(diagram_ids, page_data[key_id]['title'], key_id)
+                diagram.add_diagram(key_id + '_page', page_title)
+                diagram_pages[pages_bucket_key].append(page_title)
+                d.append_to_dict(diagram_ids, page_title, key_id)
             except ET.ParseError:
                 print(f'WARNING ! Не используйте XML зарезервированные символы <>&\'\" в поле title для объектов dc/office')
                 pass
@@ -1076,6 +1092,8 @@ def add_object(pattern, data, key_id):
         _enrich_k8s_minimal_row(pattern.get('schema') or '', key_id, data)
     elif file_name == 'k8s' and _k8s_diagram_details == 'middle':
         _enrich_k8s_middle_row(pattern.get('schema') or '', key_id, data)
+
+    _escape_data_for_drawio_xml(data)
 
     pattern_count, current_parent = 0, ''
     for xml_pattern in d.get_xml_pattern(pattern['xml'], key_id):
@@ -1138,7 +1156,6 @@ def add_object(pattern, data, key_id):
                 'description': data.get('description', ''),
                 'id': _draw_id,
             }
-            # Родитель-сегмент для шаблонов с parent="{segment}" и согласованного вложения в контейнер
             if pattern.get('parent_id') == 'segment' and current_parent:
                 fmt_extra['segment'] = current_parent
             diagram.drawio_node_object_xml = diagram.drawio_node_object_xml.format_map(
