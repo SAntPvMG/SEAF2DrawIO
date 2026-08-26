@@ -100,6 +100,8 @@ seaf.company.ta.services.monitorings:
     - Инфраструктурный
     - Журналирование
     monitored_services:
+    - jupiter.network.lan.dc01.int.it.services
+    - jupiter.network.lan.dc02.int.it.services
     - jupiter.monitoring.elk
     - jupiter.monitoring.jaeger
     - jupiter.server_metal.01

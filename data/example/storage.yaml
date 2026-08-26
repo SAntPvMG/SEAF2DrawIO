@@ -1,7 +1,7 @@
 seaf.company.ta.services.storages:
   jupiter.obj_storage.cloud_s3:
-    title: S3 Storage in Sber
-    description: S3 Storage in Sber Cloud
+    title: S3 Storage in Cloud.ru
+    description: S3 Storage in Cloud.ru
     type: Simple Storage Service
     softwares:
     - jupiter.software.s3_service

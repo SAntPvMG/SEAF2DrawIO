@@ -56,8 +56,8 @@ seaf.company.ta.services.cluster_virtualizations:
     hw_storage:
     - jupiter.hw_storage.01
   jupiter.cluster_virtualization.vmware.sber:
-    title: Кластер виртуализации VMware в Sber DC
-    description: Кластер виртуализации VMware для ресурсов в ЦОД Sber
+    title: Кластер виртуализации VMware on-prem
+    description: Кластер виртуализации VMware в корпоративном контуре ЦОД
     hypervisor: VMware vSphere
     deployment_model: onprem
     oversubscription_rate: 1

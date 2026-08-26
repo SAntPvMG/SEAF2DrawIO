@@ -1,6 +1,23 @@
 seaf.company.ta.services.logical_links:
+  jupiter.link.internet_to_av_db_update:
+    description: Технический поток данных из Internet к сервису антивирусной защиты для получения баз данных через пограничные и сегментирующие NGFW.
+    direction: ==>
+    source: jupiter.network_segment.dc.internet
+    stand:
+    - jupiter.stand.prod
+    tags:
+    - technical-data-flow
+    - internet
+    - firewall
+    - antivirus-db-update
+    target:
+    - jupiter.network_device.dc.fw.01
+    - jupiter.network_device.dc.fw.03
+    - jupiter.kb.5
+    title: Получение баз данных
+    topology: chain
   jupiter.link.fw_to_servers:
-    description: Логическая связь от NGFW к серверам в ЦОД Sber
+    description: Логическая связь от NGFW к серверам в ЦОД Cloud.ru
     direction: <==>
     source: jupiter.network_device.dc.fw.01
     stand:
@@ -9,4 +26,488 @@ seaf.company.ta.services.logical_links:
     - jupiter.compute_service.ad
     - jupiter.compute_service.mail
     title: Связь NGFW с серверами
-
+    topology: star
+    tags:
+      - firewall
+  jupiter.link.office_to_dc01_vpn:
+    description: Основной защищенный межсайтовый IPsec VPN-канал для передачи корпоративного трафика и репликации Active Directory между головным офисом HQ и ЦОД Moscow DC01.
+    direction: <==>
+    source: jupiter.network_device.ngfw.cntxt1
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.network_device.dc.vpn.01
+    title: "VPN-канал: Офис HQ - ЦОД Moscow DC01"
+    topology: star
+    tags:
+    - vpn-tunnel
+    - ipsec
+    - office-dc
+    - security
+    - production
+  jupiter.link.dc01_to_dc02_replication:
+    description: Выделенный резервированный канал межсайтовой DCI-репликации баз данных и конфигураций безопасности внутренних контуров ЦОД Moscow DC01 и Moscow DC02.
+    direction: <==>
+    source: jupiter.network_device.dc.fw.07
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.network_device.dc.fw.07_dc02
+    title: "DCI Репликация: DC01 - DC02"
+    topology: star
+    tags:
+    - inter-dc
+    - replication
+    - dci
+    - cross-site
+    - firewall
+  jupiter.link.office_dc01_dc02_transit:
+    description: Резервная логическая цепочка транзитного VPN-доступа сотрудников головного офиса к сегменту управления ЦОД Moscow DC02 через VPN-концентратор ЦОД Moscow DC01.
+    direction: ==>
+    source: jupiter.network_device.ngfw.01
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.network_device.dc.vpn.01
+    - jupiter.network_device.dc.vpn.01_dc02
+    title: "Резервный VPN-маршрут: HQ - DC01 - DC02"
+    topology: chain
+    tags:
+    - transit-route
+    - vpn-chain
+    - cross-site
+    - backup-path
+  jupiter.link.office_pc_to_dc02_vpn:
+    description: Прямой удаленный VPN-доступ (Client VPN) с корпоративных ноутбуков сотрудников головного офиса к VPN-концентратору ЦОД Moscow DC02.
+    direction: ==>
+    source: jupiter.user_device.pc
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.network_device.dc.vpn.01_dc02
+    title: "Client VPN: АРМ сотрудников - DC02"
+    topology: star
+    tags:
+    - client-vpn
+    - remote-access
+    - hq-office
+    - dc-access
+  jupiter.link.kb_scan_to_gitlab:
+    description: Передача исходного кода из GitLab в сервис инструментального контроля защищенности для SAST-проверок.
+    direction: ==>
+    source: jupiter.gitlab
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.kb.1
+    - jupiter.compute_service.wildfly
+    title: SAST-проверка кода
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - sast
+  jupiter.link.kb_config_dmz_to_ngfw:
+    description: Контроль эталонных конфигураций DMZ-устройств через сервис безопасности конфигураций.
+    direction: <==>
+    source: jupiter.kb.11
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.network_device.dc.fw.01
+    - jupiter.network_device.dc.fw.03
+    title: Контроль конфигураций DMZ
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - configuration-security
+  jupiter.link.kb_config_internal_to_servers:
+    description: Контроль конфигураций серверов внутреннего контура и сверка с эталонными профилями.
+    direction: <==>
+    source: jupiter.kb.12
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.server_virtual.ad01
+    - jupiter.server_virtual.mail01
+    - jupiter.compute_service.ad
+    title: Контроль конфигураций внутреннего контура
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - configuration-security
+  jupiter.link.kb_user_access_to_ad:
+    description: Проверка пользовательских прав доступа через сервис контроля доступа и службу каталогов.
+    direction: <==>
+    source: jupiter.kb.2
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.compute_service.ad
+    - jupiter.user_device.pc
+    title: Контроль пользовательского доступа
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - access-control
+  jupiter.link.kb_ids_from_ngfw:
+    description: Передача сетевых событий с сегментирующих NGFW в сервис обнаружения вторжений.
+    direction: ==>
+    source: jupiter.network_device.dc.fw.03
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.kb.3
+    - jupiter.monitoring.elk
+    title: События IDS от NGFW
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - ids
+  jupiter.link.kb_mse_policy_to_firewalls:
+    description: Распространение политик межсетевого экранирования на периметровые и сегментирующие NGFW.
+    direction: ==>
+    source: jupiter.kb.4
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.network_device.dc.fw.01
+    - jupiter.network_device.dc.fw.03
+    - jupiter.network_device.dc.fw.07
+    title: Политики МСЭ
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - firewall
+  jupiter.link.kb_av_agent_control:
+    description: Управление антивирусными агентами на рабочих станциях из сервиса антивирусной защиты.
+    direction: <==>
+    source: jupiter.kb.5
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.user_device.pc
+    - jupiter.user_device.laptop
+    title: Управление агентами антивируса
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - antivirus
+  jupiter.link.kb_nac_endpoint_check:
+    description: Проверка состояния рабочей станции перед выдачей сетевого доступа через NAC.
+    direction: <==>
+    source: jupiter.user_device.laptop
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.kb.6
+    - jupiter.network_device.wificontroller.arm
+    title: Проверка устройства NAC
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - nac
+  jupiter.link.kb_alg_to_apps:
+    description: Прикладной шлюз принимает внешний трафик и передает его к корпоративному кластеру приложений.
+    direction: ==>
+    source: jupiter.network_segment.dc.internet
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.kb.7
+    - jupiter.compute_service.wildfly
+    title: Прикладной шлюз к приложениям
+    topology: chain
+    tags:
+    - kb-scheme-demo
+    - application-gateway
+  jupiter.link.kb_content_filter_to_internet:
+    description: Контентная фильтрация интернет-доступа для рабочих станций офиса.
+    direction: ==>
+    source: jupiter.user_device.pc
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.kb.8
+    - jupiter.network_segment.dc.internet
+    title: Контентная фильтрация доступа
+    topology: chain
+    tags:
+    - kb-scheme-demo
+    - content-filtering
+  jupiter.link.kb_audit_from_k8s:
+    description: Передача событий Kubernetes в сервис аудита событий КБ.
+    direction: ==>
+    source: jupiter.k8s.01
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.kb.9
+    - jupiter.monitoring.elk
+    title: Аудит событий Kubernetes
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - security-audit
+  jupiter.link.kb_ddos_edge_scrubbing:
+    description: Фильтрация внешнего трафика через сервис DDoS-защиты перед пограничными маршрутизаторами.
+    direction: ==>
+    source: jupiter.network_segment.dc.internet
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.kb.ddos_1
+    - jupiter.network_device.dc.router.01
+    - jupiter.network_device.dc.router.01_dc02
+    title: DDoS-фильтрация периметра
+    topology: chain
+    tags:
+    - kb-scheme-demo
+    - ddos
+  jupiter.link.kb_sandbox_mail_analysis:
+    description: Передача вложений из почтового кластера в Sandbox для динамического анализа угроз.
+    direction: ==>
+    source: jupiter.compute_service.mail
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.kb.sandbox
+    - jupiter.server_virtual.mail01
+    - jupiter.server_virtual.mail02
+    title: Анализ вложений Sandbox
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - sandbox
+  jupiter.link.kb_ips_from_edge:
+    description: Передача потоков с внешнего периметра в сервис предотвращения вторжений.
+    direction: ==>
+    source: jupiter.network_device.dc.router.01
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.kb.seam
+    - jupiter.network_device.dc.fw.01
+    title: IPS-контроль периметра
+    topology: chain
+    tags:
+    - kb-scheme-demo
+    - ips
+  jupiter.link.kb_waf_to_k8s_apps:
+    description: WAF защищает входящий HTTP-трафик к приложениям в Kubernetes-кластерах.
+    direction: ==>
+    source: jupiter.network_segment.dc.internet
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.kb.waf_1
+    - jupiter.k8s.01
+    - jupiter.k8s.02
+    title: WAF перед Kubernetes
+    topology: chain
+    tags:
+    - kb-scheme-demo
+    - waf
+  jupiter.link.kb_radius_to_ad:
+    description: AAA/RADIUS использует службу каталогов AD для аутентификации сетевого доступа через VPN-шлюзы обоих ЦОД.
+    direction: <==>
+    source: jupiter.service.kb.radius
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.compute_service.ad
+    title: RADIUS AAA и AD
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - aaa
+  jupiter.link.kb_tacacs_to_network_devices:
+    description: TACACS+ проверяет административный доступ к сетевым устройствам через AD.
+    direction: <==>
+    source: jupiter.service.kb.tacacs.dc02
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.compute_service.ad
+    - jupiter.network_device.dc.fw.07_dc02
+    - jupiter.network_device.dc.vpn.01_dc02
+    title: TACACS+ для администрирования сети
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - aaa
+  jupiter.link.kb_skud_to_directory:
+    description: Сервис СКУД синхронизирует учетные записи и группы доступа со службой каталогов.
+    direction: <==>
+    source: jupiter.service.kb.skud
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.compute_service.ad
+    - jupiter.user_device.mrm_tablet
+    title: СКУД и служба каталогов
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - physical-access
+  jupiter.link.kb_siem_from_monitoring:
+    description: SIEM получает события от ELK и Zabbix для корреляции инцидентов КБ.
+    direction: ==>
+    source: jupiter.monitoring.elk
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.kb.audit.siem
+    - jupiter.monitoring.zabbix
+    title: Корреляция событий SIEM
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - siem
+  jupiter.link.kb_cmc_certificate_enrollment:
+    description: Центр управления сертификатами выпускает и обновляет сертификаты для AD и Kubernetes.
+    direction: <==>
+    source: jupiter.kb.cmc
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.compute_service.ad
+    - jupiter.k8s.01
+    title: Выпуск сертификатов CMC
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - certificates
+  jupiter.link.kb_idm_to_directory:
+    description: IdM синхронизирует учетные записи между корпоративным каталогом и платформенными сервисами.
+    direction: <==>
+    source: jupiter.kb.idm.corp
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.compute_service.ad
+    - jupiter.k8s.01
+    - jupiter.k8s.llm.01
+    title: IdM и каталог пользователей
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - idm
+  jupiter.link.kb_pam_to_admin_gateways:
+    description: PAM выдает привилегированные сессии администраторов через шлюз удаленного доступа и виртуализационный контур.
+    direction: <==>
+    source: jupiter.kb.pam.central
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.compute_service.guacamole
+    - jupiter.cluster_virtualization.vmware.sber
+    - jupiter.cluster_virtualization.proxmox.vk
+    title: PAM-доступ администраторов
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - pam
+  jupiter.link.kb_harbor_to_k8s:
+    description: Kubernetes-кластеры получают контейнерные образы из корпоративного Harbor Registry.
+    direction: <==>
+    source: jupiter.kb.registry.harbor
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.k8s.01
+    - jupiter.k8s.02
+    - jupiter.k8s.llm.01
+    title: Harbor Registry для Kubernetes
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - registry
+  jupiter.link.kb_repo_to_delivery:
+    description: Corporate Repo хранит артефакты сборок, используемые GitLab и Kubernetes-кластерами.
+    direction: <==>
+    source: jupiter.kb.repo.corp
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.gitlab
+    - jupiter.k8s.01
+    - jupiter.k8s.02
+    title: Репозиторий артефактов
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - repository
+  jupiter.link.kb_keycloak_to_ad:
+    description: Keycloak IdP федеративно использует AD и выдает токены доступа для Kubernetes.
+    direction: <==>
+    source: jupiter.kb.idp.keycloak
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.compute_service.ad
+    - jupiter.k8s.01
+    - jupiter.k8s.02
+    title: Keycloak IdP и AD
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - idp
+  jupiter.link.kb_vault_to_k8s:
+    description: Vault выдает секреты приложениям в Kubernetes-кластерах.
+    direction: <==>
+    source: jupiter.kb.secrets.vault
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.k8s.01
+    - jupiter.k8s.02
+    - jupiter.k8s.llm.01
+    title: Vault Secrets для Kubernetes
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - secrets
+  jupiter.link.kb_kyverno_policy_to_k8s:
+    description: Kyverno применяет политики безопасности к workload Kubernetes.
+    direction: ==>
+    source: jupiter.kb.policy.kyverno
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.k8s.01
+    - jupiter.k8s.02
+    - jupiter.k8s.llm.01
+    title: Политики Kyverno для Kubernetes
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - policy
+  jupiter.link.kb_dlp_endpoint_control:
+    description: DLP контролирует рабочие станции и почтовый кластер для предотвращения утечек данных.
+    direction: <==>
+    source: jupiter.kb.dlp.corp
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.user_device.pc
+    - jupiter.user_device.laptop
+    - jupiter.compute_service.mail
+    title: DLP-контроль конечных точек
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - dlp
+  jupiter.link.kb_uam_endpoint_monitoring:
+    description: UAM получает телеметрию действий пользователей с рабочих станций.
+    direction: <==>
+    source: jupiter.kb.uam.teramind
+    stand:
+    - jupiter.stand.prod
+    target:
+    - jupiter.user_device.pc
+    - jupiter.user_device.laptop
+    title: Мониторинг действий пользователей
+    topology: star
+    tags:
+    - kb-scheme-demo
+    - uam

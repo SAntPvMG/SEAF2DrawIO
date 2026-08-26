@@ -27,6 +27,8 @@ seaf.company.ta.components.servers:
     - jupiter.dc.moscow_dc02
     is_part_of:
     - jupiter.cluster_virtualization.proxmox.vk
+    is_monitoring_connected:
+    - jupiter.monitoring.zabbix
     stand:
     - jupiter.stand.prod
     fan_qty: 4
@@ -67,6 +69,8 @@ seaf.company.ta.components.servers:
     - jupiter.dc.moscow_dc02
     is_part_of:
     - jupiter.cluster_virtualization.proxmox.vk
+    is_monitoring_connected:
+    - jupiter.monitoring.zabbix
     stand:
     - jupiter.stand.prod
     fan_qty: 4
@@ -481,6 +485,12 @@ seaf.company.ta.components.servers:
       size: 4000
       type: SSD
     nic_qty: 2
+    power_module_qty: 2
+    fan_qty: 4
+    raid_level: [1]
+    rack_mount: true
+    is_monitoring_connected:
+    - jupiter.monitoring.zabbix
     location:
     - jupiter.dc.moscow_dc01
     subnets:
@@ -516,6 +526,12 @@ seaf.company.ta.components.servers:
       size: 4000
       type: SSD
     nic_qty: 2
+    power_module_qty: 2
+    fan_qty: 4
+    raid_level: [1]
+    rack_mount: true
+    is_monitoring_connected:
+    - jupiter.monitoring.zabbix
     location:
     - jupiter.dc.moscow_dc02
     subnets:
@@ -655,6 +671,11 @@ seaf.company.ta.components.servers:
     subnets:
       - jupiter.network.lan.dc02.int.prod
     rack_mount: true
+    power_module_qty: 2
+    fan_qty: 4
+    raid_level: [1]
+    is_monitoring_connected:
+      - jupiter.monitoring.zabbix
 
   jupiter.server_metal.proxmox_node_02:
     title: Proxmox Node 02
@@ -689,6 +710,11 @@ seaf.company.ta.components.servers:
     subnets:
       - jupiter.network.lan.dc02.int.prod
     rack_mount: true
+    power_module_qty: 2
+    fan_qty: 4
+    raid_level: [1]
+    is_monitoring_connected:
+      - jupiter.monitoring.zabbix
 
   jupiter.server_metal.proxmox_node_03:
     title: Proxmox Node 03
@@ -723,6 +749,11 @@ seaf.company.ta.components.servers:
     subnets:
       - jupiter.network.lan.dc02.int.prod
     rack_mount: true
+    power_module_qty: 2
+    fan_qty: 4
+    raid_level: [1]
+    is_monitoring_connected:
+      - jupiter.monitoring.zabbix
 
   jupiter.server_virtual.proxy-edge.01:
     title: ARM Edge Proxy 01

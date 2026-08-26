@@ -1,6 +1,6 @@
 seaf.company.ta.services.network_links:
   jupiter.link.hq_to_dc01:
-    description: VPN туннель между головным офисом и ЦОД Sber
+    description: VPN туннель между головным офисом и ЦОД Cloud.ru
     encapsulation: GRE
     encryption: ipsec
     network_connection:

@@ -1,8 +1,8 @@
 seaf.company.ta.services.networks:
   jupiter.network.lan.192.168.101.0:
-    title: LAN сеть Sber
+    title: LAN сеть Cloud.ru
     type: LAN
-    description: Сеть внутри Sber
+    description: Сеть внутри Cloud.ru
     external_id: lan.192.168.101.0
     lan_type: Проводная
     ipnetwork: 192.168.101.0/24
@@ -25,7 +25,7 @@ seaf.company.ta.services.networks:
   jupiter.network.lan.dc01.dmz.test:
     title: DMZ-TEST
     type: LAN
-    description: DMZ Test in Sber DC
+    description: DMZ Test in Cloud.ru DC
     lan_type: Проводная
     ipnetwork: 10.10.24.0/24
     vlan: 24
@@ -36,7 +36,7 @@ seaf.company.ta.services.networks:
   jupiter.network.lan.dc01.dmz.vdi:
     title: DMZ-VDI-DC01
     type: LAN
-    description: DMZ VDI in Sber DC
+    description: DMZ VDI in Cloud.ru DC
     lan_type: Проводная
     ipnetwork: 10.10.26.0/24
     vlan: 216
@@ -47,7 +47,7 @@ seaf.company.ta.services.networks:
   jupiter.network.lan.dc01.dmz.vpn:
     title: DMZ-VPN
     type: LAN
-    description: DMZ VPN in Sber DC
+    description: DMZ VPN in Cloud.ru DC
     lan_type: Проводная
     ipnetwork: 10.10.25.0/24
     vlan: 25
@@ -58,7 +58,7 @@ seaf.company.ta.services.networks:
   jupiter.network.lan.dc01.ext.wan:
     title: EXT-WAN
     type: LAN
-    description: External WAN in Sber DC
+    description: External WAN in Cloud.ru DC
     lan_type: Проводная
     ipnetwork: 203.0.113.0/24
     vlan: 31
@@ -80,7 +80,7 @@ seaf.company.ta.services.networks:
   jupiter.network.lan.dc01.int.dmz:
     title: INT-DMZ
     type: LAN
-    description: Internal DMZ in Sber DC
+    description: Internal DMZ in Cloud.ru DC
     lan_type: Проводная
     ipnetwork: 10.10.30.0/24
     vlan: 30
@@ -91,7 +91,7 @@ seaf.company.ta.services.networks:
   jupiter.network.lan.dc01.int.it.services:
     title: INT-IT Services
     type: LAN
-    description: Internal It services in Sber DC
+    description: Internal It services in Cloud.ru DC
     lan_type: Проводная
     ipnetwork: 10.10.27.0/24
     vlan: 27
@@ -102,7 +102,7 @@ seaf.company.ta.services.networks:
   jupiter.network.lan.dc01.int.prod:
     title: INT-PROD
     type: LAN
-    description: Internal Prod in Sber DC
+    description: Internal Prod in Cloud.ru DC
     lan_type: Проводная
     ipnetwork: 10.10.40.0/24
     vlan: 40
@@ -124,7 +124,7 @@ seaf.company.ta.services.networks:
   jupiter.network.lan.dc01.int.test:
     title: INT-TEST
     type: LAN
-    description: Internal test network in Sber DC
+    description: Internal test network in Cloud.ru DC
     lan_type: Проводная
     ipnetwork: 10.10.26.0/24
     vlan: 26
@@ -135,7 +135,7 @@ seaf.company.ta.services.networks:
   jupiter.network.lan.dc01.int.wan:
     title: INT-WAN
     type: LAN
-    description: Internal WAN in Sber DC
+    description: Internal WAN in Cloud.ru DC
     lan_type: Проводная
     ipnetwork: 10.10.32.0/24
     vlan: 32

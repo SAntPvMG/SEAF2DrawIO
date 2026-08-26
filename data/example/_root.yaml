@@ -5,6 +5,7 @@ imports:
 - dc_office.yaml
 - network_segment.yaml
 - network.yaml
+- network_service.yaml
 - network_component.yaml
 - network_links.yaml
 - cluster_virtualization.yaml

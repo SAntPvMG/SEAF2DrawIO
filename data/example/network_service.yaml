@@ -1,0 +1,23 @@
+seaf.company.ta.services.network_services:
+  jupiter.network_service.dc01.edge_fw:
+    title: Кластер периметровых NGFW ЦОД-01
+    description: Отказоустойчивый кластер пограничных межсетевых экранов ЦОД-01
+    service_type: Сетевая безопасность
+    capabilities:
+      - Межсетевое экранирование
+      - NAT
+      - VPN
+    high_availability:
+      type: Да
+      mode: Active-Passive
+    location:
+      - jupiter.dc.moscow_dc01
+    availabilityzone:
+      - jupiter.dc_az.moscow
+    network_connection:
+      - jupiter.network.lan.dc01.inet_edge
+      - jupiter.network.lan.dc01.dmz.prod
+    app_components:
+      - jupiter.app_system.efs
+    stand:
+      - jupiter.stand.prod

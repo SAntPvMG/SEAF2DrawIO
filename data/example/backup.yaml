@@ -23,6 +23,7 @@ seaf.company.ta.services.backups:
     - jupiter.app_system.mp_favorite_client
     path: /mnt/backup
     replication: true
+    status: Используется
     stand:
     - jupiter.stand.prod
     title: Cyberbackup

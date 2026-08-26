@@ -69,3 +69,192 @@ seaf.company.ta.services.softwares:
     lic_qty: 8
     vendor_country: Россия
     escrow_available: true
+  jupiter.software.sonarqube:
+    title: SonarQube
+    vendor: SonarSource
+    type: Закрытая бесплатная
+    support: Нет
+    expiration: 01.01.2030
+    lic_qty: 9999
+  jupiter.software.s11:
+    title: Контроль конфигураций DMZ
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 1
+  jupiter.software.s12:
+    title: Контроль конфигураций внутреннего контура
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 1
+  jupiter.software.s2:
+    title: Контроль доступа пользователей
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 1
+  jupiter.software.s3:
+    title: Система обнаружения вторжений
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 1
+  jupiter.software.forti:
+    title: FortiGate
+    vendor: Fortinet
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 2
+  jupiter.software.kaspersky:
+    title: Kaspersky
+    vendor: Kaspersky
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 4
+  jupiter.software.s6:
+    title: Контроль сетевого доступа
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 1
+  jupiter.software.s7:
+    title: Шлюз прикладной безопасности
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 1
+  jupiter.software.s8:
+    title: Контентная фильтрация интернет-доступа
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 1
+  jupiter.software.s9:
+    title: Платформа аудита событий КБ
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 1
+  jupiter.software.ddos:
+    title: DDOS
+    vendor: BiZone
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 2
+  jupiter.software.sandbox:
+    title: Sandbox
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 1
+  jupiter.software.seam:
+    title: SEAM
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 1
+  jupiter.software.nginx:
+    title: NGINX
+    vendor: F5 NGINX
+    type: Открытая
+    support: Нет
+    expiration: 01.01.2030
+    lic_qty: 9999
+  jupiter.software.arkan:
+    title: Аркан
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 2
+  jupiter.software.siem:
+    title: SIEM
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 2
+  jupiter.software.cmc:
+    title: CMC
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 2
+  jupiter.software.idm:
+    title: IdM
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 2
+  jupiter.software.pam:
+    title: PAM
+    vendor: Не указан
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 2
+  jupiter.software.harbor:
+    title: Harbor
+    vendor: CNCF
+    type: Открытая
+    support: Нет
+    expiration: 01.01.2030
+    lic_qty: 9999
+  jupiter.software.nexus:
+    title: Nexus Repository
+    vendor: Sonatype
+    type: Закрытая бесплатная
+    support: Нет
+    expiration: 01.01.2030
+    lic_qty: 9999
+  jupiter.software.keycloak:
+    title: Keycloak
+    vendor: Red Hat
+    type: Открытая
+    support: Нет
+    expiration: 01.01.2030
+    lic_qty: 9999
+  jupiter.software.vault:
+    title: Vault
+    vendor: HashiCorp
+    type: Закрытая бесплатная
+    support: Нет
+    expiration: 01.01.2030
+    lic_qty: 9999
+  jupiter.software.kyverno:
+    title: Kyverno
+    vendor: CNCF
+    type: Открытая
+    support: Нет
+    expiration: 01.01.2030
+    lic_qty: 9999
+  jupiter.software.infowatch:
+    title: InfoWatch
+    vendor: InfoWatch
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 2
+  jupiter.software.teramind:
+    title: Teramind
+    vendor: Teramind
+    type: Закрытая платная
+    support: Да
+    expiration: 01.01.2030
+    lic_qty: 2

@@ -1,13 +1,21 @@
 seaf.company.ta.services.dcs:
   jupiter.dc.moscow_dc01:
-    title: Sber Cloud DC
-    description: Sber Cloud Advanced
-    vendor: Sber
+    title: Cloud.ru
+    description: Cloud.ru Advanced
+    vendor: Cloud.ru
     ownership: Собственный
     type: Основной
     address: Москва, ул. Промышленная 10
+    country_code: RU
     rack_qty: 5
-    tier: "3"
+    tier: III
+    supported_criticality: [Mission Critical, Business Critical, Business Operational]
+    power_architecture:
+      independent_utility_feeds: 2
+      rack_power_feeds: 2
+      redundancy_model: 2N
+      guaranteed_power_tier: III
+      maintenance_without_outage: true
     availabilityzone: jupiter.dc_az.moscow
   jupiter.dc.moscow_dc02:
     title: VK DC
@@ -16,6 +24,14 @@ seaf.company.ta.services.dcs:
     ownership: Собственный
     type: Резервный
     address: Москва, ул. Южная 5
+    country_code: RU
     rack_qty: 0
-    tier: "3"
-    availabilityzone: jupiter.dc_az.moscow
+    tier: III
+    supported_criticality: [Mission Critical, Business Critical, Business Operational]
+    power_architecture:
+      independent_utility_feeds: 2
+      rack_power_feeds: 2
+      redundancy_model: 2N
+      guaranteed_power_tier: III
+      maintenance_without_outage: true
+    availabilityzone: jupiter.dc_az.moscow_dr

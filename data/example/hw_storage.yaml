@@ -14,17 +14,16 @@ seaf.company.ta.components.hw_storages:
     stand:
     - jupiter.stand.prod
     external_id: hw_storage.01
-    sber:
-      compression_rate: 5
-      dedup_rate: 2
-      erasure_coding: 1
-      links_qty: 4
-      ntp_server: ntp.jupiter.ru
-      nvram_amount: 64
-      pwr_supply_qty: 4
-      reservation_ratio: 100
-      snapshot_lic: true
-      ssd_cache_qty: 4
-      storage_console: https://console-hw-storage.01.jupiter.ru
-      storage_controller_qty: 2
-      storage_spare_disk_qty: 2
+    compression_rate: 5
+    dedup_rate: 2
+    erasure_coding: 1
+    links_qty: 4
+    ntp_server: ntp.jupiter.ru
+    nvram_amount: 64
+    pwr_supply_qty: 4
+    reservation_ratio: 100
+    snapshot_lic: true
+    ssd_cache_qty: 4
+    storage_console: https://console-hw-storage.01.jupiter.ru
+    storage_controller_qty: 2
+    storage_spare_disk_qty: 2

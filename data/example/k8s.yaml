@@ -24,12 +24,9 @@ seaf.company.ta.services.k8s:
     registries:
     - jupiter.kb.registry.harbor
     - jupiter.kb.repo.corp
-    monitoring:
-    - jupiter.monitoring.elk
-    - jupiter.monitoring.zabbix
     management_networks:
-    - jupiter.network.lan.dc01.int.it.services
-    - jupiter.network.lan.dc02.int.it.services
+    - jupiter.network.lan.dc01.int.sec.prod
+    - jupiter.network.lan.dc02.int.sec.prod
     service_mesh: Istio
     softwares:
     - jupiter.software.k8s_1_28
@@ -57,14 +54,11 @@ seaf.company.ta.services.k8s:
     - jupiter.kb.registry.harbor
     - jupiter.kb.repo.corp
     management_networks:
-    - jupiter.network.lan.dc01.int.it.services
-    - jupiter.network.lan.dc02.int.it.services
+    - jupiter.network.lan.dc01.int.sec.prod
+    - jupiter.network.lan.dc02.int.sec.prod
     service_mesh: Istio
     softwares:
     - jupiter.software.k8s_1_28
-    monitoring:
-    - jupiter.monitoring.elk
-    - jupiter.monitoring.zabbix
     title: K8s кластер расширенный (ДЗО)
   jupiter.k8s.llm.01:
     title: LLM Kubernetes Cluster
@@ -89,12 +83,9 @@ seaf.company.ta.services.k8s:
     - jupiter.network.lan.dc01.int.prod
     - jupiter.network.lan.dc02.int.prod
     management_networks:
-    - jupiter.network.lan.dc01.int.it.services
-    - jupiter.network.lan.dc02.int.it.services
+    - jupiter.network.lan.dc01.int.sec.prod
+    - jupiter.network.lan.dc02.int.sec.prod
     stand:
     - jupiter.stand.prod
-    monitoring:
-    - jupiter.monitoring.elk
-    - jupiter.monitoring.zabbix
     registries:
     - jupiter.kb.registry.harbor
