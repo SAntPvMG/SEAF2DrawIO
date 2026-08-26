@@ -16,6 +16,7 @@ from auto_layout.edge_segments_layout import (
 from auto_layout.dmz_segments_layout import dmz_segments_layout as compute_dmz_layout
 from auto_layout.segment_intrinsic_layout import (
     align_int_net_security_bottom_to_int_wan_edge,
+    center_int_net_content_by_real_bbox,
     location_on_page,
 )
 from auto_layout.kb_layout import (
@@ -58,6 +59,8 @@ _k8s_on_one_page = False
 _k8s_unified_page_title = 'Kubernetes (все кластеры)'
 
 _K8S_YAML_META_KEYS = frozenset({'Diagram details', 'On one page', 'On one page title'})
+_K8S_CLUSTER_SCHEMA = 'seaf.company.ta.services.k8s'
+_K8S_ONE_PAGE_CLUSTER_GAP_PX = 40
 DEFAULT_CONFIG = {
     "seaf2drawio": {
         "data_yaml_file": "data/example/test_seaf_ta_P41_v0.9.yaml",
@@ -238,7 +241,6 @@ _SEGMENT_PARENT_CELL_ID = '001'
 _SWIMLANE_GROUP_CELL_ID = '001'
 _SEGMENTS_SCHEMA = 'seaf.company.ta.services.network_segments'
 _LABEL_ANCHOR_INET_EXT_ZONES = frozenset({'INET-EDGE', 'EXT-WAN-EDGE'})
-_LABEL_ANCHOR_INT_NET_ZONE = 'INT-NET'
 _LABEL_TO_SEGMENT_PAD = 5
 _LABEL_STENCIL_MARK = 'vsdxID=13090'
 
@@ -248,8 +250,6 @@ _BODY_FONT_PX = 11.29
 _LABEL_LINE_HEIGHT_MULT = 1.2
 _LABEL_PAD_X = 18
 _LABEL_PAD_Y = 14
-_LABEL_GAP_ABOVE_SEGMENTS = 10
-_LABEL_SHIFT_DOWN_PX = 30
 
 
 def _label_char_px(font_px: float) -> float:
@@ -323,11 +323,16 @@ def _mx_cell_parent_chain_contains(root: ET.Element, mx_cell: ET.Element, ancest
     return False
 
 
+_OVERLAY_LAYER_PARENTS = frozenset({'101', '102', '103'})
+
+
 def _swimlane_interior_bbox_union(root: ET.Element) -> Optional[Tuple[float, float, float, float]]:
     """
     Объединение абсолютных bbox всех вершин под группой страницы (parent→…→001),
     кроме самой ячейки 001 и ярлыка локации (vsdxID=13090).
     Учитывает вложенное содержимое зон (lan_kant__, иконки и т.д.), если оно ниже/шире прямоугольника зоны.
+    Плюс КБ/ТА/UD на слоях 101/102/103, пересекающиеся по X с контентом под 001
+    (чтобы контур ЦОД покрывал сервисы над зонами, но не уезжал к чужим объектам вроде SEAM у ISP).
     """
     min_x = min_y = float('inf')
     max_x = max_y = float('-inf')
@@ -354,6 +359,26 @@ def _swimlane_interior_bbox_union(root: ET.Element) -> Optional[Tuple[float, flo
         seen = True
     if not seen:
         return None
+
+    # Оверлеи поверх зон (не в цепочке parent→001).
+    x_lo, x_hi = min_x - 40.0, max_x + 40.0
+    for cell in root.iter('mxCell'):
+        if cell.get('vertex') != '1' or cell.get('edge') == '1':
+            continue
+        if (cell.get('parent') or '') not in _OVERLAY_LAYER_PARENTS:
+            continue
+        style = cell.get('style') or ''
+        if _LABEL_STENCIL_MARK in style:
+            continue
+        bb = _absolute_bbox_vertex_cell(root, cell)
+        if bb is None:
+            continue
+        if bb[2] < x_lo or bb[0] > x_hi:
+            continue
+        min_x = min(min_x, bb[0])
+        min_y = min(min_y, bb[1])
+        max_x = max(max_x, bb[2])
+        max_y = max(max_y, bb[3])
     return min_x, min_y, max_x, max_y
 
 
@@ -422,37 +447,6 @@ def _wan_inet_ext_min_abs_left_x(
     return min_ax
 
 
-def _int_net_min_abs_top_y(
-    root: ET.Element,
-    sd,
-    conf,
-    page_name: str,
-    diagram_ids_map,
-    file_name: str,
-) -> Optional[float]:
-    page_ids = set(diagram_ids_map.get(page_name) or [])
-    try:
-        segs = sd.get_object(conf['data_yaml_file'], _SEGMENTS_SCHEMA)
-    except KeyError:
-        return None
-    roots = _page_roots_for_segment_anchor(sd, conf, page_name, diagram_ids_map, file_name)
-    min_ay: Optional[float] = None
-    for oid, row in segs.items():
-        if not isinstance(row, dict) or oid not in page_ids:
-            continue
-        if str(row.get('zone') or '') != _LABEL_ANCHOR_INT_NET_ZONE:
-            continue
-        if not location_on_page(row.get('location'), roots):
-            continue
-        mx = _segment_swimlane_mx_under_page_group(root, oid)
-        if mx is None:
-            continue
-        _, ay = _absolute_xy_of_mx_cell_top_left(root, mx)
-        if min_ay is None or ay < min_ay:
-            min_ay = ay
-    return min_ay
-
-
 def _translate_mx_geometry_by(mx_geom, ddx: float, ddy: float):
     try:
         x = float(mx_geom.get('x') or 0)
@@ -505,9 +499,8 @@ def resize_location_label_to_cover_segments(diagram, page_name, file_name, diagr
       учитываются рамки lan_kant и прочее содержимое, выступающее за прямоугольник зоны;
     — сдвиг вершин с parent «001» (кроме ярлыка), подгонка mxCell id «001» под контент + отступ;
     — ярлык ЦОД/офиса (dc_label/office_label): lw/lh по тексту; левый верхний угол в координатах родителя «001»:
-      абсцисса = левый край сегментов INET-EDGE и EXT-WAN-EDGE (минимум из них), ордината = верх INT-NET;
-      при отсутствии якорного сегмента — прежний запасной вариант (pad и формула по lh).
-      Атрибут label (HTML) не меняется.
+      абсцисса = левый край сегментов INET-EDGE и EXT-WAN-EDGE (минимум из них), ордината = −lh/2,
+      то есть верхняя линия контура проходит по середине ярлыка. Атрибут label (HTML) не меняется.
     """
     if file_name not in ('dc', 'office'):
         return
@@ -537,6 +530,24 @@ def resize_location_label_to_cover_segments(diagram, page_name, file_name, diagr
     cw = max(max_x - min_x + 2 * pad, 1)
     ch = max(max_y - min_y + 2 * pad, 1)
 
+    group_el = _find_swimlane_group_mx_cell(root)
+    ggeom = group_el.find('mxGeometry') if group_el is not None else None
+    gx = gy = 0.0
+    group_abs_x = group_abs_y = 0.0
+    if ggeom is not None:
+        try:
+            gx = float(ggeom.get('x') or 0)
+            gy = float(ggeom.get('y') or 0)
+        except (TypeError, ValueError):
+            gx, gy = 0.0, 0.0
+        group_abs_x, group_abs_y = _absolute_xy_of_mx_cell_top_left(root, group_el)
+
+    # min_x/min_y — абсолютные, то есть уже содержат позицию группы. Новое место группы — ddx/ddy,
+    # а детей сдвигаем на разницу, чтобы содержимое осталось на прежнем месте. Иначе позиция группы
+    # учитывается дважды, рамка уезжает от контента, и повторные вызовы копят смещение.
+    cdx = ddx - group_abs_x
+    cdy = ddy - group_abs_y
+
     for top in root:
         if top.tag == 'object' and (top.get('id') or '') in label_ids:
             continue
@@ -548,7 +559,7 @@ def resize_location_label_to_cover_segments(diagram, page_name, file_name, diagr
             geom = cell.find('mxGeometry')
             if geom is None:
                 continue
-            _translate_mx_geometry_by(geom, ddx, ddy)
+            _translate_mx_geometry_by(geom, cdx, cdy)
 
     for mx_ch in root:
         if mx_ch.tag != 'mxCell':
@@ -560,28 +571,19 @@ def resize_location_label_to_cover_segments(diagram, page_name, file_name, diagr
         geom = mx_ch.find('mxGeometry')
         if geom is None:
             continue
-        _translate_mx_geometry_by(geom, ddx, ddy)
+        _translate_mx_geometry_by(geom, cdx, cdy)
 
-    group_el = _find_swimlane_group_mx_cell(root)
-    if group_el is not None:
-        ggeom = group_el.find('mxGeometry')
-        if ggeom is not None:
-            try:
-                gx = float(ggeom.get('x') or 0)
-                gy = float(ggeom.get('y') or 0)
-            except (TypeError, ValueError):
-                gx, gy = 0.0, 0.0
-            ggeom.set('x', str(int(round(gx + ddx))))
-            ggeom.set('y', str(int(round(gy + ddy))))
-            ggeom.set('width', str(int(round(cw))))
-            ggeom.set('height', str(int(round(ch))))
+    if ggeom is not None:
+        ggeom.set('x', str(int(round(gx + cdx))))
+        ggeom.set('y', str(int(round(gy + cdy))))
+        ggeom.set('width', str(int(round(cw))))
+        ggeom.set('height', str(int(round(ch))))
 
     g_abs_x, g_abs_y = 0.0, 0.0
     if group_el is not None:
         g_abs_x, g_abs_y = _absolute_xy_of_mx_cell_top_left(root, group_el)
 
     wan_left_abs = _wan_inet_ext_min_abs_left_x(root, sd, conf, page_name, diagram_ids_map, file_name)
-    int_net_top_abs = _int_net_min_abs_top_y(root, sd, conf, page_name, diagram_ids_map, file_name)
 
     max_label_outer_w = max(int(label_pat.get('w', 120)), int(cw) - 2 * pad)
     inner_max = max(60.0, float(max_label_outer_w - _LABEL_PAD_X * 2))
@@ -600,10 +602,8 @@ def resize_location_label_to_cover_segments(diagram, page_name, file_name, diagr
             lx = int(round(wan_left_abs - g_abs_x))
         else:
             lx = pad
-        if int_net_top_abs is not None:
-            ly = int(round(int_net_top_abs - g_abs_y))
-        else:
-            ly = int(round(pad - lh - _LABEL_GAP_ABOVE_SEGMENTS + _LABEL_SHIFT_DOWN_PX))
+        # Ярлык «сидит» на верхней линии контура «001»: линия проходит по середине ярлыка.
+        ly = -int(round(lh / 2.0))
 
         stencil_targets: List[ET.Element] = []
         parent001_fallback: List[ET.Element] = []
@@ -642,7 +642,8 @@ def refresh_location_label_mxcells_after_swimlane_geometry(
     Вызывать после любого изменения width/height сегментов с parent «001»
     (в частности expand_segments_for_lan_overflow_and_shift_neighbors), а также после
     добавления рамок lan_kant__: ширина ярлыка зависит от актуальной ширины swimlane (cw),
-    lw/lh от текста; lx/ly привязаны к INET/EXT-WAN (слева) и верху INT-NET — см. resize_location_label_to_cover_segments.
+    lw/lh от текста; lx — левый край INET/EXT-WAN, ly — по середине верхней линии контура
+    (см. resize_location_label_to_cover_segments).
     """
     resize_location_label_to_cover_segments(
         diagram, page_name, file_name, diagram_ids_map, conf, sd,
@@ -692,17 +693,52 @@ def _object_ids_for_pattern(object_data: dict, object_pattern: dict, pattern_nam
     """
     ids = list(object_data.keys())
     rx = object_pattern.get('id_regex')
-    if not rx:
-        return ids
-    try:
-        cre = re.compile(str(rx))
-    except re.error:
-        print(
-            f'\n WARNING : id_regex «{rx}» некорректен — блок «{pattern_name}» без фильтра OID.',
-            end='',
-        )
-        return ids
-    return [oid for oid in ids if cre.search(str(oid))]
+    if rx:
+        try:
+            cre = re.compile(str(rx))
+        except re.error:
+            print(
+                f'\n WARNING : id_regex «{rx}» некорректен — блок «{pattern_name}» без фильтра OID.',
+                end='',
+            )
+        else:
+            ids = [oid for oid in ids if cre.search(str(oid))]
+
+    # Некоторые визуальные слои строятся по ссылкам из объектов, но должны
+    # содержать только один элемент на уникальную ссылку. Например, два
+    # deployment одного приложения дают одну карточку Application.
+    unique_field = object_pattern.get('unique_by_first')
+    if unique_field:
+        seen = set()
+        unique_ids = []
+        for oid in ids:
+            value = object_data.get(oid, {}).get(unique_field)
+            if isinstance(value, list):
+                value = value[0] if value else None
+            marker = str(value) if value not in (None, '') else str(oid)
+            if marker in seen:
+                continue
+            seen.add(marker)
+            unique_ids.append(oid)
+        ids = unique_ids
+
+    replica_index = object_pattern.get('replica_index')
+    if replica_index:
+        try:
+            replica_index = int(replica_index)
+        except (TypeError, ValueError):
+            replica_index = 1
+        filtered_ids = []
+        for oid in ids:
+            hpa = _k8s_hpa_by_target.get(str(oid), {})
+            try:
+                min_replicas = int(hpa.get('min', 1))
+            except (TypeError, ValueError):
+                min_replicas = 1
+            if min_replicas >= replica_index:
+                filtered_ids.append(oid)
+        ids = filtered_ids
+    return ids
 
 
 def compute_main_schema_segment_dimensions(segment_oid, segment_pattern):
@@ -798,16 +834,44 @@ def _expand_k8s_ext_page_for_one_page(ext_xml: str, n_clusters: int) -> str:
     return ext_xml
 
 
-def _patch_k8s_items_for_one_page(items):
+def _is_k8s_root_cluster_pattern(pattern) -> bool:
+    """Паттерн самого swimlane кластера: рисуется на холсте страницы, а не внутри другого объекта."""
+    return (
+        isinstance(pattern, dict)
+        and pattern.get('schema') == _K8S_CLUSTER_SCHEMA
+        and bool(pattern.get('xml'))
+        and not pattern.get('parent_id')
+    )
+
+
+def _k8s_cluster_stack_offset(items, detail: str) -> int:
+    """
+    Запас между кластерами в стопке: содержимое с parent_id=cluster может выходить ниже
+    swimlane (блок Shared Infrastructure), иначе следующий кластер накрывает его.
+    """
+    cluster_h = 0
+    child_bottom = 0
+    for k, v in items:
+        if not isinstance(v, dict) or not _k8s_pattern_applies(k, v, detail):
+            continue
+        if _is_k8s_root_cluster_pattern(v):
+            cluster_h = max(cluster_h, int(v.get('h') or 0))
+        elif v.get('parent_id') == 'cluster':
+            child_bottom = max(child_bottom, int(v.get('y') or 0) + int(v.get('h') or 0))
+    return max(0, child_bottom - cluster_h) + _K8S_ONE_PAGE_CLUSTER_GAP_PX
+
+
+def _patch_k8s_items_for_one_page(items, detail: str):
     """На одной странице корневые кластеры — вертикальная стопка (см. algo Y_stack)."""
     if not _k8s_on_one_page:
         return items
+    stack_offset = _k8s_cluster_stack_offset(items, detail)
     out = []
     for k, v in items:
-        if k in ('k8s_cluster', 'k8s_cluster_minimal', 'k8s_cluster_middle'):
+        if _is_k8s_root_cluster_pattern(v):
             v = deepcopy(v)
             v['algo'] = 'Y_stack'
-            v['offset'] = max(int(v.get('offset') or 0), 24)
+            v['offset'] = max(int(v.get('offset') or 0), stack_offset)
         out.append((k, v))
     return out
 
@@ -880,15 +944,15 @@ def _init_k8s_runtime_context():
     for did, drow in deps.items():
         if isinstance(drow, dict) and drow.get('namespace'):
             _k8s_deployment_namespace[str(did)] = str(drow['namespace'])
-    items = _patch_k8s_items_for_one_page(items)
+    items = _patch_k8s_items_for_one_page(items, detail)
     return detail, items
 
 
 def _infer_k8s_version_line(data: dict) -> str:
     for s in (data.get('softwares') or []):
-        m = re.search(r'k8s[_\s]*(\d+)[_.](\d+)', str(s), re.I)
+        m = re.search(r'k8s[_\s]*(\d+)[_.](\d+)(?:[_.](\d+))?', str(s), re.I)
         if m:
-            return f"{m.group(1)}.{m.group(2)}"
+            return f"{m.group(1)}.{m.group(2)}.{m.group(3) or '0'}"
     return '—'
 
 
@@ -899,7 +963,8 @@ def _short_seaf_tokens(values, max_items: int = 4, per_token_len: int = 24, *, l
     if not isinstance(values, list):
         values = [values]
     out = []
-    for x in values[:max_items]:
+    seen = set()
+    for x in values:
         if x in (None, ''):
             continue
         parts = str(x).split('.')
@@ -909,8 +974,33 @@ def _short_seaf_tokens(values, max_items: int = 4, per_token_len: int = 24, *, l
             s = parts[-1].replace('_', ' ')
         if len(s) > per_token_len:
             s = s[: per_token_len - 1] + '…'
+        if s in seen:
+            continue
+        seen.add(s)
         out.append(s)
+        if len(out) >= max_items:
+            break
     return ', '.join(out) if out else '—'
+
+
+def _k8s_humanize_name(oid_tail: str) -> str:
+    """«efs» → «EFS», «efs_news_editor» → «EFS News Editor» (короткие токены — аббревиатуры)."""
+    words = [w for w in str(oid_tail).split('_') if w]
+    return ' '.join(w.upper() if len(w) <= 3 else w.capitalize() for w in words)
+
+
+def _k8s_short_oid(oid: str, segments: int = 2) -> str:
+    """Отбрасывает префикс компании: «jupiter.app_system.efs» → «app_system.efs»."""
+    parts = str(oid).split('.')
+    return '.'.join(parts[-segments:]) if len(parts) > segments else str(oid)
+
+
+def _k8s_label_value(labels, key: str) -> str:
+    for lb in (labels if isinstance(labels, list) else []):
+        text = str(lb)
+        if text.startswith(f'{key}='):
+            return text
+    return ''
 
 
 def _xml_escape_drawio_text(s) -> str:
@@ -952,20 +1042,35 @@ def _enrich_k8s_middle_row(shape_schema: str, key_id: str, data: dict) -> None:
         nets = (data.get('network_connection') or []) + (data.get('management_networks') or [])
         mesh = data.get('service_mesh') or '—'
         data['_mid_registries'] = _k8s_xml_escape(_short_seaf_tokens(regs, 5))
-        data['_mid_monitoring'] = _k8s_xml_escape(_short_seaf_tokens(mon, 5))
+        data['_mid_monitoring'] = _k8s_xml_escape(
+            ', '.join(_k8s_humanize_name(t.replace(' ', '_'))
+                      for t in _short_seaf_tokens(mon, 5).split(', ')))
         data['_mid_networks'] = _k8s_xml_escape(_short_seaf_tokens(nets, 4, last_segments=2))
         data['_mid_mesh'] = _k8s_xml_escape(str(mesh) if mesh not in (None, '') else '—')
     elif shape_schema == 'seaf.company.ta.components.k8s_namespaces':
         _enrich_k8s_minimal_row(shape_schema, key_id, data)
         desc = data.get('description') or ''
+        desc = re.sub(r'^Namespace для компонентов\s+', '', str(desc), flags=re.I)
+        desc = re.sub(r'^Namespace для\s+', '', str(desc), flags=re.I)
+        labels = data.get('labels') or []
+        if 'llm' in str(data.get('cluster') or '').lower() and labels:
+            desc = re.sub(r'\bприложений\b', 'приложения', desc, flags=re.I)
+            desc = f"{desc} | {labels[0]}"
         if len(desc) > 120:
             desc = desc[: 119] + '…'
         data['_mid_ns_description'] = _k8s_xml_escape(desc) or '—'
-        data['_mid_ns_key'] = _k8s_xml_escape(kid.split('.')[-1].replace('_', '.'))
+        if 'llm' in str(data.get('cluster') or '').lower():
+            ns_key = kid
+        else:
+            ns_parts = kid.split('.')
+            ns_key = ('.'.join(ns_parts[-2:]) if len(ns_parts) >= 2 and ns_parts[-2] == 'ns'
+                      else ns_parts[-1]).replace('_', '.')
+        data['_mid_ns_key'] = _k8s_xml_escape(ns_key)
     elif shape_schema == 'seaf.company.ta.services.k8s_deployments':
+        _enrich_k8s_minimal_row(shape_schema, key_id, data)
         containers = data.get('containers') or []
         c0 = containers[0] if containers else {}
-        image = str(c0.get('image') or '—')
+        image = str(c0.get('image') or '—').rsplit('/', 1)[-1]
         if len(image) > 42:
             image = image[: 41] + '…'
         lim = (c0.get('resources') or {}).get('limits') or {}
@@ -973,15 +1078,12 @@ def _enrich_k8s_middle_row(shape_schema: str, key_id: str, data: dict) -> None:
         ram = lim.get('ram', lim.get('memory', '—'))
         labels = data.get('labels') or []
         label0 = str(labels[0]) if isinstance(labels, list) and labels else '—'
-        dep_short = kid.split('.')[-1].replace('_', '-')
+        dep_short = kid.split('.')[-1]
         data['_mid_dep_short'] = _k8s_xml_escape(dep_short)
         data['_mid_dep_image'] = _k8s_xml_escape(image)
         data['_mid_dep_cpu'] = _k8s_xml_escape(cpu)
         data['_mid_dep_ram'] = _k8s_xml_escape(ram)
         data['_mid_dep_label0'] = _k8s_xml_escape(label0)
-        apps = data.get('app_components') or []
-        app0 = str(apps[0]).split('.')[-1] if isinstance(apps, list) and apps else dep_short
-        data['_mid_app_short'] = _k8s_xml_escape(app0.replace('_', '.'))
     elif shape_schema == 'seaf.company.ta.components.k8s_hpa':
         _enrich_k8s_minimal_row(shape_schema, key_id, data)
     elif shape_schema == 'seaf.company.ta.components.k8s_nodes':
@@ -998,14 +1100,26 @@ def _enrich_k8s_middle_row(shape_schema: str, key_id: str, data: dict) -> None:
                 acc = str(lb).split('=')[-1] if '=' in str(lb) else str(lb)
                 break
         data['_mid_node_arch'] = arch
+        data['_mid_node_name'] = _k8s_xml_escape(kid.split('.')[-1])
         data['_mid_node_ver'] = ver
         data['_mid_node_zone_short'] = zshort
         data['_mid_node_accel_line'] = ''
         if acc:
             data['_mid_node_accel_line'] = f'&lt;br/&gt;accelerator={acc}'
         is_worker = 'worker=true' in lab_text
-        data['_mid_node_is_gpu_worker'] = bool(
+        is_gpu_worker = bool(
             is_worker and ('nvidia' in lab_text.lower() or 'accelerator=' in lab_text.lower() or 'gpu' in lab_text.lower()))
+        data['_mid_node_is_gpu_worker'] = is_gpu_worker
+        # В эталоне В1 у LLM-кластера версия вынесена в подпись группы нод, а GPU-воркеры выделены цветом.
+        is_llm = 'llm' in str(data.get('cluster') or '').lower()
+        if is_worker:
+            data['_mid_node_icon'] = '🎮 ' if is_gpu_worker else '⬛ '
+        else:
+            data['_mid_node_icon'] = '' if is_llm else '🔷 '
+        data['_mid_node_ver_suffix'] = '' if is_llm else f' | v{ver}'
+        data['_mid_node_fill'] = '#ffe6cc' if is_gpu_worker else ('#f5f5f5' if is_worker else '#e1d5e7')
+        data['_mid_node_stroke'] = '#d79b00' if is_gpu_worker else ('#666666' if is_worker else '#9673a6')
+        data['_mid_node_accel_title'] = _k8s_xml_escape(acc.replace('-', ' ').upper()) if acc else ''
 
 
 def _enrich_k8s_minimal_row(shape_schema: str, key_id: str, data: dict) -> None:
@@ -1026,6 +1140,10 @@ def _enrich_k8s_minimal_row(shape_schema: str, key_id: str, data: dict) -> None:
             data['service_mesh'] = '—'
         lk = kid.lower()
         is_llm = 'llm' in lk
+        data['_k8s_display_id'] = _k8s_xml_escape(
+            kid if is_llm else str(data.get('external_id') or kid))
+        data['_k8s_subtitle'] = (
+            _k8s_xml_escape(data.get('title') or 'Kubernetes Cluster') if is_llm else 'Kubernetes Cluster')
         data['_k8s_minimal_fill'] = '#e2f0d9' if is_llm else '#dae8fc'
         data['_k8s_minimal_stroke'] = '#548235' if is_llm else '#6c8ebf'
         data['_k8s_minimal_fs'] = '11' if is_llm else '9'
@@ -1036,7 +1154,7 @@ def _enrich_k8s_minimal_row(shape_schema: str, key_id: str, data: dict) -> None:
                 f"Autoscaler: {au} | GPU Nodes | Stand: {data['_stand_short']}")
         else:
             data['_k8s_minimal_row2'] = (
-                f"Autoscaler: {au} | HPA: {data['_hpa_yes']} | Stand: {data['_stand_short']}")
+                f"Autoscaler: {au} | Stand: {data['_stand_short']}")
     elif shape_schema == 'seaf.company.ta.services.k8s_deployments':
         hpa = _k8s_hpa_by_target.get(kid, {})
         pods = hpa.get('min', 2)
@@ -1047,7 +1165,15 @@ def _enrich_k8s_minimal_row(shape_schema: str, key_id: str, data: dict) -> None:
         containers = data.get('containers') or []
         c0 = containers[0] if containers else {}
         pname = (c0.get('name') or kid.split('.')[-1]).replace('_', '-')
+        data['_pod_name'] = _k8s_xml_escape(pname)
         data['_pod_line'] = f"{pname}-pod (×{pods})"
+        apps = data.get('app_components') or []
+        app_oid = str(apps[0]) if isinstance(apps, list) and apps else kid
+        domain = _k8s_label_value(data.get('labels'), 'domain')
+        data['_mid_app_short'] = _k8s_xml_escape(_k8s_humanize_name(app_oid.split('.')[-1]))
+        data['_mid_app_oid'] = _k8s_xml_escape(_k8s_short_oid(app_oid))
+        data['_mid_app_domain_line'] = (
+            f'&lt;br/&gt;{_k8s_xml_escape(domain)}' if domain else '')
         cl = str(data.get('cluster') or '')
         wn = _k8s_worker_count_by_cluster.get(cl, 1)
         data['_worker_line'] = f"worker (×{wn})"
@@ -1062,9 +1188,187 @@ def _enrich_k8s_minimal_row(shape_schema: str, key_id: str, data: dict) -> None:
         data['_k8s_ns_fs'] = '11' if 'llm' in lk else '9'
         labels = data.get('labels') or []
         if isinstance(labels, list) and labels:
-            data['_ns_labels_line'] = ' | '.join(str(x) for x in labels[:3])
+            unique_labels = list(dict.fromkeys(str(x) for x in labels))
+            data['_ns_labels_line'] = ' | '.join(unique_labels[:3])
         else:
             data['_ns_labels_line'] = ''
+        ns_parts = kid.split('.')
+        short_key = '.'.join(ns_parts[-2:]) if len(ns_parts) >= 2 and ns_parts[-2] == 'ns' else ns_parts[-1]
+        data['_minimal_ns_key'] = _k8s_xml_escape(kid if 'llm' in lk else short_key)
+        desc = str(data.get('description') or '')
+        desc = re.sub(r'^Namespace для компонентов\s+', '', desc, flags=re.I)
+        desc = re.sub(r'^Namespace для\s+', '', desc, flags=re.I)
+        if 'llm' in lk:
+            desc = re.sub(r'\bприложений\b', 'приложения', desc, flags=re.I)
+        if 'llm' in lk and data['_ns_labels_line']:
+            desc = f"{desc} | {data['_ns_labels_line']}"
+        data['_minimal_ns_description'] = _k8s_xml_escape(desc)
+
+
+_K8S_LINK_OBJECT_XML = (
+    '\n    <object id="{id}" label="{label}">'
+    '\n      <mxCell style="{style}" edge="1" parent="1" source="{source_id}" target="{target_id}">'
+    '\n          <mxGeometry relative="1" as="geometry"/>'
+    '\n      </mxCell>'
+    '\n    </object>\n    '
+)
+
+
+def _add_k8s_reference_links(page: str) -> None:
+    """Связи слоёв K8s как в эталонах B1/B2, только для реально нарисованных объектов."""
+    if _k8s_diagram_details not in ('middle', 'full'):
+        return
+    # На страницах K8s нет скрытой группы «Links» (id=104) из base.drawio — рисуем связи на слое.
+    link_xml_backup = diagram.drawio_link_object_xml
+    diagram.drawio_link_object_xml = _K8S_LINK_OBJECT_XML
+    try:
+        _add_k8s_reference_links_body(page)
+    finally:
+        diagram.drawio_link_object_xml = link_xml_backup
+
+
+def _add_k8s_reference_links_body(page: str) -> None:
+    try:
+        node_ids = set(diagram.nodes_ids[diagram.current_diagram_id])
+        deployments = d.get_object(conf['data_yaml_file'], 'seaf.company.ta.services.k8s_deployments')
+        hpas = d.get_object(conf['data_yaml_file'], 'seaf.company.ta.components.k8s_hpa')
+        nodes = d.get_object(conf['data_yaml_file'], 'seaf.company.ta.components.k8s_nodes')
+    except Exception:
+        return
+
+    page_deployments = [
+        (oid, row) for oid, row in deployments.items()
+        if oid in node_ids and isinstance(row, dict)
+    ]
+    app_anchor = {}
+    for dep_id, row in page_deployments:
+        apps = row.get('app_components') or []
+        app_id = str(apps[0]) if isinstance(apps, list) and apps else dep_id
+        anchor = app_anchor.setdefault(app_id, f'{dep_id}__app')
+        if anchor in node_ids:
+            diagram.add_link(
+                source=anchor,
+                target=dep_id,
+                label='deploys',
+                style='endArrow=block;html=1;rounded=0;fontSize=7;strokeColor=#3d6185;',
+            )
+
+    workers = []
+    for node_id, row in nodes.items():
+        if node_id not in node_ids or not isinstance(row, dict):
+            continue
+        labels = ' '.join(str(x) for x in (row.get('labels') or []))
+        if 'worker=true' in labels:
+            workers.append(node_id)
+
+    for dep_index, (dep_id, _) in enumerate(page_deployments):
+        if _k8s_diagram_details == 'full':
+            for replica in (1, 2):
+                pod_id = f'{dep_id}__pod{replica}'
+                if pod_id not in node_ids:
+                    continue
+                diagram.add_link(
+                    source=dep_id,
+                    target=pod_id,
+                    label='creates',
+                    style='endArrow=classic;html=1;rounded=0;dashed=1;fontSize=7;strokeColor=#82b366;',
+                )
+                if workers:
+                    worker_id = workers[(dep_index + replica - 1) % len(workers)]
+                    diagram.add_link(
+                        source=pod_id,
+                        target=worker_id,
+                        label='runs on',
+                        style='endArrow=classic;html=1;rounded=0;dashed=1;fontSize=7;strokeColor=#9673a6;',
+                    )
+        elif workers:
+            diagram.add_link(
+                source=dep_id,
+                target=workers[dep_index % len(workers)],
+                label='runs on',
+                style='endArrow=classic;html=1;rounded=0;dashed=1;fontSize=8;strokeColor=#82b366;',
+            )
+
+    for hpa_id, row in hpas.items():
+        if hpa_id not in node_ids or not isinstance(row, dict):
+            continue
+        target = str(row.get('target') or '')
+        if target in node_ids:
+            diagram.add_link(
+                source=hpa_id,
+                target=target,
+                label='scales',
+                style='endArrow=oval;html=1;rounded=0;fontSize=7;strokeColor=#b85450;',
+            )
+
+
+_K8S_PAGE_ROOT_IDS = frozenset({'0', '1', '001'})
+
+
+def _k8s_geom_num(value: float) -> str:
+    return str(int(value)) if float(value).is_integer() else f'{value:g}'
+
+
+def _flatten_k8s_page(page: str) -> None:
+    """Плоская структура страницы K8s (как в эталоне): абсолютные координаты, без stackLayout.
+
+    Вложенные swimlane с childLayout=stackLayout перестраивают детей при первом
+    редактировании в DrawIO и затирают рассчитанную геометрию.
+    """
+    diagram.go_to_diagram(diagram_name=page)
+    cells = {}
+    for el in list(diagram.current_root):
+        cell = el.find('mxCell') if el.tag == 'object' else el
+        cid = el.get('id')
+        if cell is not None and cid:
+            cells[cid] = cell
+
+    def ancestor_shift(cell_id: str) -> tuple:
+        dx = dy = 0.0
+        visited = set()
+        parent = cells[cell_id].get('parent')
+        while parent and parent in cells and parent not in _K8S_PAGE_ROOT_IDS and parent not in visited:
+            visited.add(parent)
+            geo = cells[parent].find('mxGeometry')
+            if geo is not None:
+                dx += float(geo.get('x') or 0)
+                dy += float(geo.get('y') or 0)
+            parent = cells[parent].get('parent')
+        return dx, dy
+
+    for cell_id, cell in cells.items():
+        if cell_id in _K8S_PAGE_ROOT_IDS:
+            continue
+        style = cell.get('style') or ''
+        if 'childLayout=stackLayout;' in style:
+            cell.set('style', style.replace('childLayout=stackLayout;', ''))
+        if cell.get('vertex') != '1':
+            continue
+        dx, dy = ancestor_shift(cell_id)
+        geo = cell.find('mxGeometry')
+        if geo is not None and (dx or dy):
+            geo.set('x', _k8s_geom_num(float(geo.get('x') or 0) + dx))
+            geo.set('y', _k8s_geom_num(float(geo.get('y') or 0) + dy))
+        cell.set('parent', '001')
+
+
+def _drop_k8s_page_without_objects(page: str) -> bool:
+    """Убирает страницу кластера, если на ней нет ни одного объекта кроме самого кластера."""
+    diagram.go_to_diagram(diagram_name=page)
+    for element in diagram.current_root:
+        if element.tag != 'object':
+            continue
+        schema = element.get('schema')
+        if schema and schema != 'seaf.company.ta.services.k8s':
+            return False
+
+    diagram_id = diagram.current_diagram_id
+    diagram.drawing.remove(diagram.current_diagram)
+    diagram.nodes_ids.pop(diagram_id, None)
+    diagram.edges_ids.pop(diagram_id, None)
+    diagram_ids.pop(page, None)
+    print(f'\n INFO : Страница «{page}» не создана — у кластера нет объектов для отображения.', end='')
+    return True
 
 
 def add_pages(pattern, pages_bucket_key: str, restore_page=None):
@@ -1111,7 +1415,7 @@ def add_object(pattern, data, key_id):
 
     if file_name == 'k8s' and _k8s_diagram_details == 'minimal':
         _enrich_k8s_minimal_row(pattern.get('schema') or '', key_id, data)
-    elif file_name == 'k8s' and _k8s_diagram_details == 'middle':
+    elif file_name == 'k8s' and _k8s_diagram_details in ('middle', 'full'):
         _enrich_k8s_middle_row(pattern.get('schema') or '', key_id, data)
 
     _escape_data_for_drawio_xml(data)
@@ -1148,6 +1452,12 @@ def add_object(pattern, data, key_id):
                 # перекрытие. Сохраняем курсор y по зоне и восстанавливаем при повторе.
                 if not old_last:
                     pattern.update(default_pattern)
+                elif file_name == 'k8s':
+                    # Координаты внутри кластера отсчитываются от его swimlane: при переходе
+                    # к следующему кластеру курсор x/y и счётчик строк начинаются заново,
+                    # иначе на одной странице содержимое уезжает от своего кластера.
+                    pattern.update(default_pattern)
+                    pattern.pop('_llm_layout_applied', None)
                 elif new_pt == old_pt:
                     default_pattern['parent'] = new_pt
                     pattern['parent'] = new_pt
@@ -1176,6 +1486,7 @@ def add_object(pattern, data, key_id):
                 'parent_type': default_pattern['parent'],
                 'description': data.get('description', ''),
                 'id': _draw_id,
+                'source_oid': key_id,
             }
             if pattern.get('parent_id') == 'segment' and current_parent:
                 fmt_extra['segment'] = current_parent
@@ -1227,6 +1538,26 @@ def add_object(pattern, data, key_id):
                     pattern['x'] = seg_origin['x']
                 if 'y' in seg_origin:
                     pattern['y'] = seg_origin['y']
+
+            # Эталонные K8s-схемы используют отдельную компактную геометрию
+            # для LLM/GPU-кластеров. Переопределение хранится рядом с паттерном,
+            # чтобы стили и семантика объекта оставались общими. Применяется один раз
+            # на паттерн: иначе сбрасывается сдвиг, накопленный position_offset().
+            if (file_name == 'k8s' and 'llm' in str(key_id).lower()
+                    and not pattern.get('_llm_layout_applied')):
+                llm_layout = pattern.get('llm_layout') or {}
+                # На объединённой странице место кластера задаёт стопка Y_stack,
+                # поэтому llm_layout меняет только размеры и внутреннюю раскладку.
+                skip_keys = (
+                    {'x', 'y'}
+                    if _k8s_on_one_page and _is_k8s_root_cluster_pattern(pattern)
+                    else set()
+                )
+                for layout_key in ('x', 'y', 'w', 'h', 'offset', 'deep', 'algo'):
+                    if layout_key in llm_layout and layout_key not in skip_keys:
+                        pattern[layout_key] = llm_layout[layout_key]
+                if llm_layout:
+                    pattern['_llm_layout_applied'] = True
 
             draw_node_id = (
                 f"{key_id}_{pattern_count}" if not d.contains_object_tag(xml_pattern, 'object')
@@ -1384,7 +1715,8 @@ if __name__ == '__main__':
             )
             print(f"\n> Формирую диаграмму страницы \033[32m{page_name}\033[0m ", end='')
             _pattern_iter = (
-                k8s_pattern_items if file_name == 'k8s'
+                [(pattern_key, deepcopy(pattern_value))
+                 for pattern_key, pattern_value in k8s_pattern_items] if file_name == 'k8s'
                 else d.read_yaml_file(patterns_dir + file_name + '.yaml').items()
             )
             for k, object_pattern in _pattern_iter:
@@ -1446,6 +1778,9 @@ if __name__ == '__main__':
                 if bool(re.match(r'^logical_links(_\d+)*', k)):
                     add_links(object_pattern, logical_link=True)  # Связывание объектов на текущей диаграмме
 
+            if file_name == 'k8s':
+                _add_k8s_reference_links(page_name)
+
             reorder_inet_ext_wan_edge_before_dmz_swimlane(diagram, page_name)
             bring_cross_segment_firewalls_to_front(
                 diagram, page_name, wan_edge_layout_cache.get('cross_segment_firewall_oids') or frozenset(),
@@ -1453,6 +1788,10 @@ if __name__ == '__main__':
             refresh_location_label_mxcells_after_swimlane_geometry(
                 diagram, page_name, file_name, diagram_ids, conf, d,
             )
+            if file_name == 'k8s':
+                if _drop_k8s_page_without_objects(page_name):
+                    continue
+                _flatten_k8s_page(page_name)
             if file_name in ('dc', 'office'):
                 kb_layout(diagram, d, conf, page_name, diagram_ids, _py, _roots)
                 services_TA_layout(diagram, d, conf, page_name, diagram_ids, _py, _roots)
@@ -1464,6 +1803,10 @@ if __name__ == '__main__':
                     diagram, page_name, file_name, diagram_ids, conf, d,
                 )
                 place_lan_group_kant_cells(
+                    diagram, d, conf, page_name, diagram_ids, _py, _roots,
+                )
+                # INT-NET: выравнивание по реальному bbox (LAN + сервисы + kant) к левому краю сегмента.
+                center_int_net_content_by_real_bbox(
                     diagram, d, conf, page_name, diagram_ids, _py, _roots,
                 )
                 # После lan_kant bbox может вырасти — снова подогнать ярлык под cw и текст.
