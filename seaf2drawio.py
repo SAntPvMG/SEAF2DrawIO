@@ -13,6 +13,7 @@ from auto_layout.edge_segments_layout import (
     edge_segments_layout as compute_wan_edge_layout,
     resolve_page_location_roots,
 )
+from auto_layout.cross_segment_firewall_boundary import place_cross_segment_firewalls_on_boundary
 from auto_layout.dmz_segments_layout import dmz_segments_layout as compute_dmz_layout
 from auto_layout.segment_intrinsic_layout import (
     align_int_net_security_bottom_to_int_wan_edge,
@@ -1807,6 +1808,10 @@ if __name__ == '__main__':
                 )
                 # INT-NET: выравнивание по реальному bbox (LAN + сервисы + kant) к левому краю сегмента.
                 center_int_net_content_by_real_bbox(
+                    diagram, d, conf, page_name, diagram_ids, _py, _roots,
+                )
+                # Геометрия зон окончательная — сегментирующие NGFW на границы разделяемых зон.
+                place_cross_segment_firewalls_on_boundary(
                     diagram, d, conf, page_name, diagram_ids, _py, _roots,
                 )
                 # После lan_kant bbox может вырасти — снова подогнать ярлык под cw и текст.
