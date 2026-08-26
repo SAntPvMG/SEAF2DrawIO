@@ -176,6 +176,7 @@ def advanced_analysis(conf, expected_counts, expected_data, pattern_specs, d):
                     oid = obj.get('id')
                     if not schema or not oid:
                         continue
+                    oid = obj.get('source_oid') or oid
                     if oid in ignore_object_ids:
                         continue
                     # Logical links: use OID (semantic id) if available, skip non-edge objects
@@ -191,6 +192,7 @@ def advanced_analysis(conf, expected_counts, expected_data, pattern_specs, d):
                 oid = obj.get('id')
                 if not schema or not oid:
                     continue
+                oid = obj.get('source_oid') or oid
                 if oid in ignore_object_ids:
                     continue
                 if schema == 'seaf.ta.services.logical_link':
