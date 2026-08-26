@@ -23,6 +23,7 @@ from auto_layout.kb_layout import (
     _parse_network_connection,
     _pick_anchor_network_oid,
 )
+from auto_layout.lan_group_kant_layout import KANT_OUTSET_MIN_Y_PX
 from auto_layout.segment_intrinsic_layout import location_on_page
 from auto_layout.services_ta_layout import TA_SCHEMAS, _ta_positioning_mx_cell
 
@@ -30,6 +31,8 @@ NETWORKS_SCHEMA = 'seaf.company.ta.services.networks'
 SEGMENTS_SCHEMA = 'seaf.company.ta.services.network_segments'
 
 PAD_PX = 30
+# Подпись зоны рисуется по верхнему краю сегмента (verticalAlign=top, fontSize=12, bold).
+SEGMENT_TITLE_CLEARANCE_PX = 30
 _NEIGHBOR_EPS = 3.0
 _MAX_ROUNDS = 14
 
@@ -58,13 +61,19 @@ def _geom_shift_xy(geom: ET.Element, dx: float, dy: float) -> None:
 
 
 def _segment_swimlane_mx(root: ET.Element, seg_oid: str) -> Optional[ET.Element]:
+    """Прямоугольник зоны: предпочтительно parent=001 (контур страницы ЦОД/офиса)."""
     obj = root.find(f".//object[@id='{seg_oid}']")
     if obj is None:
         return None
+    fallback: Optional[ET.Element] = None
     for mx in obj.iter('mxCell'):
-        if mx.get('vertex') == '1' and mx.get('edge') != '1':
+        if mx.get('vertex') != '1' or mx.get('edge') == '1':
+            continue
+        if mx.get('parent') == '001':
             return mx
-    return None
+        if fallback is None:
+            fallback = mx
+    return fallback
 
 
 def _walk_vertices_under_parent_chain(root: ET.Element, root_parent_id: str) -> List[ET.Element]:
@@ -99,15 +108,15 @@ def _lan_oids_in_segment(nets: Dict[str, Any], seg_oid: str, page_ids: Set[str])
     return found
 
 
-def _overlay_cells_for_segment_lans(
+def _overlay_cells_by_anchor_lan(
     root: ET.Element,
     sd: Any,
     conf: Dict[str, Any],
     page_ids: Set[str],
     location_root: Optional[str],
     lan_in_seg: Set[str],
-) -> List[ET.Element]:
-    cells: List[ET.Element] = []
+) -> Dict[str, List[ET.Element]]:
+    by_anchor: Dict[str, List[ET.Element]] = {}
 
     def feed(schema: str, pos_fn: Any) -> None:
         try:
@@ -126,11 +135,27 @@ def _overlay_cells_for_segment_lans(
                 continue
             pos_mx = pos_fn(root, str(oid))
             if pos_mx is not None:
-                cells.append(pos_mx)
+                by_anchor.setdefault(anchor, []).append(pos_mx)
 
     feed(KB_SCHEMA, _kb_positioning_mx_cell)
     for sch in TA_SCHEMAS:
         feed(sch, _ta_positioning_mx_cell)
+    return by_anchor
+
+
+def _overlay_cells_for_segment_lans(
+    root: ET.Element,
+    sd: Any,
+    conf: Dict[str, Any],
+    page_ids: Set[str],
+    location_root: Optional[str],
+    lan_in_seg: Set[str],
+) -> List[ET.Element]:
+    cells: List[ET.Element] = []
+    for group in _overlay_cells_by_anchor_lan(
+        root, sd, conf, page_ids, location_root, lan_in_seg,
+    ).values():
+        cells.extend(group)
     return cells
 
 
@@ -147,6 +172,48 @@ def _union_content_bbox_segment(
         bb = _absolute_bbox_vertex_cell(root, pos_mx)
         union_bb = _bbox_union(union_bb, bb)
     return union_bb
+
+
+def _pull_overlays_into_segment_top(
+    root: ET.Element,
+    sd: Any,
+    conf: Dict[str, Any],
+    page_ids: Set[str],
+    location_root: Optional[str],
+    nets: Dict[str, Any],
+    seg_on_page: List[str],
+) -> None:
+    """
+    КБ с offset −80 часто оказываются выше верхней границы сегмента (и контура 001).
+    Группа сервисов одной LAN опускается ниже подписи зоны с запасом под рамку lan_kant;
+    сдвиг делается по группам, чтобы остальные остались напротив своих сетей.
+    """
+    min_top_offset = float(SEGMENT_TITLE_CLEARANCE_PX + KANT_OUTSET_MIN_Y_PX)
+    for si in seg_on_page:
+        cmx = _segment_swimlane_mx(root, si)
+        if cmx is None:
+            continue
+        seg_bb = _absolute_bbox_vertex_cell(root, cmx)
+        if seg_bb is None:
+            continue
+        lan_set = _lan_oids_in_segment(nets, si, page_ids)
+        by_anchor = _overlay_cells_by_anchor_lan(
+            root, sd, conf, page_ids, location_root, lan_set,
+        )
+        seg_top = float(seg_bb[1])
+        for overlays in by_anchor.values():
+            u_bb = None
+            for pos_mx in overlays:
+                u_bb = _bbox_union(u_bb, _absolute_bbox_vertex_cell(root, pos_mx))
+            if u_bb is None:
+                continue
+            dy = (seg_top + min_top_offset) - float(u_bb[1])
+            if dy <= 0.01:
+                continue
+            for pos_mx in overlays:
+                geom = pos_mx.find('mxGeometry')
+                if geom is not None:
+                    _geom_shift_xy(geom, 0.0, dy)
 
 
 def _shift_kb_ta_overlays_for_lans(
@@ -246,6 +313,10 @@ def expand_segments_for_lan_overflow_and_shift_neighbors(
     ]
     if not seg_on_page:
         return
+
+    _pull_overlays_into_segment_top(
+        root, sd, conf, page_ids, location_root, nets, seg_on_page,
+    )
 
     def snapshot_seg_bounds() -> Dict[str, Tuple[float, float, float, float]]:
         bbmap: Dict[str, Tuple[float, float, float, float]] = {}

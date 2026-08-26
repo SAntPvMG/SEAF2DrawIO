@@ -3,9 +3,11 @@
 сервисы КБ (слой 101), сервисы ТА (слой 102), User Devices — только те, у которых в данных
 эта LAN в network_connection (для КБ/ТА якорь совпадает с kb_layout / services_TA_layout).
 
-На каждую LAN в сегменте одна рамка: объединение абсолютных bbox объектов на canvas, затем асимметричное
-расширение: верхний левый (min_x−30, min_y−30), нижний правый (max_x+20, max_y+40); координаты относительно
-swimlane сегмента (parent=segment_oid). Обводка KANT_STROKE_WIDTH, пунктир KANT_DASH_PATTERN.
+На каждую LAN в сегменте одна рамка: объединение абсолютных bbox объектов на canvas (для КБ/ТА —
+только ячейка позиционирования на слое), затем асимметричное расширение: верхний левый
+(min_x−30, min_y−30), нижний правый (max_x+20, max_y+40); координаты относительно swimlane
+сегмента (parent=segment_oid) и обрезка по внутренней области сегмента. Обводка
+KANT_STROKE_WIDTH, пунктир KANT_DASH_PATTERN.
 """
 
 from __future__ import annotations
@@ -56,10 +58,15 @@ def _segment_swimlane_mx(root: ET.Element, seg_oid: str) -> Optional[ET.Element]
     obj = root.find(f".//object[@id='{seg_oid}']")
     if obj is None:
         return None
+    fallback: Optional[ET.Element] = None
     for mx in obj.iter('mxCell'):
-        if mx.get('vertex') == '1' and mx.get('edge') != '1':
+        if mx.get('vertex') != '1' or mx.get('edge') == '1':
+            continue
+        if mx.get('parent') == '001':
             return mx
-    return None
+        if fallback is None:
+            fallback = mx
+    return fallback
 
 
 def _remove_existing_kant_cells(root: ET.Element) -> None:
@@ -136,12 +143,43 @@ def _union_kb_or_ta_row_bbox_for_anchor_lan(
         anchor = _pick_anchor_network_oid(nc_list, page_ids, location_root)
         if anchor != lan_oid:
             continue
+        # Только ячейка позиционирования на слое КБ/ТА: иначе _canvas_bbox_for_oid
+        # подхватывает «осиротевшие» группы (другой parent / старые координаты) и
+        # раздувает пунктирную рамку за пределы сегмента ЦОД.
         pos_mx = pos_fn(root, str(oid))
-        bb = _canvas_bbox_for_oid(root, str(oid))
-        if bb is None and pos_mx is not None:
-            bb = _absolute_bbox_vertex_cell(root, pos_mx)
+        if pos_mx is None:
+            continue
+        bb = _absolute_bbox_vertex_cell(root, pos_mx)
         union_abs = _union_bbox(union_abs, bb)
     return union_abs
+
+
+def _clamp_relative_bbox_to_swimlane(
+    swimlane_mx: ET.Element,
+    rx1: float,
+    ry1: float,
+    rx2: float,
+    ry2: float,
+    pad: float = 4.0,
+) -> Optional[Tuple[float, float, float, float]]:
+    """Обрезает локальный bbox рамки по внутренней области swimlane сегмента."""
+    geom = swimlane_mx.find('mxGeometry')
+    if geom is None:
+        return rx1, ry1, rx2, ry2
+    try:
+        sw = float(geom.get('width') or 0)
+        sh = float(geom.get('height') or 0)
+    except (TypeError, ValueError):
+        return rx1, ry1, rx2, ry2
+    if sw < pad * 2 + 4 or sh < pad * 2 + 4:
+        return None
+    x1 = max(pad, min(rx1, sw - pad - 4.0))
+    y1 = max(pad, min(ry1, sh - pad - 4.0))
+    x2 = min(sw - pad, max(rx2, pad + 4.0))
+    y2 = min(sh - pad, max(ry2, pad + 4.0))
+    if x2 - x1 < 4.0 or y2 - y1 < 4.0:
+        return None
+    return x1, y1, x2, y2
 
 
 def _union_kb_ta_ud_for_lan(
@@ -284,6 +322,10 @@ def place_lan_group_kant_cells(
             )
 
             rx1, ry1, rx2, ry2 = _bbox_relative_to_swimlane(root, swimlane_mx, union_outset)
+            clamped = _clamp_relative_bbox_to_swimlane(swimlane_mx, rx1, ry1, rx2, ry2)
+            if clamped is None:
+                continue
+            rx1, ry1, rx2, ry2 = clamped
             rw = rx2 - rx1
             rh = ry2 - ry1
             if rw < 1.0 or rh < 1.0:

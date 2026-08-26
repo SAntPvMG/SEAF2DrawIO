@@ -21,9 +21,16 @@ from collections import defaultdict
 from typing import Any, AbstractSet, Dict, List, Optional, Set, Tuple
 
 from auto_layout.kb_layout import (
+    KB_SCHEMA,
+    KB_LAYER_PARENT,
+    _absolute_bbox_vertex_cell,
+    _absolute_xy_of_mx_cell_top_left,
+    _canvas_bbox_for_oid,
     _dc_slug_from_location_root,
+    _kb_positioning_mx_cell,
     _network_oid_matches_dc_zone,
     _parse_network_connection,
+    _pick_anchor_network_oid,
 )
 from auto_layout.layout_pattern_modes import patterns_yaml_uses_interior_layout
 from auto_layout.layout_cache import (
@@ -32,12 +39,15 @@ from auto_layout.layout_cache import (
     set_intrinsic_cached,
 )
 from auto_layout.services_ta_layout import (
+    TA_LAYER_PARENT,
     TA_SCHEMAS,
     _ANCHOR_TOP_OFFSET_PX as TA_ANCHOR_TOP_OFFSET_PX,
     _GAP_RIGHT as TA_GAP_RIGHT,
     _GRID_GAP_PX as TA_GRID_GAP_PX,
     _PER_ROW as TA_PER_ROW,
+    _ta_positioning_mx_cell,
 )
+import xml.etree.ElementTree as ET
 
 # Зазор между соседними сегментами на странице (сетка office/dmz), не поля внутри сегмента
 SEGMENT_GAP = 10
@@ -116,6 +126,9 @@ def _ta_service_counts_by_anchor_lan(
 ) -> Dict[str, int]:
     """
     Сколько сервисов ТА (слой 102, см. services_TA_layout) привязывается к каждой LAN как к якорю.
+
+    Не фильтруем по location объекта: на страницу сервисы попадают через network_connection
+    (как services_TA_layout), иначе row_h занижается и сетка не помещается напротив LAN.
     """
     on_page = _network_oids_on_page_for_intrinsic(networks, page_roots)
     loc_root = page_roots[0] if len(page_roots) == 1 else None
@@ -127,8 +140,6 @@ def _ta_service_counts_by_anchor_lan(
             continue
         for row in chunk.values():
             if not isinstance(row, dict):
-                continue
-            if not location_on_page(row.get('location'), page_roots):
                 continue
             nc_list = _parse_network_connection(row.get('network_connection'))
             anchor = _pick_anchor_network_like_kb(nc_list, on_page, loc_root)
@@ -1060,7 +1071,7 @@ def compute_intrinsic_band_layout(
             tbw, tbh = _bbox_ta_services_grid_px(tn, ta_mw, ta_mh)
             spec['ta_bbox_w'] = tbw
             spec['ta_bbox_h'] = tbh
-            spec['ta_row_h_floor'] = int(TA_ANCHOR_TOP_OFFSET_PX + tbh) if tn > 0 else 0
+            spec['ta_row_h_floor'] = int(tbh) if tn > 0 else 0
             if spec['ta_row_h_floor']:
                 spec['row_h'] = max(int(spec['row_h']), spec['ta_row_h_floor'])
 
@@ -1306,16 +1317,12 @@ def compute_intrinsic_band_layout(
                 INT_SEGMENT_GAP_TOP, INT_SEGMENT_GAP_BOTTOM,
             )
 
-        if zone in WIDE_CENTER_ZONES and oids_this_seg:
-            _center_segment_horizontal_widen(
-                out_positions, oids_this_seg, base_w,
-                INT_SEGMENT_GAP_LEFT, INT_SEGMENT_GAP_RIGHT,
-            )
-            max_content_right = max(
-                out_positions[o]['x'] + out_positions[o]['w'] for o in oids_this_seg
-            )
+        # Горизонтальное центрирование INT-NET перенесено на post-pass
+        # center_int_net_content_by_real_bbox (после сервисов ТА/КБ и lan_kant):
+        # иначе узкий столбик LAN (~толщина полоски) центрируется в широком сегменте
+        # и сети «висят» посередине оранжевой зоны вдали от левого края.
 
-        # После финализации/центрирования: иначе _finalize_segment_vertical снова «центрирует» и гасит сдвиг
+        # После финализации: иначе _finalize_segment_vertical снова «центрирует» и гасит сдвиг
         if oids_this_seg and LAN_BAND_VERTICAL_OFFSET:
             for oid in oids_this_seg:
                 out_positions[oid]['y'] += LAN_BAND_VERTICAL_OFFSET
@@ -1350,3 +1357,172 @@ def effective_segment_height(segment_oid: str, template_h: int, layout_cache: Op
     if sz and 'h' in sz:
         return int(sz['h'])
     return template_h
+
+
+def _translate_geom_x(mx_cell: ET.Element, dx: float) -> None:
+    geom = mx_cell.find('mxGeometry')
+    if geom is None or abs(dx) < 0.5:
+        return
+    try:
+        x = float(geom.get('x') or 0)
+    except (TypeError, ValueError):
+        return
+    geom.set('x', str(int(round(x + dx))))
+
+
+def center_int_net_content_by_real_bbox(
+    diagram: Any,
+    sd: Any,
+    conf: Dict[str, Any],
+    page_name: str,
+    diagram_ids_map: Dict[str, Any],
+    patterns_yaml_path: str,
+    location_roots: List[str],
+) -> None:
+    """
+    Горизонтальное выравнивание содержимого INT-NET после сервисов и lan_kant.
+
+    Ранний WIDE_CENTER в intrinsic центрировал только толщину полоски LAN (~20 px) —
+    сети уезжали в середину сегмента. Здесь сдвигаем блок (LAN, устройства, lan_kant,
+    сервисы КБ/ТА) так, чтобы левый край geom полосок LAN был на INT_SEGMENT_GAP_LEFT —
+    как в INT-SECURITY-NET (визуально с rotation=270 это отступ ~120 px от границы сегмента,
+    а не 30 px по visual bbox).
+    """
+    if not patterns_yaml_path or not patterns_yaml_uses_interior_layout(patterns_yaml_path):
+        return
+
+    diagram.go_to_diagram(diagram_name=page_name)
+    root = diagram.current_root
+    page_ids: Set[str] = set(diagram_ids_map.get(page_name) or [])
+    location_root = location_roots[0] if len(location_roots) == 1 else None
+
+    try:
+        segments = sd.get_object(conf['data_yaml_file'], 'seaf.company.ta.services.network_segments')
+        networks = sd.get_object(conf['data_yaml_file'], 'seaf.company.ta.services.networks')
+    except Exception:
+        return
+    if not isinstance(segments, dict) or not isinstance(networks, dict):
+        return
+
+    int_net_oids = [
+        str(soid)
+        for soid, srow in segments.items()
+        if isinstance(srow, dict)
+        and soid in page_ids
+        and location_on_page(srow.get('location'), location_roots)
+        and str(srow.get('zone') or '') in WIDE_CENTER_ZONES
+    ]
+    if not int_net_oids:
+        return
+
+    service_rows: Dict[str, Dict[str, Any]] = {}
+    for schema in (KB_SCHEMA,) + TA_SCHEMAS:
+        try:
+            chunk = sd.get_object(conf['data_yaml_file'], schema)
+        except Exception:
+            continue
+        if not isinstance(chunk, dict):
+            continue
+        for oid, row in chunk.items():
+            if oid in page_ids and isinstance(row, dict):
+                service_rows.setdefault(str(oid), row)
+
+    for seg_oid in int_net_oids:
+        swim = None
+        for el in root:
+            if el.tag == 'object' and el.get('id') == seg_oid:
+                for mx in el.iter('mxCell'):
+                    if mx.get('vertex') == '1' and mx.get('parent') == '001':
+                        swim = mx
+                        break
+            elif el.tag == 'mxCell' and el.get('id') == seg_oid and el.get('parent') == '001':
+                swim = el
+            if swim is not None:
+                break
+        if swim is None:
+            continue
+        sgeom = swim.find('mxGeometry')
+        if sgeom is None:
+            continue
+        try:
+            seg_w = float(sgeom.get('width') or 0)
+        except (TypeError, ValueError):
+            continue
+        if seg_w <= INT_SEGMENT_GAP_LEFT + INT_SEGMENT_GAP_RIGHT:
+            continue
+
+        seg_abs_x, _seg_abs_y = _absolute_xy_of_mx_cell_top_left(root, swim)
+
+        lans_in_seg = {
+            nid
+            for nid, nd in networks.items()
+            if isinstance(nd, dict)
+            and nd.get('type') == 'LAN'
+            and nid in page_ids
+            and (
+                nd.get('segment') == seg_oid
+                or (isinstance(nd.get('segment'), list) and seg_oid in (nd.get('segment') or []))
+            )
+        }
+        if not lans_in_seg:
+            continue
+
+        content_cells: List[ET.Element] = []
+        for el in root:
+            cells: List[ET.Element] = []
+            if el.tag == 'object':
+                cells.extend(
+                    mx for mx in el.iter('mxCell')
+                    if mx.get('vertex') == '1' and mx.get('edge') != '1'
+                )
+            elif el.tag == 'mxCell' and el.get('vertex') == '1' and el.get('edge') != '1':
+                cells.append(el)
+            for mx in cells:
+                if mx.get('parent') == seg_oid:
+                    content_cells.append(mx)
+
+        lan_geom_min_x = float('inf')
+        for lan_oid in lans_in_seg:
+            obj = root.find(f".//object[@id='{lan_oid}']")
+            candidates: List[ET.Element] = []
+            if obj is not None:
+                candidates.extend(
+                    mx for mx in obj.iter('mxCell')
+                    if mx.get('vertex') == '1' and mx.get('edge') != '1'
+                )
+            for mid in (lan_oid, f'{lan_oid}_0'):
+                mx = root.find(f".//mxCell[@id='{mid}']")
+                if mx is not None:
+                    candidates.append(mx)
+            for mx in candidates:
+                if mx.get('parent') != seg_oid:
+                    continue
+                ax, _ay = _absolute_xy_of_mx_cell_top_left(root, mx)
+                lan_geom_min_x = min(lan_geom_min_x, ax)
+
+        layer_cells: List[ET.Element] = []
+        for service_oid, row in service_rows.items():
+            nc_list = _parse_network_connection(row.get('network_connection'))
+            anchor = _pick_anchor_network_oid(nc_list, page_ids, location_root)
+            if not anchor or anchor not in lans_in_seg:
+                continue
+            pos_mx = _kb_positioning_mx_cell(root, service_oid)
+            if pos_mx is None:
+                pos_mx = _ta_positioning_mx_cell(root, service_oid)
+            if pos_mx is None:
+                continue
+            layer_cells.append(pos_mx)
+
+        if lan_geom_min_x == float('inf') or not content_cells:
+            continue
+
+        # Как INT-SECURITY-NET: левый край geom полоски LAN = INT_SEGMENT_GAP_LEFT.
+        target_left = seg_abs_x + float(INT_SEGMENT_GAP_LEFT)
+        dx = target_left - lan_geom_min_x
+        if abs(dx) < 0.5:
+            continue
+
+        for mx in content_cells:
+            _translate_geom_x(mx, dx)
+        for mx in layer_cells:
+            _translate_geom_x(mx, dx)

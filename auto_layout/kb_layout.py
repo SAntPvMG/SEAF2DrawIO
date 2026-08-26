@@ -14,7 +14,10 @@ import xml.etree.ElementTree as ET
 
 KB_LAYER_PARENT = '101'
 KB_SCHEMA = 'seaf.company.ta.services.kbs'
-_GAP_RIGHT = 15
+# Зазор от полоски LAN до первого сервиса: пунктирная рамка lan_kant отступает влево
+# на KANT_OUTSET_MIN_X_PX (30), плюс её собственный просвет до сети.
+LAN_TO_SERVICES_GAP_PX = 45
+_GAP_RIGHT = LAN_TO_SERVICES_GAP_PX
 _ANCHOR_TOP_OFFSET_PX = -80
 _KB_GAP_PX = 20
 _KB_PER_ROW = 4
@@ -109,13 +112,32 @@ def _absolute_xy_of_mx_cell_top_left(root: ET.Element, mx_cell: ET.Element) -> T
 
 
 def _absolute_bbox_vertex_cell(root: ET.Element, mx_cell: ET.Element) -> Optional[Tuple[float, float, float, float]]:
+    """Абсолютный bbox вершины. Для rotation=±90/270 оси меняются (вертикальные полоски LAN)."""
     geom = mx_cell.find('mxGeometry')
     t = _parse_geom_xywh(geom)
     if t is None:
         return None
     _, _, lw, lh = t
     ax, ay = _absolute_xy_of_mx_cell_top_left(root, mx_cell)
-    return ax, ay, ax + lw, ay + lh
+    ax1, ay1, ax2, ay2 = ax, ay, ax + lw, ay + lh
+
+    style = mx_cell.get('style') or ''
+    m = re.search(r'rotation=(-?\d+(?:\.\d+)?)', style)
+    if not m:
+        return ax1, ay1, ax2, ay2
+    try:
+        rot = abs(float(m.group(1))) % 360.0
+    except (TypeError, ValueError):
+        return ax1, ay1, ax2, ay2
+    if abs(rot - 90.0) > 1.0 and abs(rot - 270.0) > 1.0:
+        return ax1, ay1, ax2, ay2
+
+    cx = (ax1 + ax2) / 2.0
+    cy = (ay1 + ay2) / 2.0
+    hw = (ax2 - ax1) / 2.0
+    hh = (ay2 - ay1) / 2.0
+    # 90/270: визуально ширина↔высота вокруг центра
+    return cx - hh, cy - hw, cx + hh, cy + hw
 
 
 def _canvas_bbox_for_oid(root: ET.Element, oid: str) -> Optional[Tuple[float, float, float, float]]:

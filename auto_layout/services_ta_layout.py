@@ -1,6 +1,7 @@
 """
 Раскладка сервисов ТА (слой Draw.IO «102», parent_id network_connection): справа от первого OID
-в network_connection в зоне страницы; вертикально +40 px от верха якоря (ниже верхней границы); до 4 в ряд, шаг 20 px.
+в network_connection в зоне страницы; вертикально — напротив визуального bbox якоря (LAN);
+до 4 в ряд, шаг 20 px.
 """
 
 from __future__ import annotations
@@ -10,13 +11,14 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 import xml.etree.ElementTree as ET
 
 from auto_layout.kb_layout import (
+    LAN_TO_SERVICES_GAP_PX,
     _canvas_bbox_for_oid,
     _parse_network_connection,
     _pick_anchor_network_oid,
 )
 
 TA_LAYER_PARENT = '102'
-_GAP_RIGHT = 15
+_GAP_RIGHT = LAN_TO_SERVICES_GAP_PX
 _ANCHOR_TOP_OFFSET_PX = 40
 _GRID_GAP_PX = 20
 _PER_ROW = 4
@@ -135,13 +137,25 @@ def services_TA_layout(
         by_anchor[item[1]].append(item)
 
     for _anchor_oid, items in by_anchor.items():
-        row_offset_y = 0.0
-        for row_start in range(0, len(items), _PER_ROW):
+        # Полная высота сетки напротив якоря (LAN), чтобы блок стоял напротив полоски, а не уезжал вниз.
+        n = len(items)
+        n_rows = (n + _PER_ROW - 1) // _PER_ROW
+        row_heights: List[float] = []
+        for row_start in range(0, n, _PER_ROW):
             row_slice = items[row_start : row_start + _PER_ROW]
-            max_h = max(t[4] for t in row_slice)
-            _, ay_top, ax_right, _ = row_slice[0][2]
+            row_heights.append(max(t[4] for t in row_slice))
+        grid_h = sum(row_heights) + _GRID_GAP_PX * max(0, n_rows - 1)
+
+        ax_left, ay_top, ax_right, ay_bottom = items[0][2]
+        # Всегда центрируем сетку по вертикали относительно визуального bbox LAN («напротив»).
+        y0 = (ay_top + ay_bottom) / 2.0 - grid_h / 2.0
+
+        row_offset_y = 0.0
+        for row_idx, row_start in enumerate(range(0, n, _PER_ROW)):
+            row_slice = items[row_start : row_start + _PER_ROW]
+            max_h = row_heights[row_idx]
             x_cursor = ax_right + _GAP_RIGHT
-            iy = int(round(ay_top + _ANCHOR_TOP_OFFSET_PX + row_offset_y))
+            iy = int(round(y0 + row_offset_y))
 
             for _sid, _an, _bb, w, h, pos_mx in row_slice:
                 geom = pos_mx.find('mxGeometry')
