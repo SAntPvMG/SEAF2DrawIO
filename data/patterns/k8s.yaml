@@ -1,13 +1,13 @@
 # ---------------------------------------------------------------------------
 # Diagram details — уровень детализации страниц Kubernetes:
-#   minimal — компактная схема (как Minimal K8S_Р41 v02): swimlane кластера,
-#             namespace, агрегированные «pod» по deployment, HPA; без нод.
-#   middle  — макет как Middle K8S_Р41 v02: заголовок кластера (stack swimlane),
-#             блок Shared Infrastructure, namespace (stack), deployments с образом/CPU/RAM,
-#             HPA в ряд, master/worker ноды; без полного «full»-контейнера 1180×820.
-#   full    — крупный swimlane кластера, namespace, ноды, deployment, HPA (как раньше).
+#   minimal — как «В1» в K8S_Р41 v03: swimlane кластера, namespace, приложения,
+#             один агрегированный pod на deployment (worker1+worker2 / GPU),
+#             HPA под namespace внутри кластера; без нод.
+#   middle  — макет как Middle / «В2»: Shared Infrastructure, deployments с образом,
+#             HPA, master/worker ноды.
+#   full    — крупный swimlane, namespace, ноды, deployment, HPA, поды.
 # ---------------------------------------------------------------------------
-'Diagram details': middle
+'Diagram details': minimal
 
 # ---------------------------------------------------------------------------
 # On one page — все кластеры на одной странице DrawIO:
@@ -67,20 +67,20 @@ k8s_pages_full:
     </diagram>
   schema: 'seaf.company.ta.services.k8s'
 
-# --- minimal (компоновка как Minimal K8S_Р41 v02) --------------------------------
+# --- minimal (компоновка как «В1» в K8S_Р41 v03.drawio) ------------------------
 
 k8s_cluster_minimal:
   diagram_modes: [minimal]
   xml: >
-    <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;🔷 {_k8s_display_id}&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;text-align:left&quot;&gt;Kubernetes Cluster&lt;/span&gt;&lt;br/&gt;v{_k8s_ver} | CNI: {_cni_product} | Mesh: {service_mesh}&lt;br/&gt;{_k8s_minimal_row2}&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.services.k8s">
+    <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;🔷 {_k8s_display_id}&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;text-align:left&quot;&gt;{_k8s_subtitle}&lt;/span&gt;&lt;br/&gt;v{_k8s_ver} | CNI: {_cni_product} | Mesh: {service_mesh}&lt;br/&gt;{_k8s_minimal_row2}&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.services.k8s">
       <mxCell style="swimlane;html=1;startSize={_k8s_minimal_start};container=0;collapsible=0;childLayout=stackLayout;horizontal=1;align=center;spacingTop=-4;fillColor={_k8s_minimal_fill};strokeColor={_k8s_minimal_stroke};whiteSpace=wrap;fontSize={_k8s_minimal_fs};movable=1;resizable=1;" vertex="1" parent="001">
         <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
       </mxCell>
     </object>
   schema: 'seaf.company.ta.services.k8s'
-  x: 120
-  y: 120
-  w: 510
+  x: 80
+  y: 80
+  w: 480
   h: 260
   offset: 0
   deep: 1
@@ -91,16 +91,16 @@ k8s_namespace_minimal:
   diagram_modes: [minimal]
   xml: >
     <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;b&gt;📦 Namespace: {_minimal_ns_key}&lt;/b&gt;&lt;br/&gt;{_minimal_ns_description}&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.components.k8s_namespaces">
-      <mxCell style="swimlane;html=1;startSize=40;container=0;collapsible=0;childLayout=stackLayout;horizontal=1;align=left;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize={_k8s_ns_fs};" vertex="1" parent="{parent_id}">
+      <mxCell style="swimlane;html=1;startSize={_k8s_ns_start};container=0;collapsible=0;childLayout=stackLayout;horizontal=1;align={_k8s_ns_align};whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize={_k8s_ns_fs};" vertex="1" parent="{parent_id}">
         <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
       </mxCell>
     </object>
   schema: 'seaf.company.ta.components.k8s_namespaces'
   parent_id: 'cluster'
-  x: 30
+  x: 26
   y: 60
-  w: 450
-  h: 180
+  w: 430
+  h: 162
   offset: 20
   deep: 1
   algo: 'none'
@@ -111,77 +111,57 @@ k8s_application_minimal:
   node_id_suffix: '__app'
   unique_by_first: app_components
   xml: >
-    <object label="&lt;div style=&quot;text-align:center&quot;&gt;&lt;b&gt;🧩 {_mid_app_short}&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:8px&quot;&gt;{_mid_app_oid}&lt;/font&gt;&lt;/div&gt;" id="{{id}}" source_oid="{source_oid}" schema="seaf.company.ta.services.k8s_deployments">
-      <mxCell style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d4e1f5;strokeColor=#3d6185;fontSize=9;shadow=1;container=0;" vertex="1" parent="{parent_id}">
+    <object label="&lt;div style=&quot;text-align:center&quot;&gt;{_minimal_app_title}&lt;br/&gt;&lt;font style=&quot;font-size:{_minimal_app_sub_fs}px&quot;&gt;{_minimal_app_sub}&lt;/font&gt;&lt;/div&gt;" id="{{id}}" source_oid="{source_oid}" schema="seaf.company.ta.services.k8s_deployments">
+      <mxCell style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d4e1f5;strokeColor=#3d6185;fontSize={_minimal_app_fs};shadow=1;container=0;align=center;" vertex="1" parent="{parent_id}">
         <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
       </mxCell>
     </object>
   schema: 'seaf.company.ta.services.k8s_deployments'
   parent_id: 'namespace'
   x: 63
-  y: 58
+  y: 55
   w: 164
   h: 30
-  offset: 63
+  offset: 55
   deep: 3
   algo: 'X+'
   llm_layout: {x: 45, y: 48, w: 180, h: 50, offset: 15, deep: 2}
 
-k8s_pod_1_minimal:
+# Один бокс на deployment: несколько worker-строк (В1) или GPU-под для LLM.
+k8s_pod_minimal:
   diagram_modes: [minimal]
-  node_id_suffix: '__pod1'
-  replica_index: 1
+  node_id_suffix: '__pod'
   xml: >
-    <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;font style=&quot;font-size:8px&quot;&gt;🟣 {_pod_name}-pod-1&lt;br/&gt;📍 worker1 | 🟢 Running&lt;/font&gt;&lt;/div&gt;" id="{{id}}" source_oid="{source_oid}" schema="seaf.company.ta.services.k8s_deployments">
-      <mxCell style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=8;container=0;shadow=0;" vertex="1" parent="{parent_id}">
+    <object label="&lt;div style=&quot;text-align:left&quot;&gt;{_minimal_pod_html}&lt;/div&gt;" id="{{id}}" source_oid="{source_oid}" schema="seaf.company.ta.services.k8s_deployments">
+      <mxCell style="rounded=1;whiteSpace=wrap;html=1;fillColor={_minimal_pod_fill};strokeColor={_minimal_pod_stroke};fontSize={_minimal_pod_fs};container=0;align=center;" vertex="1" parent="{parent_id}">
         <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
       </mxCell>
     </object>
   schema: 'seaf.company.ta.services.k8s_deployments'
   parent_id: 'namespace'
   x: 21
-  y: 95
+  y: 94
   w: 115
-  h: 30
-  offset: 14
+  h: 45
+  offset: 11
   deep: 3
   algo: 'X+'
   llm_layout: {x: 55, y: 110, w: 160, h: 35, offset: 35, deep: 2}
 
-k8s_pod_2_minimal:
-  diagram_modes: [minimal]
-  node_id_suffix: '__pod2'
-  replica_index: 2
-  xml: >
-    <object label="&lt;div style=&quot;text-align:left&quot;&gt;&lt;font style=&quot;font-size:8px&quot;&gt;🟣 {_pod_name}-pod-2&lt;br/&gt;📍 worker2 | 🟢 Running&lt;/font&gt;&lt;/div&gt;" id="{{id}}" source_oid="{source_oid}" schema="seaf.company.ta.services.k8s_deployments">
-      <mxCell style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=8;container=0;shadow=0;" vertex="1" parent="{parent_id}">
-        <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
-      </mxCell>
-    </object>
-  schema: 'seaf.company.ta.services.k8s_deployments'
-  parent_id: 'namespace'
-  x: 20
-  y: 126
-  w: 115
-  h: 30
-  offset: 14
-  deep: 3
-  algo: 'X+'
-  llm_layout: {x: 55, y: 148, w: 160, h: 35, offset: 35, deep: 2}
-
+# HPA — sibling namespace внутри кластера (под жёлтой зоной), как в В1.
 k8s_hpa_minimal:
   diagram_modes: [minimal]
   xml: >
-    <object label="&lt;div style=&quot;text-align:center&quot;&gt;&lt;font style=&quot;font-size:8px&quot;&gt;HPA: {_hpa_target_short}&lt;br/&gt;min: {min} | max: {max}&lt;/font&gt;&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.components.k8s_hpa">
+    <object label="&lt;div style=&quot;text-align:center&quot;&gt;🔄 HPA: {_hpa_target_short}&lt;br/&gt;min: {min} | max: {max}&lt;/div&gt;" id="{{id}}" schema="seaf.company.ta.components.k8s_hpa">
       <mxCell style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=8;container=0;" vertex="1" parent="{parent_id}">
         <mxGeometry x="{{x_pos}}" y="{{y_pos}}" width="{{width}}" height="{{height}}" as="geometry"/>
       </mxCell>
     </object>
   schema: 'seaf.company.ta.components.k8s_hpa'
-  parent_id: 'namespace'
+  parent_id: 'cluster'
   sort: null
-  x: 37
-  y: 165
+  x: 63
+  y: 210
   w: 87
   h: 27
   offset: 37

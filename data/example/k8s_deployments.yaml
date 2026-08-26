@@ -50,3 +50,37 @@ seaf.company.ta.services.k8s_deployments:
         limits:
           cpu: 600m
           ram: 512Mi
+  jupiter.k8s.deployment.llm_chat:
+    title: LLM Chat Service
+    description: domain=llm-services
+    cluster: jupiter.k8s.llm.01
+    namespace: jupiter.ns.llm_apps
+    app_components:
+    - jupiter.app_system.llm_chat
+    labels:
+    - domain=llm-services
+    - app=llm-chat
+    containers:
+    - name: llm-chat
+      image: repo.jupiter.ru/containers/llm-chat:1.0.0
+      resources:
+        limits:
+          cpu: 8000m
+          ram: 64Gi
+  jupiter.k8s.deployment.llm_api:
+    title: LLM API Gateway
+    description: Inference endpoint
+    cluster: jupiter.k8s.llm.01
+    namespace: jupiter.ns.llm_apps
+    app_components:
+    - jupiter.app_system.llm_api
+    labels:
+    - domain=llm-services
+    - app=llm-api
+    containers:
+    - name: llm-api
+      image: repo.jupiter.ru/containers/llm-api:1.0.0
+      resources:
+        limits:
+          cpu: 8000m
+          ram: 64Gi

@@ -54,7 +54,11 @@ _k8s_diagram_details = 'full'
 _k8s_hpa_by_target = {}
 _k8s_clusters_with_hpa = set()
 _k8s_worker_count_by_cluster = {}
+_k8s_workers_by_cluster = {}
+_k8s_deployments_by_cluster = {}
 _k8s_deployment_namespace = {}
+_k8s_namespace_rows = {}
+_k8s_network_rows = {}
 # Одна страница для всех кластеров (data/patterns/k8s.yaml → «On one page»)
 _k8s_on_one_page = False
 _k8s_unified_page_title = 'Kubernetes (все кластеры)'
@@ -897,7 +901,8 @@ def _init_k8s_runtime_context():
     items=None, если в данных нет seaf.company.ta.services.k8s — страницы K8s не создаются.
     """
     global _k8s_diagram_details, _k8s_hpa_by_target, _k8s_clusters_with_hpa
-    global _k8s_worker_count_by_cluster, _k8s_deployment_namespace
+    global _k8s_worker_count_by_cluster, _k8s_workers_by_cluster, _k8s_deployments_by_cluster, _k8s_deployment_namespace
+    global _k8s_namespace_rows, _k8s_network_rows
     global _k8s_on_one_page, _k8s_unified_page_title
     raw = d.read_yaml_file(patterns_dir + 'k8s.yaml') or {}
     detail = _normalize_k8s_diagram_detail(raw.get('Diagram details', 'full'))
@@ -913,7 +918,11 @@ def _init_k8s_runtime_context():
         _k8s_hpa_by_target = {}
         _k8s_clusters_with_hpa = set()
         _k8s_worker_count_by_cluster = {}
+        _k8s_workers_by_cluster = {}
+        _k8s_deployments_by_cluster = {}
         _k8s_deployment_namespace = {}
+        _k8s_namespace_rows = {}
+        _k8s_network_rows = {}
         return detail, None
     hpas = merged.get('seaf.company.ta.components.k8s_hpa') or {}
     _k8s_hpa_by_target = {}
@@ -929,22 +938,46 @@ def _init_k8s_runtime_context():
             _k8s_clusters_with_hpa.add(str(c))
     nodes = merged.get('seaf.company.ta.components.k8s_nodes') or {}
     _k8s_worker_count_by_cluster = {}
-    for nrow in nodes.values():
+    _k8s_workers_by_cluster = {}
+    for nid, nrow in nodes.items():
         if not isinstance(nrow, dict):
             continue
         c = nrow.get('cluster')
         if not c:
             continue
-        for lab in (nrow.get('labels') or []):
-            if 'worker=true' in str(lab):
-                cs = str(c)
-                _k8s_worker_count_by_cluster[cs] = _k8s_worker_count_by_cluster.get(cs, 0) + 1
+        labs = [str(x) for x in (nrow.get('labels') or [])]
+        if not any('worker=true' in lab for lab in labs):
+            continue
+        cs = str(c)
+        _k8s_worker_count_by_cluster[cs] = _k8s_worker_count_by_cluster.get(cs, 0) + 1
+        accel = ''
+        for lab in labs:
+            if lab.lower().startswith('accelerator='):
+                raw_acc = lab.split('=', 1)[-1]
+                accel = raw_acc.split('-')[-1].upper() if raw_acc else ''
                 break
+        wname = str(nid).split('.')[-1]
+        _k8s_workers_by_cluster.setdefault(cs, []).append((wname, accel))
     deps = merged.get('seaf.company.ta.services.k8s_deployments') or {}
     _k8s_deployment_namespace = {}
     for did, drow in deps.items():
         if isinstance(drow, dict) and drow.get('namespace'):
             _k8s_deployment_namespace[str(did)] = str(drow['namespace'])
+    _k8s_deployments_by_cluster = {}
+    for did, drow in deps.items():
+        if not isinstance(drow, dict):
+            continue
+        c = drow.get('cluster')
+        if c:
+            _k8s_deployments_by_cluster.setdefault(str(c), []).append(str(did))
+    _k8s_namespace_rows = {
+        str(oid): row for oid, row in (merged.get('seaf.company.ta.components.k8s_namespaces') or {}).items()
+        if isinstance(row, dict)
+    }
+    _k8s_network_rows = {
+        str(oid): row for oid, row in (merged.get('seaf.company.ta.services.networks') or {}).items()
+        if isinstance(row, dict)
+    }
     items = _patch_k8s_items_for_one_page(items, detail)
     return detail, items
 
@@ -1137,6 +1170,20 @@ def _enrich_k8s_minimal_row(shape_schema: str, key_id: str, data: dict) -> None:
         else:
             data['_stand_short'] = '—'
         data['_hpa_yes'] = 'YES' if kid in _k8s_clusters_with_hpa else 'NO'
+        data['_vpa_yes'] = 'YES' if data.get('vpa') else 'NO'
+        cluster_net = '—'
+        for nid in (data.get('network_connection') or []):
+            nd = _k8s_network_rows.get(str(nid)) or {}
+            ipn = nd.get('ipnetwork') or nd.get('cidr')
+            if ipn:
+                cluster_net = str(ipn)
+                break
+            # OID вида …lan.192.168.101.0 → 192.168.101.0/24
+            m = re.search(r'(\d+\.\d+\.\d+\.\d+)(?:/(\d+))?$', str(nid))
+            if m:
+                cluster_net = f"{m.group(1)}/{m.group(2) or '24'}"
+                break
+        data['_cluster_net'] = _k8s_xml_escape(cluster_net)
         if data.get('service_mesh') in (None, ''):
             data['service_mesh'] = '—'
         lk = kid.lower()
@@ -1154,15 +1201,16 @@ def _enrich_k8s_minimal_row(shape_schema: str, key_id: str, data: dict) -> None:
             data['_k8s_minimal_row2'] = (
                 f"Autoscaler: {au} | GPU Nodes | Stand: {data['_stand_short']}")
         else:
+            # Как в эталоне В1 - K8s.01
             data['_k8s_minimal_row2'] = (
-                f"Autoscaler: {au} | Stand: {data['_stand_short']}")
+                f"Autoscaler: {au} | HPA: {data['_hpa_yes']} | VPA:{data['_vpa_yes']} | "
+                f"ClusterNetwork: {data['_cluster_net']} | Stand: {data['_stand_short']}")
     elif shape_schema == 'seaf.company.ta.services.k8s_deployments':
         hpa = _k8s_hpa_by_target.get(kid, {})
-        pods = hpa.get('min', 2)
         try:
-            pods = int(pods)
+            pods = int(hpa.get('min', 1))
         except (TypeError, ValueError):
-            pods = 2
+            pods = 1
         containers = data.get('containers') or []
         c0 = containers[0] if containers else {}
         pname = (c0.get('name') or kid.split('.')[-1]).replace('_', '-')
@@ -1170,14 +1218,79 @@ def _enrich_k8s_minimal_row(shape_schema: str, key_id: str, data: dict) -> None:
         data['_pod_line'] = f"{pname}-pod (×{pods})"
         apps = data.get('app_components') or []
         app_oid = str(apps[0]) if isinstance(apps, list) and apps else kid
+        app_tail = app_oid.split('.')[-1]
         domain = _k8s_label_value(data.get('labels'), 'domain')
-        data['_mid_app_short'] = _k8s_xml_escape(_k8s_humanize_name(app_oid.split('.')[-1]))
+        data['_mid_app_short'] = _k8s_xml_escape(_k8s_humanize_name(app_tail))
         data['_mid_app_oid'] = _k8s_xml_escape(_k8s_short_oid(app_oid))
         data['_mid_app_domain_line'] = (
             f'&lt;br/&gt;{_k8s_xml_escape(domain)}' if domain else '')
         cl = str(data.get('cluster') or '')
+        is_llm = 'llm' in cl.lower()
         wn = _k8s_worker_count_by_cluster.get(cl, 1)
         data['_worker_line'] = f"worker (×{wn})"
+        workers = list(_k8s_workers_by_cluster.get(cl) or [])
+        ns_oid = str(data.get('namespace') or '')
+        ns_row = _k8s_namespace_rows.get(ns_oid) or {}
+        ns_desc = str(ns_row.get('description') or '')
+        ns_desc = re.sub(r'^Namespace для компонентов\s+', '', ns_desc, flags=re.I)
+        ns_desc = re.sub(r'^Namespace для\s+', '', ns_desc, flags=re.I)
+        if is_llm:
+            title = str(data.get('title') or _k8s_humanize_name(app_tail))
+            title = re.sub(r'\s+Deployment$', '', title, flags=re.I).strip()
+            low = f'{kid} {title}'.lower()
+            if 'chat' in low:
+                emoji = '💬 '
+            elif 'api' in low or 'gateway' in low:
+                emoji = '🔌 '
+            else:
+                emoji = ''
+            data['_minimal_app_title'] = _k8s_xml_escape(f'{emoji}{title}')
+            desc = str(data.get('description') or '').strip()
+            sub = desc or domain or _k8s_short_oid(app_oid)
+            data['_minimal_app_sub'] = _k8s_xml_escape(sub)
+            data['_minimal_app_fs'] = '11'
+            data['_minimal_app_sub_fs'] = '10'
+            dep_order = _k8s_deployments_by_cluster.get(cl) or []
+            try:
+                dep_idx = dep_order.index(kid)
+            except ValueError:
+                dep_idx = 0
+            if workers:
+                wname, accel = workers[dep_idx % len(workers)]
+            else:
+                wname, accel = (f'worker{dep_idx + 1:02d}', 'H100')
+            if not accel:
+                accel = 'H100'
+            data['_minimal_pod_html'] = (
+                f'🟣 {_k8s_xml_escape(pname)}-pod-1&lt;br/&gt;'
+                f'📍 {_k8s_xml_escape(wname)} | 🎮 {_k8s_xml_escape(accel)} | 🟢')
+            data['_minimal_pod_fill'] = '#ffe6cc'
+            data['_minimal_pod_stroke'] = '#d79b00'
+            data['_minimal_pod_fs'] = '11'
+        else:
+            # Короткий app id (efs) → заголовок из описания namespace, как в В1.
+            if '_' not in app_tail and ns_desc:
+                data['_minimal_app_title'] = _k8s_xml_escape(ns_desc)
+            else:
+                data['_minimal_app_title'] = _k8s_xml_escape(_k8s_humanize_name(app_tail))
+            data['_minimal_app_sub'] = _k8s_xml_escape(_k8s_short_oid(app_oid))
+            data['_minimal_app_fs'] = '9'
+            data['_minimal_app_sub_fs'] = '8'
+            lines = [f'🟣 {_k8s_xml_escape(pname)}-pod']
+            n_lines = max(1, pods)
+            for i in range(n_lines):
+                if i < len(workers):
+                    wname = workers[i][0]
+                else:
+                    wname = f'worker{i + 1}'
+                lines.append(f'📍 {_k8s_xml_escape(wname)} | 🟢 Running')
+            if pods >= 2:
+                lines[0] += (
+                    f'&lt;font style=&quot;color:#ff0000;font-size:7px&quot;&gt; ×{pods}&lt;/font&gt;')
+            data['_minimal_pod_html'] = '&lt;br/&gt;'.join(lines)
+            data['_minimal_pod_fill'] = '#e1d5e7'
+            data['_minimal_pod_stroke'] = '#9673a6'
+            data['_minimal_pod_fs'] = '8'
     elif shape_schema == 'seaf.company.ta.components.k8s_hpa':
         tgt = str(data.get('target') or '')
         data['_hpa_target_short'] = tgt.split('.')[-1] if tgt else '—'
@@ -1186,7 +1299,10 @@ def _enrich_k8s_minimal_row(shape_schema: str, key_id: str, data: dict) -> None:
             data['namespace'] = ns
     elif shape_schema == 'seaf.company.ta.components.k8s_namespaces':
         lk = str(data.get('cluster') or '').lower()
-        data['_k8s_ns_fs'] = '11' if 'llm' in lk else '9'
+        is_llm = 'llm' in lk
+        data['_k8s_ns_fs'] = '11' if is_llm else '9'
+        data['_k8s_ns_start'] = '32' if is_llm else '40'
+        data['_k8s_ns_align'] = 'center' if is_llm else 'left'
         labels = data.get('labels') or []
         if isinstance(labels, list) and labels:
             unique_labels = list(dict.fromkeys(str(x) for x in labels))
@@ -1195,13 +1311,13 @@ def _enrich_k8s_minimal_row(shape_schema: str, key_id: str, data: dict) -> None:
             data['_ns_labels_line'] = ''
         ns_parts = kid.split('.')
         short_key = '.'.join(ns_parts[-2:]) if len(ns_parts) >= 2 and ns_parts[-2] == 'ns' else ns_parts[-1]
-        data['_minimal_ns_key'] = _k8s_xml_escape(kid if 'llm' in lk else short_key)
+        data['_minimal_ns_key'] = _k8s_xml_escape(kid if is_llm else short_key)
         desc = str(data.get('description') or '')
         desc = re.sub(r'^Namespace для компонентов\s+', '', desc, flags=re.I)
         desc = re.sub(r'^Namespace для\s+', '', desc, flags=re.I)
-        if 'llm' in lk:
+        if is_llm:
             desc = re.sub(r'\bприложений\b', 'приложения', desc, flags=re.I)
-        if 'llm' in lk and data['_ns_labels_line']:
+        if is_llm and data['_ns_labels_line']:
             desc = f"{desc} | {data['_ns_labels_line']}"
         data['_minimal_ns_description'] = _k8s_xml_escape(desc)
 
