@@ -22,6 +22,7 @@ _CLUSTER_SCHEMA = 'seaf.company.ta.services.k8s'
 _NS_SCHEMA = 'seaf.company.ta.components.k8s_namespaces'
 _HPA_SCHEMA = 'seaf.company.ta.components.k8s_hpa'
 _DEP_SCHEMA = 'seaf.company.ta.services.k8s_deployments'
+_NODE_SCHEMA = 'seaf.company.ta.components.k8s_nodes'
 
 _CLUSTER_GAP_Y = 40
 _CLUSTER_PAD_X = 20
@@ -43,13 +44,18 @@ _EMPTY_NS_BODY = 8
 _MAX_APP_COLS = 4
 _MAX_POD_COLS = 4
 _MIN_CLUSTER_W = 480
+_MIN_ROW_W = 440
+_MAX_LEAF_W = 280
+_GENERIC_PAD = 12
+_GENERIC_GAP = 10
 _MAX_APP_W = 260
 _MAX_POD_W = 230
+_MAX_HPA_W = 200
 # Helvetica: средняя ширина глифа и межстрочный интервал в долях кегля.
 _CHAR_W_K = 0.58
 _LINE_H_K = 1.3
 _TEXT_PAD_X = 8.0
-_TEXT_PAD_Y = 6.0
+_TEXT_PAD_Y = 3.0
 
 
 def _geom_num(value: float) -> str:
@@ -383,16 +389,19 @@ def _layout_cluster(
     bottom = origin_y + content_h
     if hpa_oids:
         bottom += _HPA_GAP
-        hpa_y = bottom
-        hpa_x = origin_x
-        for i, oid in enumerate(sorted(hpa_oids)):
-            if i and i % 5 == 0:
-                hpa_x = origin_x
-                hpa_y += _HPA_H + _HPA_GAP
-            _set_xywh(geoms[oid], hpa_x, hpa_y, _HPA_W, _HPA_H)
-            hpa_x += _HPA_W + _HPA_GAP
-            content_w = max(content_w, hpa_x - origin_x - _HPA_GAP)
-        bottom = hpa_y + _HPA_H
+        hpa_boxes = _sized_boxes(
+            sorted(hpa_oids), objects, cells, _HPA_W, _HPA_H, _MAX_HPA_W, 8.0,
+        )
+        row_budget_hpa = max(row_budget, max(w for _, w, _ in hpa_boxes))
+        places_hpa, hpa_w, hpa_h = _flow_place_boxes(
+            hpa_boxes, origin_x, bottom, _HPA_GAP, _HPA_GAP, row_budget_hpa,
+        )
+        sizes = {oid: (w, h) for oid, w, h in hpa_boxes}
+        for oid, hx, hy in places_hpa:
+            bw, bh = sizes[oid]
+            _set_xywh(geoms[oid], hx, hy, bw, bh)
+        content_w = max(content_w, hpa_w)
+        bottom += hpa_h
 
     cluster_w = max(_MIN_CLUSTER_W, content_w + 2 * _CLUSTER_PAD_X)
     cluster_h = bottom + _CLUSTER_PAD_BOTTOM
@@ -437,6 +446,147 @@ def _restack_clusters(
     return max_right, max_bottom
 
 
+def _descendants(
+    roots: List[str],
+    cells: Dict[str, ET.Element],
+) -> set:
+    """Все вложенные ячейки указанных контейнеров."""
+    inside = set(roots)
+    grew = True
+    while grew:
+        grew = False
+        for oid, mx in cells.items():
+            if oid in inside:
+                continue
+            if (mx.get('parent') or '') in inside:
+                inside.add(oid)
+                grew = True
+    return inside - set(roots)
+
+
+def _children_map(cells: Dict[str, ET.Element]) -> Dict[str, List[str]]:
+    """parent → дети в порядке документа (порядок задаёт секции в middle/full)."""
+    out: Dict[str, List[str]] = {}
+    for oid, mx in cells.items():
+        out.setdefault(mx.get('parent') or '', []).append(oid)
+    return out
+
+
+def _has_unmanaged_children(
+    cluster_oids: List[str],
+    objects: Dict[str, ET.Element],
+    cells: Dict[str, ET.Element],
+) -> bool:
+    """Есть ли внутри кластеров объекты, которыми minimal-раскладка не управляет."""
+    inside = set(cluster_oids)
+    grew = True
+    while grew:
+        grew = False
+        for oid, mx in cells.items():
+            if oid in inside:
+                continue
+            if (mx.get('parent') or '') in inside:
+                inside.add(oid)
+                grew = True
+    for oid in inside - set(cluster_oids):
+        schema = (objects.get(oid).get('schema') or '') if oid in objects else ''
+        if schema == _NODE_SCHEMA or oid.endswith('_label'):
+            return True
+    return False
+
+
+def _is_section_header(oid: str, cells: Dict[str, ET.Element]) -> bool:
+    """Подпись секции: занимает свой ряд целиком."""
+    style = cells[oid].get('style') or ''
+    return oid.endswith('_label') or style.startswith('text;')
+
+
+def _label_of(oid: str, objects: Dict[str, ET.Element], cells: Dict[str, ET.Element]) -> str:
+    obj = objects.get(oid)
+    if obj is not None and obj.get('label'):
+        return obj.get('label') or ''
+    return cells[oid].get('value') or ''
+
+
+def _layout_generic(
+    oid: str,
+    objects: Dict[str, ET.Element],
+    cells: Dict[str, ET.Element],
+    geoms: Dict[str, ET.Element],
+    children: Dict[str, List[str]],
+) -> Tuple[float, float]:
+    """
+    Рекурсивная раскладка контейнера по фактическому содержимому.
+    Подписи секций и вложенные контейнеры занимают отдельные ряды, остальные
+    объекты выстраиваются в поток с переносом. Возвращает (w, h).
+    """
+    geom = geoms[oid]
+    style = cells[oid].get('style') or ''
+    cur_w = float(geom.get('width') or 0)
+    cur_h = float(geom.get('height') or 0)
+    kids = [k for k in children.get(oid, []) if k in geoms]
+
+    if not kids:
+        if 'swimlane' in style:
+            # Пустой swimlane (namespace без объектов) — только шапка.
+            start_empty = _parse_start_size(style, 30.0)
+            w_empty = _title_min_width(
+                _label_of(oid, objects, cells), style,
+                max(12.0, start_empty - 6.0), 9.0, float(_EMPTY_NS_W), 720.0,
+            )
+            return w_empty, start_empty + _EMPTY_NS_BODY
+        return _fit_box_size(
+            _label_of(oid, objects, cells), style,
+            cur_w, cur_h, max(cur_w, _MAX_LEAF_W), 9.0,
+        )
+
+    start = _parse_start_size(style, 0.0) if 'swimlane' in style else 0.0
+    sizes: Dict[str, Tuple[float, float]] = {}
+    for kid in kids:
+        sizes[kid] = _layout_generic(kid, objects, cells, geoms, children)
+
+    # Вложенные контейнеры (namespace) выстраиваются в несколько колонок, иначе
+    # кластер с десятками namespace вытягивается в бесконечную полосу.
+    nested = [k for k in kids if children.get(k)]
+    cols = 1 if len(nested) <= 1 else (2 if len(nested) <= 6 else 3)
+    widest_nested = max([sizes[k][0] for k in nested], default=0.0)
+    row_budget = max(
+        _MIN_ROW_W,
+        max(w for w, _ in sizes.values()),
+        cols * widest_nested + (cols - 1) * _GENERIC_GAP,
+    )
+    pad = float(_GENERIC_PAD)
+    x = pad
+    y = start + pad
+    row_h = 0.0
+    content_w = 0.0
+    for kid in kids:
+        w, h = sizes[kid]
+        own_row = _is_section_header(kid, cells)
+        wrap = x > pad and (x + w - pad) > row_budget
+        if (own_row and x > pad) or wrap:
+            x = pad
+            y += row_h + _GENERIC_GAP
+            row_h = 0.0
+        _set_xywh(geoms[kid], x, y, w, h)
+        content_w = max(content_w, x + w - pad)
+        if own_row:
+            y += h + _GENERIC_GAP
+            x = pad
+            row_h = 0.0
+        else:
+            x += w + _GENERIC_GAP
+            row_h = max(row_h, h)
+    bottom = y + row_h
+
+    w = content_w + 2 * pad
+    if 'swimlane' in style:
+        w = max(w, _title_min_width(
+            _label_of(oid, objects, cells), style, max(12.0, start - 6.0), 9.0, w, 720.0,
+        ))
+    return w, bottom + pad
+
+
 def fit_k8s_clusters_to_content(diagram: Any, page_name: str) -> None:
     """
     Подгоняет namespace/кластеры на странице K8s под число объектов.
@@ -455,10 +605,26 @@ def fit_k8s_clusters_to_content(diagram: Any, page_name: str) -> None:
     if not cluster_oids:
         return
 
-    for coid in cluster_oids:
-        _layout_cluster(coid, objects, cells, geoms)
+    children = _children_map(cells)
+    if _has_unmanaged_children(cluster_oids, objects, cells):
+        # middle/full: внутри кластеров есть узлы и подписи секций.
+        for coid in cluster_oids:
+            w, h = _layout_generic(coid, objects, cells, geoms, children)
+            g = geoms[coid]
+            _set_xywh(g, float(g.get('x') or 0), float(g.get('y') or 0),
+                      max(w, _MIN_CLUSTER_W), h)
+    else:
+        for coid in cluster_oids:
+            _layout_cluster(coid, objects, cells, geoms)
 
-    max_right, max_bottom = _restack_clusters(cluster_oids, geoms)
+    # Стопка по всем блокам верхнего уровня: помимо кластеров там бывают
+    # swimlane общей инфраструктуры, их нельзя оставить на прежних y.
+    parents = {cells[c].get('parent') or '' for c in cluster_oids}
+    top_level = [
+        oid for oid in children.get(next(iter(parents)), [])
+        if oid in geoms and (oid in cluster_oids or oid not in _descendants(cluster_oids, cells))
+    ] if len(parents) == 1 else cluster_oids
+    max_right, max_bottom = _restack_clusters(top_level or cluster_oids, geoms)
 
     # Рамка группы 001.
     for el in root.iter('mxCell'):
