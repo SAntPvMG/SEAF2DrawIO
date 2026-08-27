@@ -15,6 +15,7 @@ from auto_layout.edge_segments_layout import (
 )
 from auto_layout.cross_segment_firewall_boundary import place_cross_segment_firewalls_on_boundary
 from auto_layout.dmz_segments_layout import dmz_segments_layout as compute_dmz_layout
+from auto_layout.k8s_fit_layout import fit_k8s_clusters_to_content
 from auto_layout.segment_intrinsic_layout import (
     align_int_net_security_bottom_to_int_wan_edge,
     center_int_net_content_by_real_bbox,
@@ -58,6 +59,7 @@ _k8s_workers_by_cluster = {}
 _k8s_deployments_by_cluster = {}
 _k8s_deployment_namespace = {}
 _k8s_namespace_rows = {}
+_k8s_ns_app_count = {}
 _k8s_network_rows = {}
 # Одна страница для всех кластеров (data/patterns/k8s.yaml → «On one page»)
 _k8s_on_one_page = False
@@ -902,7 +904,7 @@ def _init_k8s_runtime_context():
     """
     global _k8s_diagram_details, _k8s_hpa_by_target, _k8s_clusters_with_hpa
     global _k8s_worker_count_by_cluster, _k8s_workers_by_cluster, _k8s_deployments_by_cluster, _k8s_deployment_namespace
-    global _k8s_namespace_rows, _k8s_network_rows
+    global _k8s_namespace_rows, _k8s_ns_app_count, _k8s_network_rows
     global _k8s_on_one_page, _k8s_unified_page_title
     raw = d.read_yaml_file(patterns_dir + 'k8s.yaml') or {}
     detail = _normalize_k8s_diagram_detail(raw.get('Diagram details', 'full'))
@@ -922,6 +924,7 @@ def _init_k8s_runtime_context():
         _k8s_deployments_by_cluster = {}
         _k8s_deployment_namespace = {}
         _k8s_namespace_rows = {}
+        _k8s_ns_app_count = {}
         _k8s_network_rows = {}
         return detail, None
     hpas = merged.get('seaf.company.ta.components.k8s_hpa') or {}
@@ -974,6 +977,19 @@ def _init_k8s_runtime_context():
         str(oid): row for oid, row in (merged.get('seaf.company.ta.components.k8s_namespaces') or {}).items()
         if isinstance(row, dict)
     }
+    # Сколько разных приложений в namespace: описание зоны как заголовок карточки
+    # подходит только когда приложение одно (эталон В1: efs → АС «Единый Фронт Сотрудника»).
+    ns_apps = {}
+    for drow in deps.values():
+        if not isinstance(drow, dict):
+            continue
+        ns_key = str(drow.get('namespace') or '')
+        if not ns_key:
+            continue
+        apps_list = drow.get('app_components') or []
+        app_key = str(apps_list[0]) if isinstance(apps_list, list) and apps_list else ''
+        ns_apps.setdefault(ns_key, set()).add(app_key)
+    _k8s_ns_app_count = {k: len(v) for k, v in ns_apps.items()}
     _k8s_network_rows = {
         str(oid): row for oid, row in (merged.get('seaf.company.ta.services.networks') or {}).items()
         if isinstance(row, dict)
@@ -1021,6 +1037,12 @@ def _k8s_humanize_name(oid_tail: str) -> str:
     """«efs» → «EFS», «efs_news_editor» → «EFS News Editor» (короткие токены — аббревиатуры)."""
     words = [w for w in str(oid_tail).split('_') if w]
     return ' '.join(w.upper() if len(w) <= 3 else w.capitalize() for w in words)
+
+
+def _k8s_clip_text(text: str, limit: int) -> str:
+    """Обрезает подпись, чтобы карточка не разрасталась на весь namespace."""
+    s = ' '.join(str(text or '').split())
+    return s if len(s) <= limit else s[: limit - 1].rstrip() + '…'
 
 
 def _k8s_short_oid(oid: str, segments: int = 2) -> str:
@@ -1268,11 +1290,16 @@ def _enrich_k8s_minimal_row(shape_schema: str, key_id: str, data: dict) -> None:
             data['_minimal_pod_stroke'] = '#d79b00'
             data['_minimal_pod_fs'] = '11'
         else:
-            # Короткий app id (efs) → заголовок из описания namespace, как в В1.
-            if '_' not in app_tail and ns_desc:
-                data['_minimal_app_title'] = _k8s_xml_escape(ns_desc)
+            # Описание зоны как заголовок — только когда в namespace одно приложение (В1).
+            single_app = _k8s_ns_app_count.get(ns_oid, 0) <= 1
+            dep_title = re.sub(r'\s+Deployment$', '', str(data.get('title') or ''), flags=re.I).strip()
+            if single_app and '_' not in app_tail and ns_desc:
+                title = ns_desc
+            elif dep_title:
+                title = dep_title
             else:
-                data['_minimal_app_title'] = _k8s_xml_escape(_k8s_humanize_name(app_tail))
+                title = _k8s_humanize_name(app_tail)
+            data['_minimal_app_title'] = _k8s_xml_escape(_k8s_clip_text(title, 64))
             data['_minimal_app_sub'] = _k8s_xml_escape(_k8s_short_oid(app_oid))
             data['_minimal_app_fs'] = '9'
             data['_minimal_app_sub_fs'] = '8'
@@ -1908,6 +1935,8 @@ if __name__ == '__main__':
             if file_name == 'k8s':
                 if _drop_k8s_page_without_objects(page_name):
                     continue
+                # Пока есть иерархия parent: подогнать размеры/позиции под число объектов.
+                fit_k8s_clusters_to_content(diagram, page_name)
                 _flatten_k8s_page(page_name)
             if file_name in ('dc', 'office'):
                 kb_layout(diagram, d, conf, page_name, diagram_ids, _py, _roots)
