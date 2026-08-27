@@ -1397,15 +1397,22 @@ def _add_k8s_reference_links_body(page: str) -> None:
                 style='endArrow=block;html=1;rounded=0;fontSize=7;strokeColor=#3d6185;',
             )
 
-    workers = []
+    # Воркеры только своего кластера: общий список раскладывал deployment по
+    # чужим нодам (efs_news → llm.worker01).
+    workers_by_cluster: dict = {}
     for node_id, row in nodes.items():
         if node_id not in node_ids or not isinstance(row, dict):
             continue
         labels = ' '.join(str(x) for x in (row.get('labels') or []))
         if 'worker=true' in labels:
-            workers.append(node_id)
+            workers_by_cluster.setdefault(str(row.get('cluster') or ''), []).append(node_id)
 
-    for dep_index, (dep_id, _) in enumerate(page_deployments):
+    dep_index_by_cluster: dict = {}
+    for dep_id, dep_row in page_deployments:
+        cluster = str(dep_row.get('cluster') or '')
+        workers = workers_by_cluster.get(cluster) or []
+        dep_index = dep_index_by_cluster.get(cluster, 0)
+        dep_index_by_cluster[cluster] = dep_index + 1
         if _k8s_diagram_details == 'full':
             for replica in (1, 2):
                 pod_id = f'{dep_id}__pod{replica}'
